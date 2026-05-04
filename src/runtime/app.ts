@@ -3,9 +3,15 @@ import { cors } from "hono/cors";
 import { validateAvatarStateEvent } from "../contracts/avatarEvent";
 import { RuntimeStateStore } from "./stateStore";
 
+const defaultAllowedOrigins = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "https://clawpet.vercel.app",
+];
+
 export type CreateRuntimeAppOptions = {
   store?: RuntimeStateStore;
-  allowCorsOrigin?: string;
+  allowCorsOrigin?: string | string[];
 };
 
 export function createRuntimeApp(options: CreateRuntimeAppOptions = {}) {
@@ -15,7 +21,7 @@ export function createRuntimeApp(options: CreateRuntimeAppOptions = {}) {
   app.use(
     "*",
     cors({
-      origin: options.allowCorsOrigin ?? "http://127.0.0.1:8737",
+      origin: options.allowCorsOrigin ?? defaultAllowedOrigins,
       allowMethods: ["GET", "POST"],
       allowHeaders: ["Content-Type"],
     }),
