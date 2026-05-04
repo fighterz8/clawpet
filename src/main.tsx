@@ -79,9 +79,9 @@ function App() {
             lightweight animations, and short useful status messages.
           </p>
           <div className="hero__actions">
-            <a href="/docs/product-brief.md">Product brief</a>
-            <a href="/docs/avatar-bundle-spec.md">Bundle spec</a>
-            <a href="https://github.com/" aria-label="GitHub repository placeholder">GitHub soon</a>
+            <a href="https://github.com/fighterz8/clawpet/blob/main/docs/product-brief.md">Product brief</a>
+            <a href="https://github.com/fighterz8/clawpet/blob/main/docs/avatar-bundle-spec.md">Bundle spec</a>
+            <a href="https://github.com/fighterz8/clawpet">GitHub</a>
           </div>
         </div>
         <div className="pet-card">
@@ -107,7 +107,10 @@ function App() {
         </article>
         <article className="panel">
           <h2>How OpenClaw controls it</h2>
-          <p>A future local runtime exposes a localhost-only API. OpenClaw sends state changes and short messages.</p>
+          <p>
+            Local mode uses a localhost API. Remote mode pairs the desktop avatar with an OpenClaw host running on
+            another machine through an authenticated connection.
+          </p>
           <pre>{`POST /avatar/state\n${current.api}`}</pre>
         </article>
         <article className="panel">
@@ -119,13 +122,32 @@ function App() {
         </article>
       </section>
 
+      <section className="architecture">
+        <div>
+          <p className="eyebrow">Remote-first architecture</p>
+          <h2>Clawpet should live on the machine you actually use.</h2>
+          <p>
+            Many OpenClaw users host their assistant on a server or spare machine. Clawpet is designed so the
+            desktop avatar can run on your main computer while OpenClaw runs somewhere else.
+          </p>
+        </div>
+        <div className="flow" aria-label="Remote connection diagram">
+          <div className="flow__node">OpenClaw host</div>
+          <div className="flow__edge">HTTPS / WebSocket</div>
+          <div className="flow__node flow__node--relay">Clawpet relay or direct tunnel</div>
+          <div className="flow__edge">paired outbound connection</div>
+          <div className="flow__node">Desktop avatar</div>
+        </div>
+      </section>
+
       <section className="roadmap">
         <h2>MVP path</h2>
         <ol>
           <li>Design docs and Vercel preview</li>
           <li>Avatar bundle manifest and validator</li>
+          <li>Connection contract for local and remote avatar events</li>
           <li>Rust/Tauri transparent desktop overlay</li>
-          <li>Local OpenClaw control bridge</li>
+          <li>Pairing flow between OpenClaw host and desktop client</li>
           <li>Dawn avatar pack and public demo video</li>
         </ol>
       </section>

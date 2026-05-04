@@ -220,7 +220,8 @@ button.active {
 }
 
 .panel,
-.roadmap {
+.roadmap,
+.architecture {
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 26px;
   background: rgba(255, 255, 255, 0.07);
@@ -229,7 +230,50 @@ button.active {
 }
 
 .panel h2,
-.roadmap h2 { color: white; margin-top: 0; }
+.roadmap h2,
+.architecture h2 { color: white; margin-top: 0; }
+
+.architecture {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 24px;
+  align-items: center;
+  margin-top: 18px;
+}
+
+.flow {
+  display: grid;
+  grid-template-columns: 1fr auto 1.2fr auto 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.flow__node {
+  min-height: 86px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 14px;
+  border: 1px solid rgba(142, 231, 255, 0.32);
+  border-radius: 22px;
+  background: rgba(8, 10, 18, 0.42);
+  color: #edf4ff;
+  font-weight: 800;
+}
+
+.flow__node--relay {
+  border-color: rgba(255, 247, 173, 0.42);
+  background: rgba(255, 247, 173, 0.08);
+}
+
+.flow__edge {
+  color: #8ee7ff;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
 
 pre {
   overflow: auto;
@@ -251,6 +295,9 @@ pre {
 
 @media (max-width: 880px) {
   .hero,
-  .panel-grid { grid-template-columns: 1fr; }
+  .panel-grid,
+  .architecture { grid-template-columns: 1fr; }
+  .flow { grid-template-columns: 1fr; }
+  .flow__edge::after { content: " ↓"; }
   .pet-card { min-height: 500px; }
 }
