@@ -24,13 +24,19 @@
         "decorations": false,
         "transparent": true,
         "alwaysOnTop": true,
-        "skipTaskbar": false,
+        "skipTaskbar": true,
         "shadow": false,
         "center": true
       }
     ],
     "security": {
       "csp": null
+    },
+    "trayIcon": {
+      "id": "main",
+      "iconPath": "icons/32x32.png",
+      "tooltip": "Clawpet",
+      "menuOnLeftClick": false
     }
   },
   "bundle": {
