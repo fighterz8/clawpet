@@ -1,8 +1,17 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
+import { AVATAR_EVENT_VERSION, avatarStates, type AvatarState, type AvatarStateEvent, type ClawpetStatus } from "./contracts/avatarEvent";
 
-type PetState = "idle" | "thinking" | "focused" | "happy" | "alert" | "sleepy";
+type PetState = AvatarState;
+
+type RuntimeEventLogEntry = {
+  event: AvatarStateEvent;
+  receivedAt: string;
+  latencyMs: number | null;
+};
+
+const RUNTIME_URL = "http://127.0.0.1:8737";
 
 const stateCopy: Record<PetState, { label: string; message: string; api: string }> = {
   idle: {
@@ -37,7 +46,7 @@ const stateCopy: Record<PetState, { label: string; message: string; api: string 
   },
 };
 
-const states = Object.keys(stateCopy) as PetState[];
+const states = [...avatarStates];
 
 function ClawpetAvatar({ state }: { state: PetState }) {
   const face = useMemo(() => {
@@ -64,6 +73,149 @@ function ClawpetAvatar({ state }: { state: PetState }) {
   );
 }
 
+function buildBrowserEvent(state: PetState, message: string): AvatarStateEvent {
+  return {
+    type: "avatar.state",
+    version: AVATAR_EVENT_VERSION,
+    eventId: `evt_browser_${crypto.randomUUID()}`,
+    sentAt: new Date().toISOString(),
+    source: {
+      kind: "openclaw",
+      instanceId: "browser-console",
+      displayName: "Clawpet local console",
+    },
+    target: {
+      deviceId: "local-runtime",
+      avatarId: "dawn-v0",
+    },
+    state,
+    message,
+    ttlMs: 8000,
+    priority: state === "alert" ? "high" : "normal",
+  };
+}
+
+function RuntimeConsole({ onPreviewState }: { onPreviewState: (state: PetState) => void }) {
+  const [status, setStatus] = useState<ClawpetStatus | null>(null);
+  const [events, setEvents] = useState<RuntimeEventLogEntry[]>([]);
+  const [online, setOnline] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [lastError, setLastError] = useState<string | null>(null);
+
+  async function refresh() {
+    try {
+      const [statusResponse, eventsResponse] = await Promise.all([
+        fetch(`${RUNTIME_URL}/status`),
+        fetch(`${RUNTIME_URL}/events`),
+      ]);
+      if (!statusResponse.ok) throw new Error(`status returned ${statusResponse.status}`);
+      const nextStatus = await statusResponse.json() as ClawpetStatus;
+      const eventBody = await eventsResponse.json() as { events?: RuntimeEventLogEntry[] };
+      setStatus(nextStatus);
+      setEvents(eventBody.events ?? []);
+      setOnline(true);
+      setLastError(null);
+      onPreviewState(nextStatus.avatar.state);
+    } catch (error) {
+      setOnline(false);
+      setLastError(error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  useEffect(() => {
+    void refresh();
+    const id = window.setInterval(() => void refresh(), 3000);
+    return () => window.clearInterval(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function sendState(nextState: PetState) {
+    setLoading(true);
+    setLastError(null);
+    const message = stateCopy[nextState].message;
+    try {
+      const response = await fetch(`${RUNTIME_URL}/avatar/state`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(buildBrowserEvent(nextState, message)),
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(JSON.stringify(body));
+      onPreviewState(nextState);
+      await refresh();
+    } catch (error) {
+      setOnline(false);
+      setLastError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <section className="console" id="console">
+      <div className="console__header">
+        <div>
+          <p className="eyebrow">Local runtime console</p>
+          <h2>Validate the avatar connection from your browser.</h2>
+          <p>
+            This panel talks to the local Clawpet runtime at <code>{RUNTIME_URL}</code>. Start it with <code>npm run runtime:dev</code>.
+          </p>
+        </div>
+        <div className={`status-pill ${online ? "status-pill--online" : "status-pill--offline"}`}>
+          {online ? "Runtime online" : "Runtime offline"}
+        </div>
+      </div>
+
+      <div className="console__grid">
+        <article className="console-card">
+          <h3>Runtime status</h3>
+          {status ? (
+            <dl className="status-list">
+              <div><dt>Mode</dt><dd>{status.mode}</dd></div>
+              <div><dt>State</dt><dd>{status.avatar.state}</dd></div>
+              <div><dt>Avatar</dt><dd>{status.avatar.avatarId}</dd></div>
+              <div><dt>Source</dt><dd>{status.pairedOpenClaw?.displayName ?? "Not paired yet"}</dd></div>
+              <div><dt>Latency</dt><dd>{status.latencyMs == null ? "—" : `${status.latencyMs}ms`}</dd></div>
+            </dl>
+          ) : (
+            <p className="muted">No runtime status yet.</p>
+          )}
+          {lastError && <p className="error">{lastError}</p>}
+        </article>
+
+        <article className="console-card">
+          <h3>Send test state</h3>
+          <div className="state-grid state-grid--console">
+            {states.map((s) => (
+              <button key={s} disabled={loading} onClick={() => void sendState(s)}>
+                {stateCopy[s].label}
+              </button>
+            ))}
+          </div>
+          <button className="secondary" onClick={() => void refresh()}>Refresh status</button>
+        </article>
+
+        <article className="console-card console-card--events">
+          <h3>Recent events</h3>
+          {events.length === 0 ? (
+            <p className="muted">No events yet. Send a test state to populate the log.</p>
+          ) : (
+            <ul className="event-log">
+              {events.slice(0, 5).map((entry) => (
+                <li key={entry.event.eventId}>
+                  <strong>{entry.event.state}</strong>
+                  <span>{entry.event.message}</span>
+                  <small>{entry.latencyMs == null ? "latency —" : `${entry.latencyMs}ms`} · {new Date(entry.receivedAt).toLocaleTimeString()}</small>
+                </li>
+              ))}
+            </ul>
+          )}
+        </article>
+      </div>
+    </section>
+  );
+}
+
 function App() {
   const [state, setState] = useState<PetState>("idle");
   const current = stateCopy[state];
@@ -79,8 +231,8 @@ function App() {
             lightweight animations, and short useful status messages.
           </p>
           <div className="hero__actions">
-            <a href="https://github.com/fighterz8/clawpet/blob/main/docs/product-brief.md">Product brief</a>
-            <a href="https://github.com/fighterz8/clawpet/blob/main/docs/avatar-bundle-spec.md">Bundle spec</a>
+            <a href="#console">Local console</a>
+            <a href="https://github.com/fighterz8/clawpet/blob/main/docs/avatar-event-contract.md">Event contract</a>
             <a href="https://github.com/fighterz8/clawpet">GitHub</a>
           </div>
         </div>
@@ -96,6 +248,8 @@ function App() {
           </div>
         </div>
       </section>
+
+      <RuntimeConsole onPreviewState={setState} />
 
       <section className="panel-grid">
         <article className="panel">
