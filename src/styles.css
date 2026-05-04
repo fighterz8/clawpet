@@ -57,6 +57,42 @@ main {
   filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.45));
 }
 
+.bundle-avatar {
+  width: 220px;
+  height: 220px;
+  display: block;
+  background: transparent;
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.45));
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.bundle-avatar--loading {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  border: 2px dashed rgba(255, 255, 255, 0.25);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+.bundle-avatar--anim-none      { animation: none; }
+.bundle-avatar--anim-breathe   { animation: breathe 3.4s ease-in-out infinite; }
+.bundle-avatar--anim-bob       { animation: bob 2.4s ease-in-out infinite; }
+.bundle-avatar--anim-pulse     { animation: pulse 1.6s ease-in-out infinite; }
+.bundle-avatar--anim-bounce    { animation: bounce 0.9s ease-in-out infinite; }
+.bundle-avatar--anim-shake     { animation: shake 0.45s ease-in-out infinite; }
+.bundle-avatar--anim-slowBlink { animation: slowBlink 4s ease-in-out infinite; opacity: 0.85; }
+
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+@keyframes slowBlink {
+  0%, 90%, 100% { opacity: 0.85; }
+  93%, 97%      { opacity: 0.35; }
+}
+
 .overlay-floating__bubble {
   position: absolute;
   bottom: -8px;

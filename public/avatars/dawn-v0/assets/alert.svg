@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="Clawpet alert placeholder">
+  <defs>
+    <radialGradient id="bodyGrad-alert" cx="50%" cy="42%" r="60%">
+      <stop offset="0%" stop-color="#fdfcff" stop-opacity="0.95"/>
+      <stop offset="55%" stop-color="#ff6b6b" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#1a0f3a" stop-opacity="1"/>
+    </radialGradient>
+    <radialGradient id="glowGrad-alert" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffd166" stop-opacity="0.85"/>
+      <stop offset="80%" stop-color="#ffd166" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- soft glow -->
+  <circle cx="128" cy="128" r="110" fill="url(#glowGrad-alert)"/>
+
+  <!-- horns -->
+  <path d="M86 70 Q92 32 104 56 L102 78 Z" fill="#fff5ae"/>
+  <path d="M170 70 Q164 32 152 56 L154 78 Z" fill="#fff5ae"/>
+
+  <!-- body -->
+  <path d="M128 56
+           C 78 56 60 96 60 132
+           C 60 176 92 196 128 196
+           C 164 196 196 176 196 132
+           C 196 96 178 56 128 56 Z"
+        fill="url(#bodyGrad-alert)" stroke="#0a0820" stroke-width="3"/>
+
+  <!-- ears -->
+  <path d="M62 92 Q40 84 50 116 Z" fill="#ff6b6b" stroke="#0a0820" stroke-width="2"/>
+  <path d="M194 92 Q216 84 206 116 Z" fill="#ff6b6b" stroke="#0a0820" stroke-width="2"/>
+
+  <!-- belly -->
+  <ellipse cx="128" cy="156" rx="42" ry="26" fill="#fdfcff" opacity="0.18"/>
+
+  <!-- eyes (mood expression via symbol) -->
+  <text x="100" y="138" font-family="ui-monospace, Menlo, monospace" font-size="24" font-weight="900" fill="#0a0820" text-anchor="middle">!</text>
+  <text x="156" y="138" font-family="ui-monospace, Menlo, monospace" font-size="24" font-weight="900" fill="#0a0820" text-anchor="middle">!</text>
+
+  <!-- spark accent -->
+  <text x="186" y="78" font-family="ui-sans-serif, system-ui" font-size="18" fill="#ffd166">✦</text>
+
+  <!-- tail (offset away from body so it doesn't overlap awkwardly) -->
+  <path d="M188 184 Q224 180 220 220" stroke="#ff6b6b" stroke-width="14" stroke-linecap="round" fill="none"/>
+  <path d="M188 184 Q224 180 220 220" stroke="#0a0820" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.55"/>
+</svg>

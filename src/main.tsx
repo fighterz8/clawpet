@@ -2,6 +2,37 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
 import { AVATAR_EVENT_VERSION, avatarStates, type AvatarState, type AvatarStateEvent, type ClawpetStatus } from "./contracts/avatarEvent";
+import { loadAvatarBundle, type ResolvedAvatarBundle } from "./avatars/bundle";
+
+const DEFAULT_AVATAR_BUNDLE_URL = "/avatars/dawn-v0";
+
+function BundleAvatar({ state, bundle }: { state: AvatarState; bundle: ResolvedAvatarBundle | null }) {
+  if (!bundle) {
+    return <div className="bundle-avatar bundle-avatar--loading" aria-label="Loading avatar" />;
+  }
+  const { src, animation } = bundle.resolveAsset(state);
+  return (
+    <img
+      src={src}
+      alt={`Clawpet ${state}`}
+      className={`bundle-avatar bundle-avatar--anim-${animation}`}
+      draggable={false}
+    />
+  );
+}
+
+function useAvatarBundle(url: string = DEFAULT_AVATAR_BUNDLE_URL) {
+  const [bundle, setBundle] = useState<ResolvedAvatarBundle | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    loadAvatarBundle(url)
+      .then((resolved) => { if (!cancelled) setBundle(resolved); })
+      .catch((err) => { if (!cancelled) setError(err instanceof Error ? err.message : String(err)); });
+    return () => { cancelled = true; };
+  }, [url]);
+  return { bundle, error };
+}
 
 type PetState = AvatarState;
 
@@ -220,6 +251,7 @@ function OverlayApp() {
   const [state, setState] = useState<PetState>("idle");
   const [message, setMessage] = useState(stateCopy.idle.message);
   const [online, setOnline] = useState(false);
+  const { bundle } = useAvatarBundle();
 
   useEffect(() => {
     async function refresh() {
@@ -247,7 +279,7 @@ function OverlayApp() {
   return (
     <main className="overlay-shell" data-tauri-drag-region>
       <div className={`overlay-floating ${online ? "overlay-floating--online" : "overlay-floating--offline"}`} data-tauri-drag-region>
-        <ClawpetAvatar state={state} />
+        <BundleAvatar state={state} bundle={bundle} />
         {online && message && (
           <div className="overlay-floating__bubble">{message}</div>
         )}
