@@ -41,6 +41,27 @@ Phase 0: design pipeline and public demo shell.
 npm install
 npm run dev
 npm run build
+npm test
+```
+
+### Local runtime API
+
+Start the local runtime skeleton:
+
+```bash
+npm run runtime:dev
+```
+
+Default URL:
+
+```txt
+http://127.0.0.1:8737
+```
+
+Send a test avatar event:
+
+```bash
+npm run send-test -- thinking "Working on Clawpet..."
 ```
 
 ## License
