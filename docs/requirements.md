@@ -19,7 +19,9 @@ The local desktop overlay is the next runtime target.
 
 - Render a transparent always-on-top avatar window.
 - Load an avatar bundle from a local folder.
-- Support state changes using a local API.
+- Support state changes using a local API for same-machine mode.
+- Support remote pairing so OpenClaw can run on a different machine from the desktop avatar.
+- Prefer outbound remote connections from the desktop client; do not require normal users to open inbound firewall ports.
 - Support short optional speech/status bubbles.
 - Provide tray/menu controls:
   - quit
@@ -37,7 +39,8 @@ The local desktop overlay is the next runtime target.
 
 ## Non-functional requirements
 
-- Localhost-only control API by default.
+- Localhost-only control API by default for local mode.
+- Authenticated pairing/token model for remote mode.
 - No secrets in avatar manifests.
 - Low CPU/RAM target.
 - Graceful behavior when OpenClaw is offline.
@@ -57,4 +60,5 @@ The local desktop overlay is the next runtime target.
 - Repo exists on GitHub.
 - Vercel preview deploys successfully.
 - Docs explain product, requirements, UX, bundle spec, and architecture decisions.
+- Remote OpenClaw host support is captured as a first-class architecture requirement.
 - Web demo communicates the idea clearly enough to post publicly.

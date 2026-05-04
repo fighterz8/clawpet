@@ -16,7 +16,9 @@ Traditional dashboards are useful, but they are often heavy and interruptive. Cl
 
 ## Solution
 
-Clawpet renders a small desktop avatar controlled by local OpenClaw events. The avatar can show states like idle, thinking, happy, alert, sleepy, or focused, and can display short optional messages.
+Clawpet renders a small desktop avatar controlled by OpenClaw events. OpenClaw may be running on the same machine or on a separate host, which matches how many OpenClaw users run their setup.
+
+The avatar can show states like idle, thinking, happy, alert, sleepy, or focused, and can display short optional messages.
 
 The avatar is not hardcoded. It is loaded from a local avatar bundle: assets plus a manifest describing states, animation presets, and behavior.
 
@@ -35,6 +37,7 @@ A lightweight demo and spec for a local avatar companion that can:
 - load a file-based avatar bundle
 - preview avatar states and emotions
 - demonstrate how OpenClaw would control state/messages
+- support the design path for both local and remote OpenClaw hosts
 - document the path toward a desktop overlay runtime
 
 ## Long-term product thesis

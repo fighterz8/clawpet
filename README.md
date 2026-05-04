@@ -13,7 +13,8 @@ The production/runtime target is still local-first:
 - desktop overlay
 - transparent always-on-top window
 - avatar bundle manifests
-- local API bridge for OpenClaw
+- local API bridge for same-machine OpenClaw
+- remote pairing/relay path for OpenClaw hosts running on another machine
 - lightweight animations and emotions
 
 The Vercel app is for public documentation, design preview, and sharing progress while the local runtime is built.
@@ -30,6 +31,7 @@ Phase 0: design pipeline and public demo shell.
 - [UX spec](docs/ux-spec.md)
 - [Avatar bundle spec](docs/avatar-bundle-spec.md)
 - [Architecture decision records](docs/adr/)
+- [ADR 0004: Support remote OpenClaw hosts](docs/adr/0004-support-remote-openclaw-hosts.md)
 
 ## Development
 
