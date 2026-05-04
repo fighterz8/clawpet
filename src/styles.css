@@ -35,8 +35,49 @@ main {
   height: 100vh;
   display: grid;
   place-items: center;
-  padding: 18px;
+  padding: 0;
   background: transparent;
+  -webkit-app-region: drag;
+  cursor: grab;
+}
+
+.overlay-shell:active { cursor: grabbing; }
+
+.overlay-floating {
+  position: relative;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  -webkit-app-region: drag;
+}
+
+.overlay-floating .avatar {
+  width: 220px;
+  height: 220px;
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.45));
+}
+
+.overlay-floating__bubble {
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translate(-50%, 100%);
+  max-width: 280px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: rgba(8, 10, 18, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #edf4ff;
+  font-size: 0.82rem;
+  text-align: center;
+  pointer-events: none;
+  -webkit-app-region: no-drag;
+}
+
+.overlay-floating__bubble--warn {
+  background: rgba(60, 12, 18, 0.78);
+  border-color: rgba(239, 68, 68, 0.45);
+  color: #fecaca;
 }
 
 .overlay-card {

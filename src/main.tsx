@@ -245,11 +245,15 @@ function OverlayApp() {
   }, []);
 
   return (
-    <main className="overlay-shell">
-      <div className={`overlay-card ${online ? "overlay-card--online" : "overlay-card--offline"}`}>
-        <div className="overlay-card__status">{online ? "Runtime online" : "Runtime offline"}</div>
+    <main className="overlay-shell" data-tauri-drag-region>
+      <div className={`overlay-floating ${online ? "overlay-floating--online" : "overlay-floating--offline"}`} data-tauri-drag-region>
         <ClawpetAvatar state={state} />
-        <div className="overlay-card__message">{online ? message : "Start npm run runtime:dev"}</div>
+        {online && message && (
+          <div className="overlay-floating__bubble">{message}</div>
+        )}
+        {!online && (
+          <div className="overlay-floating__bubble overlay-floating__bubble--warn">Start npm run runtime:dev</div>
+        )}
       </div>
     </main>
   );
