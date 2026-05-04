@@ -1,0 +1,140 @@
+import React, { useMemo, useState } from "react";
+import { createRoot } from "react-dom/client";
+import "./styles.css";
+
+type PetState = "idle" | "thinking" | "focused" | "happy" | "alert" | "sleepy";
+
+const stateCopy: Record<PetState, { label: string; message: string; api: string }> = {
+  idle: {
+    label: "Idle",
+    message: "OpenClaw is available.",
+    api: '{ "state": "idle", "message": "OpenClaw is available." }',
+  },
+  thinking: {
+    label: "Thinking",
+    message: "Dawn is working through a task…",
+    api: '{ "state": "thinking", "message": "Inspecting the repo…" }',
+  },
+  focused: {
+    label: "Focused",
+    message: "Long-running work is in progress.",
+    api: '{ "state": "focused", "message": "Building the demo packet." }',
+  },
+  happy: {
+    label: "Happy",
+    message: "Task completed successfully.",
+    api: '{ "state": "happy", "message": "Deploy finished." }',
+  },
+  alert: {
+    label: "Alert",
+    message: "Something needs attention.",
+    api: '{ "state": "alert", "message": "OAuth approval needed." }',
+  },
+  sleepy: {
+    label: "Sleepy",
+    message: "Quiet hours / low activity.",
+    api: '{ "state": "sleepy", "message": "Quiet mode." }',
+  },
+};
+
+const states = Object.keys(stateCopy) as PetState[];
+
+function ClawpetAvatar({ state }: { state: PetState }) {
+  const face = useMemo(() => {
+    if (state === "happy") return "ᵔᴥᵔ";
+    if (state === "alert") return "•̀ᴥ•́";
+    if (state === "sleepy") return "-ᴥ-";
+    if (state === "focused") return "•ᴥ•";
+    if (state === "thinking") return "◔ᴥ◔";
+    return "•ᴥ•";
+  }, [state]);
+
+  return (
+    <div className={`avatar avatar--${state}`} aria-label={`Clawpet avatar state: ${state}`}>
+      <div className="avatar__glow" />
+      <div className="avatar__body">
+        <div className="avatar__horn avatar__horn--left" />
+        <div className="avatar__horn avatar__horn--right" />
+        <div className="avatar__ears" />
+        <div className="avatar__face">{face}</div>
+        <div className="avatar__spark">✦</div>
+      </div>
+      <div className="avatar__tail" />
+    </div>
+  );
+}
+
+function App() {
+  const [state, setState] = useState<PetState>("idle");
+  const current = stateCopy[state];
+
+  return (
+    <main>
+      <section className="hero">
+        <div className="hero__copy">
+          <p className="eyebrow">OpenClaw ambient avatar runtime</p>
+          <h1>Clawpet gives your local AI assistant a visible presence.</h1>
+          <p className="lede">
+            A local-first companion overlay concept for OpenClaw: avatar bundles, state-driven emotions,
+            lightweight animations, and short useful status messages.
+          </p>
+          <div className="hero__actions">
+            <a href="/docs/product-brief.md">Product brief</a>
+            <a href="/docs/avatar-bundle-spec.md">Bundle spec</a>
+            <a href="https://github.com/" aria-label="GitHub repository placeholder">GitHub soon</a>
+          </div>
+        </div>
+        <div className="pet-card">
+          <div className="bubble">{current.message}</div>
+          <ClawpetAvatar state={state} />
+          <div className="state-grid">
+            {states.map((s) => (
+              <button key={s} className={s === state ? "active" : ""} onClick={() => setState(s)}>
+                {stateCopy[s].label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="panel-grid">
+        <article className="panel">
+          <h2>Why it exists</h2>
+          <p>
+            AI agents often run invisibly in chats, logs, and background jobs. Clawpet explores a lighter
+            status layer: a small companion that shows when the agent is idle, working, blocked, or done.
+          </p>
+        </article>
+        <article className="panel">
+          <h2>How OpenClaw controls it</h2>
+          <p>A future local runtime exposes a localhost-only API. OpenClaw sends state changes and short messages.</p>
+          <pre>{`POST /avatar/state\n${current.api}`}</pre>
+        </article>
+        <article className="panel">
+          <h2>Avatar bundles</h2>
+          <p>
+            Characters are file-based bundles: assets plus an <code>avatar.json</code> manifest that maps states to
+            images and animation presets.
+          </p>
+        </article>
+      </section>
+
+      <section className="roadmap">
+        <h2>MVP path</h2>
+        <ol>
+          <li>Design docs and Vercel preview</li>
+          <li>Avatar bundle manifest and validator</li>
+          <li>Rust/Tauri transparent desktop overlay</li>
+          <li>Local OpenClaw control bridge</li>
+          <li>Dawn avatar pack and public demo video</li>
+        </ol>
+      </section>
+    </main>
+  );
+}
+
+createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+);

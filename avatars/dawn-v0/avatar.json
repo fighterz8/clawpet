@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "0.1.0",
+  "name": "Dawn",
+  "version": "0.1.0",
+  "description": "Baby AGI dragon familiar for OpenClaw.",
+  "defaultState": "idle",
+  "states": {
+    "idle": {
+      "asset": "assets/idle.svg",
+      "animation": "breathe",
+      "messageStyle": "quiet"
+    },
+    "thinking": {
+      "asset": "assets/thinking.svg",
+      "animation": "pulse",
+      "messageStyle": "status"
+    },
+    "focused": {
+      "asset": "assets/focused.svg",
+      "animation": "pulse",
+      "messageStyle": "status"
+    },
+    "happy": {
+      "asset": "assets/happy.svg",
+      "animation": "bounce",
+      "messageStyle": "celebrate"
+    },
+    "alert": {
+      "asset": "assets/alert.svg",
+      "animation": "shake",
+      "messageStyle": "attention"
+    },
+    "sleepy": {
+      "asset": "assets/sleepy.svg",
+      "animation": "slowBlink",
+      "messageStyle": "quiet"
+    }
+  }
+}
