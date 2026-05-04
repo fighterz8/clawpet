@@ -141,13 +141,14 @@ function App() {
       </section>
 
       <section className="roadmap">
-        <h2>MVP path</h2>
+        <h2>Runtime-first MVP path</h2>
         <ol>
           <li>Design docs and Vercel preview</li>
-          <li>Avatar bundle manifest and validator</li>
-          <li>Connection contract for local and remote avatar events</li>
-          <li>Rust/Tauri transparent desktop overlay</li>
-          <li>Pairing flow between OpenClaw host and desktop client</li>
+          <li>Avatar event contract and validation tests</li>
+          <li>Local desktop overlay with avatar state rendering</li>
+          <li>OpenClaw skill: install, pair, status, send-test, diagnose</li>
+          <li>Remote pairing for OpenClaw hosts running on another machine</li>
+          <li>Local dashboard for diagnostics and manual avatar adjustments</li>
           <li>Dawn avatar pack and public demo video</li>
         </ol>
       </section>

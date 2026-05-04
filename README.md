@@ -30,6 +30,8 @@ Phase 0: design pipeline and public demo shell.
 - [Requirements](docs/requirements.md)
 - [UX spec](docs/ux-spec.md)
 - [Avatar bundle spec](docs/avatar-bundle-spec.md)
+- [Avatar event contract](docs/avatar-event-contract.md)
+- [Runtime-first MVP plan](docs/runtime-first-mvp-plan.md)
 - [Architecture decision records](docs/adr/)
 - [ADR 0004: Support remote OpenClaw hosts](docs/adr/0004-support-remote-openclaw-hosts.md)
 

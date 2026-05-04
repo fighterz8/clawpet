@@ -4,7 +4,7 @@
 
 The first public MVP is a Vercel-hosted web demo and documentation site that previews the avatar-bundle model and state-driven companion behavior.
 
-The local desktop overlay is the next runtime target.
+The real product MVP is runtime-first: a desktop avatar overlay that can connect to OpenClaw locally or remotely. The dashboard is local/admin-focused and secondary to getting the avatar connected, validated, secure, and responsive.
 
 ## Functional requirements — web MVP
 
@@ -13,6 +13,7 @@ The local desktop overlay is the next runtime target.
 - Show selectable states: idle, thinking, happy, alert, sleepy, focused.
 - Display sample OpenClaw event messages.
 - Document the avatar bundle manifest format.
+- Document the avatar event contract.
 - Link to design docs and ADRs.
 
 ## Functional requirements — desktop runtime target
