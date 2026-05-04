@@ -216,9 +216,51 @@ function RuntimeConsole({ onPreviewState }: { onPreviewState: (state: PetState) 
   );
 }
 
+function OverlayApp() {
+  const [state, setState] = useState<PetState>("idle");
+  const [message, setMessage] = useState(stateCopy.idle.message);
+  const [online, setOnline] = useState(false);
+
+  useEffect(() => {
+    async function refresh() {
+      try {
+        const [statusResponse, eventsResponse] = await Promise.all([
+          fetch(`${RUNTIME_URL}/status`),
+          fetch(`${RUNTIME_URL}/events`),
+        ]);
+        if (!statusResponse.ok) throw new Error(`status returned ${statusResponse.status}`);
+        const nextStatus = await statusResponse.json() as ClawpetStatus;
+        const eventBody = await eventsResponse.json().catch(() => ({ events: [] })) as { events?: RuntimeEventLogEntry[] };
+        const latestMessage = eventBody.events?.[0]?.event.message;
+        setState(nextStatus.avatar.state);
+        setMessage(latestMessage ?? stateCopy[nextStatus.avatar.state].message);
+        setOnline(true);
+      } catch {
+        setOnline(false);
+      }
+    }
+    void refresh();
+    const id = window.setInterval(() => void refresh(), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  return (
+    <main className="overlay-shell">
+      <div className={`overlay-card ${online ? "overlay-card--online" : "overlay-card--offline"}`}>
+        <div className="overlay-card__status">{online ? "Runtime online" : "Runtime offline"}</div>
+        <ClawpetAvatar state={state} />
+        <div className="overlay-card__message">{online ? message : "Start npm run runtime:dev"}</div>
+      </div>
+    </main>
+  );
+}
+
 function App() {
   const [state, setState] = useState<PetState>("idle");
   const current = stateCopy[state];
+  const isOverlay = new URLSearchParams(window.location.search).get("overlay") === "1";
+
+  if (isOverlay) return <OverlayApp />;
 
   return (
     <main>

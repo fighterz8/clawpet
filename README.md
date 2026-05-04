@@ -64,6 +64,23 @@ Send a test avatar event:
 npm run send-test -- thinking "Working on Clawpet..."
 ```
 
+### Desktop overlay skeleton
+
+Run the Tauri desktop shell in development:
+
+```bash
+npm run runtime:dev
+npm run desktop:dev
+```
+
+Build the desktop binary without packaging installers:
+
+```bash
+npm run desktop:build
+```
+
+The desktop window opens the React app in overlay mode (`/?overlay=1`), polls the local runtime, and updates when the runtime receives avatar state events from the browser console or `npm run send-test`.
+
 ## License
 
 TBD.
