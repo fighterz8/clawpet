@@ -1,6 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
+
+// Make the html/body transparent immediately when running as the desktop overlay,
+// so the Tauri window can show through before React paints anything.
+if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("overlay") === "1") {
+  document.documentElement.classList.add("clawpet-overlay");
+  document.body.classList.add("clawpet-overlay");
+}
+
 import { AVATAR_EVENT_VERSION, avatarStates, type AvatarState, type AvatarStateEvent, type ClawpetStatus } from "./contracts/avatarEvent";
 import { loadAvatarBundle, type ResolvedAvatarBundle } from "./avatars/bundle";
 

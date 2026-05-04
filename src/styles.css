@@ -18,9 +18,20 @@ body {
     linear-gradient(135deg, #080a12 0%, #111827 54%, #17111f 100%);
 }
 
+html:has(.overlay-shell),
 body:has(.overlay-shell) {
   min-width: 0;
-  background: transparent;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  overflow: hidden;
+}
+
+html.clawpet-overlay,
+body.clawpet-overlay {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
   overflow: hidden;
 }
 
@@ -62,9 +73,10 @@ main {
   height: 220px;
   display: block;
   background: transparent;
-  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.45));
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.35));
   user-select: none;
   -webkit-user-drag: none;
+  image-rendering: pixelated;
 }
 
 .bundle-avatar--loading {

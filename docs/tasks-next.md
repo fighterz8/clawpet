@@ -14,6 +14,14 @@ Tracking what's next after the runtime-first MVP shipped (transparent draggable 
 - The avatar itself must have **no surrounding background, glow, gradient, or card** — only the avatar character is visible. Whatever is behind the window on the user's desktop should show through completely around the avatar.
 - This is part of **Option B (avatar bundle redesign)**: replace the CSS div avatar with a single transparent SVG/PNG asset rendered as the only visible element.
 
+### Style lock (mandatory for all Clawpets)
+- See `docs/clawpet-style-guide.md` (v1).
+- Pixel-art platformer/roguelike style, Terraria-ish but slightly higher resolution.
+- 128×128 logical canvas, exported at 512×512 PNG with transparent background.
+- Limited palette, hard 1-pixel outline, cel-shaded, no gradients/glow baked in.
+- 6 mandatory state variants: idle, thinking, focused, happy, alert, sleepy.
+- Mandatory prompt template in §7 of the style guide must be used by OpenClaw skill and any image generator.
+
 ## Roadmap order
 
 1. **Tray icon + skipTaskbar** — done immediately, minimal change.
