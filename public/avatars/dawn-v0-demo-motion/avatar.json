@@ -1,16 +1,14 @@
 {
   "schemaVersion": "0.5.0",
   "name": "Dawn Demo Blue",
-  "version": "0.5.0-demo-motion",
-  "description": "Default blue Dawn demo pet with frame-delta micro-animation based on saved Clawpet frame-delta prompt.",
+  "version": "0.5.1-clean-motion",
+  "description": "Default blue Dawn demo pet with subtle frame-delta motion (no drawn accessories, real blink).",
   "defaultState": "idle",
   "seed": {
     "sourcePrompts": [
       "docs/prompts/clawpet-creative-prompt.md",
       "docs/prompts/clawpet-frame-delta-prompt.md"
-    ],
-    "lockedCharacter": "Dawn blue baby AGI dragon familiar",
-    "motionPrinciple": "small frame deltas: bob, blink, bubbles, flicks, bounce, spark, sleepy Z"
+    ]
   },
   "states": {
     "idle": {
@@ -20,9 +18,11 @@
         "frames/idle-02.png",
         "frames/idle-03.png",
         "frames/idle-04.png",
-        "frames/idle-05.png"
+        "frames/idle-05.png",
+        "frames/idle-06.png",
+        "frames/idle-07.png"
       ],
-      "fps": 5,
+      "fps": 6,
       "loop": true,
       "fallbackAsset": "assets/idle.png"
     },
@@ -33,7 +33,7 @@
         "frames/thinking-02.png",
         "frames/thinking-03.png"
       ],
-      "fps": 4,
+      "fps": 3,
       "loop": true,
       "fallbackAsset": "assets/thinking.png"
     },
@@ -44,7 +44,7 @@
         "frames/focused-02.png",
         "frames/focused-03.png"
       ],
-      "fps": 4,
+      "fps": 3,
       "loop": true,
       "fallbackAsset": "assets/focused.png"
     },
@@ -55,7 +55,7 @@
         "frames/happy-02.png",
         "frames/happy-03.png"
       ],
-      "fps": 6,
+      "fps": 8,
       "loop": true,
       "fallbackAsset": "assets/happy.png"
     },
@@ -77,7 +77,7 @@
         "frames/sleepy-04.png",
         "frames/sleepy-05.png"
       ],
-      "fps": 3,
+      "fps": 2,
       "loop": true,
       "fallbackAsset": "assets/sleepy.png"
     }
