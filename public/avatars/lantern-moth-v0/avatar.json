@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "0.5.0",
+  "name": "Lantern Moth",
+  "version": "0.1.0-showcase",
+  "description": "A soft lantern-moth Clawpet showcase character with a very different silhouette from Dawn.",
+  "defaultState": "idle",
+  "states": {
+    "idle": {
+      "asset": "assets/idle.png",
+      "animation": "breathe"
+    },
+    "thinking": {
+      "asset": "assets/thinking.png",
+      "animation": "pulse"
+    },
+    "focused": {
+      "asset": "assets/focused.png",
+      "animation": "bob"
+    },
+    "happy": {
+      "asset": "assets/happy.png",
+      "animation": "bounce"
+    },
+    "alert": {
+      "asset": "assets/alert.png",
+      "animation": "shake"
+    },
+    "sleepy": {
+      "asset": "assets/sleepy.png",
+      "animation": "slowBlink"
+    }
+  }
+}

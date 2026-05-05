@@ -178,12 +178,13 @@ Avatar redesigns are intentionally **OpenClaw-led**:
 
 This keeps personalization conversational and reversible: “make Dawn a cooler baby dragon,” “go back to standard Dawn,” or “try the folder-desk version” should be OpenClaw-side actions, not user filesystem chores.
 
-Built-in preset bundles now include:
+Built-in preset/showcase bundles now include:
 
 - `dawn-v2-ember` — warm ember-red Dawn
 - `dawn-v2-jade` — jade-and-gold Dawn
 - `dawn-v2-amethyst` — amethyst Dawn
 - `dawn-v2-ashgold` — muted ash-gold Dawn
+- `lantern-moth-v0` — a totally different lantern-moth companion for showcase/demo variety
 
 These presets are intentionally useful for two things:
 1. showing multiple looks on the landing page / README without waiting on live generation, and

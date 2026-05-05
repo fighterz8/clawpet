@@ -18,9 +18,9 @@ const DAWN_DEMO: ScriptedBeat[] = [
 
 const PRESET_SHOWCASE = [
   { avatarId: "dawn-v2-ember", title: "Dawn Ember", accent: "#ff8a5b" },
+  { avatarId: "lantern-moth-v0", title: "Lantern Moth", accent: "#5fc8b5" },
   { avatarId: "dawn-v2-jade", title: "Dawn Jade", accent: "#67d6a3" },
   { avatarId: "dawn-v2-amethyst", title: "Dawn Amethyst", accent: "#b884ff" },
-  { avatarId: "dawn-v2-ashgold", title: "Dawn Ashgold", accent: "#d7b36a" },
 ];
 
 function useScriptedDemo(beats: ScriptedBeat[]) {
@@ -183,7 +183,7 @@ clawpet activity balanced`}</pre>
           <h2 className="lp-h2">Ask OpenClaw to redesign your familiar.</h2>
           <p className="lp-body">
             Each avatar is a folder of six PNGs (<code>idle</code>, <code>thinking</code>, <code>focused</code>, <code>happy</code>, <code>alert</code>, <code>sleepy</code>) plus an
-            <code> avatar.json</code> manifest. The fun part is personalization: OpenClaw can generate, store, push, and swap bundles conversationally. We now ship a Dawn v2 preset family so you can demo multiple looks immediately, then test real runtime switching after pairing.
+            <code> avatar.json</code> manifest. The fun part is personalization: OpenClaw can generate, store, push, and swap bundles conversationally. We now ship a Dawn v2 preset family plus a genuinely different lantern-moth showcase pet, so you can demo both palette variation and full character variation before testing live runtime switching.
           </p>
         </Reveal>
         <div className="lp-stages lp-stages--presets">
