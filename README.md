@@ -166,7 +166,7 @@ LLM-triggered flavor emits are still available via `clawpet react <event>` and `
 
 ## Avatar bundles
 
-Standard Dawn (`dawn-v0`) is the default avatar.
+Standard Dawn (`dawn-v0`) is the original default avatar. The current preset/demo family is Dawn v2.
 
 Avatar redesigns are intentionally **OpenClaw-led**:
 
@@ -177,6 +177,17 @@ Avatar redesigns are intentionally **OpenClaw-led**:
 - The user can ask to swap back, try another design, or iterate without manually editing files on the display machine.
 
 This keeps personalization conversational and reversible: “make Dawn a cooler baby dragon,” “go back to standard Dawn,” or “try the folder-desk version” should be OpenClaw-side actions, not user filesystem chores.
+
+Built-in preset bundles now include:
+
+- `dawn-v2-ember` — warm ember-red Dawn
+- `dawn-v2-jade` — jade-and-gold Dawn
+- `dawn-v2-amethyst` — amethyst Dawn
+- `dawn-v2-ashgold` — muted ash-gold Dawn
+
+These presets are intentionally useful for two things:
+1. showing multiple looks on the landing page / README without waiting on live generation, and
+2. testing real avatar switching over the paired OpenClaw connection.
 
 Bundles live under `public/avatars/<name>-v<n>/` for built-in defaults and under `~/.openclaw/clawpet/bundles/<name>/` for OpenClaw-managed custom designs:
 

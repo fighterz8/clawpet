@@ -16,13 +16,11 @@ const DAWN_DEMO: ScriptedBeat[] = [
   { state: "sleepy",   bubble: "Quiet hours… 💤",                    hold: 2600 },
 ];
 
-const PIP_DEMO: ScriptedBeat[] = [
-  { state: "idle",     bubble: "",                       hold: 1800 },
-  { state: "thinking", bubble: "Hmm, let me check…",     hold: 2200 },
-  { state: "focused",  bubble: "Crunching tests",        hold: 2800 },
-  { state: "happy",    bubble: "All green!",             hold: 2200 },
-  { state: "alert",    bubble: "PR is blocked",          hold: 2400 },
-  { state: "sleepy",   bubble: "Power nap…",             hold: 2400 },
+const PRESET_SHOWCASE = [
+  { avatarId: "dawn-v2-ember", title: "Dawn Ember", accent: "#ff8a5b" },
+  { avatarId: "dawn-v2-jade", title: "Dawn Jade", accent: "#67d6a3" },
+  { avatarId: "dawn-v2-amethyst", title: "Dawn Amethyst", accent: "#b884ff" },
+  { avatarId: "dawn-v2-ashgold", title: "Dawn Ashgold", accent: "#d7b36a" },
 ];
 
 function useScriptedDemo(beats: ScriptedBeat[]) {
@@ -124,7 +122,7 @@ function Landing() {
         </Reveal>
 
         <Reveal delay={200}>
-          <DemoStage avatarId="dawn-v0" beats={DAWN_DEMO} accent="#b76cff" />
+          <DemoStage avatarId="dawn-v2-ember" beats={DAWN_DEMO} accent="#ff8a5b" />
         </Reveal>
       </section>
 
@@ -185,22 +183,18 @@ clawpet activity balanced`}</pre>
           <h2 className="lp-h2">Ask OpenClaw to redesign your familiar.</h2>
           <p className="lp-body">
             Each avatar is a folder of six PNGs (<code>idle</code>, <code>thinking</code>, <code>focused</code>, <code>happy</code>, <code>alert</code>, <code>sleepy</code>) plus an
-            <code> avatar.json</code> manifest. The fun part is personalization: ask your OpenClaw assistant for a new look, let it generate/store the bundle on the OpenClaw machine, then push it to the desktop runtime. Dawn's standard baby dragon bundle is the default; custom designs are easy to swap in or roll back.
+            <code> avatar.json</code> manifest. The fun part is personalization: OpenClaw can generate, store, push, and swap bundles conversationally. We now ship a Dawn v2 preset family so you can demo multiple looks immediately, then test real runtime switching after pairing.
           </p>
         </Reveal>
-        <div className="lp-stages">
-          <Reveal delay={80}>
-            <div className="lp-stage-wrap">
-              <DemoStage avatarId="dawn-v0" beats={DAWN_DEMO} accent="#b76cff" />
-              <p className="lp-stage-caption">Dawn — baby dragon</p>
-            </div>
-          </Reveal>
-          <Reveal delay={160}>
-            <div className="lp-stage-wrap">
-              <DemoStage avatarId="pip-v0" beats={PIP_DEMO} accent="#5ed1e6" />
-              <p className="lp-stage-caption">Pip — cyan slime</p>
-            </div>
-          </Reveal>
+        <div className="lp-stages lp-stages--presets">
+          {PRESET_SHOWCASE.map((preset, idx) => (
+            <Reveal delay={80 + idx * 80} key={preset.avatarId}>
+              <div className="lp-stage-wrap">
+                <DemoStage avatarId={preset.avatarId} beats={DAWN_DEMO} accent={preset.accent} />
+                <p className="lp-stage-caption">{preset.title}</p>
+              </div>
+            </Reveal>
+          ))}
         </div>
       </section>
 

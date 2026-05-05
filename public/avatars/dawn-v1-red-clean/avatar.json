@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "0.1.0",
+  "name": "Dawn Red",
+  "version": "0.1.2-clean",
+  "description": "Red Dawn v1 cleaned: removed stray export artifacts and added clearer state silhouettes/accents.",
+  "defaultState": "idle",
+  "states": {
+    "idle": {
+      "asset": "assets/idle.png",
+      "animation": "breathe"
+    },
+    "thinking": {
+      "asset": "assets/thinking.png",
+      "animation": "pulse"
+    },
+    "focused": {
+      "asset": "assets/focused.png",
+      "animation": "bob"
+    },
+    "happy": {
+      "asset": "assets/happy.png",
+      "animation": "bounce"
+    },
+    "alert": {
+      "asset": "assets/alert.png",
+      "animation": "shake"
+    },
+    "sleepy": {
+      "asset": "assets/sleepy.png",
+      "animation": "slowBlink"
+    }
+  }
+}

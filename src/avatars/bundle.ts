@@ -1,18 +1,30 @@
 import { avatarStates, type AvatarState } from "../contracts/avatarEvent";
 
 export const AVATAR_BUNDLE_SCHEMA_VERSION = "0.1.0" as const;
+export const AVATAR_BUNDLE_FRAME_SCHEMA_VERSION = "0.5.0" as const;
 
 export const avatarAnimations = ["none", "breathe", "bob", "pulse", "bounce", "shake", "slowBlink"] as const;
 export type AvatarAnimation = (typeof avatarAnimations)[number];
 
-export type AvatarStateDefinition = {
+export type AvatarAssetStateDefinition = {
   asset: string;
   animation: AvatarAnimation;
   messageStyle?: string;
 };
 
+export type AvatarFrameStateDefinition = {
+  frames: string[];
+  fps: number;
+  loop: boolean;
+  fallbackAsset: string;
+  animation?: AvatarAnimation;
+  messageStyle?: string;
+};
+
+export type AvatarStateDefinition = AvatarAssetStateDefinition | AvatarFrameStateDefinition;
+
 export type AvatarBundleManifest = {
-  schemaVersion: typeof AVATAR_BUNDLE_SCHEMA_VERSION;
+  schemaVersion: typeof AVATAR_BUNDLE_SCHEMA_VERSION | typeof AVATAR_BUNDLE_FRAME_SCHEMA_VERSION;
   name: string;
   version: string;
   description?: string;
@@ -24,6 +36,7 @@ export type ResolvedAvatarBundle = {
   manifest: AvatarBundleManifest;
   baseUrl: string;
   resolveAsset: (state: AvatarState) => { src: string; animation: AvatarAnimation };
+  resolveFrames: (state: AvatarState) => { src: string; fps: number; loop: boolean; animation: AvatarAnimation }[];
 };
 
 export type ValidationResult<T> =
@@ -38,12 +51,20 @@ function isString(value: unknown): value is string {
   return typeof value === "string" && value.length > 0;
 }
 
+function isSafeBundleRelativePath(value: unknown): value is string {
+  return isString(value) && !value.includes("..") && !/^[a-z]+:\/\//i.test(value) && !value.startsWith("/");
+}
+
+function isFrameStateDefinition(def: AvatarStateDefinition): def is AvatarFrameStateDefinition {
+  return "frames" in def;
+}
+
 export function validateAvatarBundleManifest(input: unknown): ValidationResult<AvatarBundleManifest> {
   const errors: string[] = [];
 
   if (!isRecord(input)) return { ok: false, errors: ["manifest must be an object"] };
-  if (input.schemaVersion !== AVATAR_BUNDLE_SCHEMA_VERSION) {
-    errors.push(`schemaVersion must be ${AVATAR_BUNDLE_SCHEMA_VERSION}`);
+  if (input.schemaVersion !== AVATAR_BUNDLE_SCHEMA_VERSION && input.schemaVersion !== AVATAR_BUNDLE_FRAME_SCHEMA_VERSION) {
+    errors.push(`schemaVersion must be ${AVATAR_BUNDLE_SCHEMA_VERSION} or ${AVATAR_BUNDLE_FRAME_SCHEMA_VERSION}`);
   }
   if (!isString(input.name)) errors.push("name is required");
   if (!isString(input.version)) errors.push("version is required");
@@ -65,14 +86,40 @@ export function validateAvatarBundleManifest(input: unknown): ValidationResult<A
         errors.push(`states.${stateKey} must be an object`);
         continue;
       }
-      if (!isString(def.asset)) errors.push(`states.${stateKey}.asset is required`);
-      if (def.asset && typeof def.asset === "string") {
-        if (def.asset.includes("..") || /^[a-z]+:\/\//i.test(def.asset) || def.asset.startsWith("/")) {
-          errors.push(`states.${stateKey}.asset must be a bundle-relative path`);
+      const hasAsset = "asset" in def;
+      const hasFrames = "frames" in def;
+      if (!hasAsset && !hasFrames) {
+        errors.push(`states.${stateKey} must define asset or frames`);
+        continue;
+      }
+      if (hasAsset && hasFrames) {
+        errors.push(`states.${stateKey} must not define both asset and frames`);
+        continue;
+      }
+      if (hasAsset) {
+        if (!isSafeBundleRelativePath(def.asset)) errors.push(`states.${stateKey}.asset must be a bundle-relative path`);
+        if (!avatarAnimations.includes(def.animation as AvatarAnimation)) {
+          errors.push(`states.${stateKey}.animation must be one of ${avatarAnimations.join(", ")}`);
         }
       }
-      if (!avatarAnimations.includes(def.animation as AvatarAnimation)) {
-        errors.push(`states.${stateKey}.animation must be one of ${avatarAnimations.join(", ")}`);
+      if (hasFrames) {
+        if (!Array.isArray(def.frames) || def.frames.length === 0) {
+          errors.push(`states.${stateKey}.frames must be a non-empty array`);
+        } else {
+          for (const [i, frame] of def.frames.entries()) {
+            if (!isSafeBundleRelativePath(frame)) errors.push(`states.${stateKey}.frames[${i}] must be a bundle-relative path`);
+          }
+        }
+        if (typeof def.fps !== "number" || !Number.isFinite(def.fps) || def.fps <= 0) {
+          errors.push(`states.${stateKey}.fps must be a positive number`);
+        }
+        if (typeof def.loop !== "boolean") errors.push(`states.${stateKey}.loop must be a boolean`);
+        if (!isSafeBundleRelativePath(def.fallbackAsset)) {
+          errors.push(`states.${stateKey}.fallbackAsset must be a bundle-relative path`);
+        }
+        if (def.animation !== undefined && !avatarAnimations.includes(def.animation as AvatarAnimation)) {
+          errors.push(`states.${stateKey}.animation must be one of ${avatarAnimations.join(", ")}`);
+        }
       }
       if (def.messageStyle !== undefined && typeof def.messageStyle !== "string") {
         errors.push(`states.${stateKey}.messageStyle must be a string`);
@@ -94,10 +141,23 @@ export function resolveBundle(manifest: AvatarBundleManifest, baseUrl: string): 
       if (!def) {
         throw new Error(`avatar bundle is missing default state asset: ${manifest.defaultState}`);
       }
-      return {
-        src: `${normalizedBase}${def.asset}`,
-        animation: def.animation,
-      };
+      const asset = isFrameStateDefinition(def) ? def.fallbackAsset : def.asset;
+      return { src: `${normalizedBase}${asset}`, animation: def.animation ?? "none" };
+    },
+    resolveFrames(state) {
+      const def = manifest.states[state] ?? manifest.states[manifest.defaultState];
+      if (!def) {
+        throw new Error(`avatar bundle is missing default state asset: ${manifest.defaultState}`);
+      }
+      if (isFrameStateDefinition(def)) {
+        return def.frames.map((frame) => ({
+          src: `${normalizedBase}${frame}`,
+          fps: def.fps,
+          loop: def.loop,
+          animation: def.animation ?? "none",
+        }));
+      }
+      return [{ src: `${normalizedBase}${def.asset}`, fps: 1, loop: true, animation: def.animation }];
     },
   };
 }

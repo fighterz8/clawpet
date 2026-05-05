@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "0.5.0",
+  "name": "Dawn Ember",
+  "version": "0.1.0-preset",
+  "description": "Warm ember-red Dawn preset.",
+  "defaultState": "idle",
+  "states": {
+    "idle": {
+      "frames": [
+        "frames/idle-00.png",
+        "frames/idle-01.png",
+        "frames/idle-02.png",
+        "frames/idle-03.png",
+        "frames/idle-04.png"
+      ],
+      "fps": 5,
+      "loop": true,
+      "fallbackAsset": "assets/idle.png"
+    },
+    "thinking": {
+      "asset": "assets/thinking.png",
+      "animation": "pulse"
+    },
+    "focused": {
+      "asset": "assets/focused.png",
+      "animation": "bob"
+    },
+    "happy": {
+      "asset": "assets/happy.png",
+      "animation": "bounce"
+    },
+    "alert": {
+      "asset": "assets/alert.png",
+      "animation": "shake"
+    },
+    "sleepy": {
+      "asset": "assets/sleepy.png",
+      "animation": "slowBlink"
+    }
+  }
+}

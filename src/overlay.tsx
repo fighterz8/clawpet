@@ -5,11 +5,34 @@ import { loadAvatarBundle, type ResolvedAvatarBundle } from "./avatars/bundle";
 import "./styles.css";
 
 const BUILD_TIME_AVATAR = (import.meta as { env?: Record<string, string> }).env?.VITE_CLAWPET_AVATAR_BUNDLE;
+const DEV_DEFAULT_AVATAR = (import.meta as { env?: Record<string, string>; hot?: unknown }).env?.DEV ? "dawn-v2-preview" : undefined;
 const RUNTIME_URL = "http://127.0.0.1:8737";
 
 function BundleAvatar({ state, bundle }: { state: AvatarState; bundle: ResolvedAvatarBundle | null }) {
+  const [frameIndex, setFrameIndex] = useState(0);
+
+  useEffect(() => {
+    setFrameIndex(0);
+  }, [state, bundle]);
+
+  const frames = bundle?.resolveFrames(state) ?? [];
+  const activeFrame = frames[frameIndex] ?? frames[0];
+
+  useEffect(() => {
+    if (!activeFrame || frames.length <= 1) return;
+    const ms = 1000 / activeFrame.fps;
+    const id = window.setTimeout(() => {
+      setFrameIndex((i) => {
+        const next = i + 1;
+        if (next < frames.length) return next;
+        return activeFrame.loop ? 0 : i;
+      });
+    }, ms);
+    return () => window.clearTimeout(id);
+  }, [activeFrame, frames.length]);
+
   if (!bundle) return <div className="bundle-avatar bundle-avatar--loading" />;
-  const { src, animation } = bundle.resolveAsset(state);
+  const { src, animation } = activeFrame ?? bundle.resolveAsset(state);
   return <img src={src} alt={state} className={`bundle-avatar bundle-avatar--anim-${animation}`} draggable={false} />;
 }
 
@@ -21,35 +44,44 @@ function OverlayApp() {
   const [lastEventAt, setLastEventAt] = useState<string | null>(null);
   const [bundle, setBundle] = useState<ResolvedAvatarBundle | null>(null);
 
-  // Resolve avatar id: build-time env wins, else fetch from /status, else dawn-v0.
-  useEffect(() => {
-    let cancelled = false;
-    async function pickBundle() {
-      let avatarId = BUILD_TIME_AVATAR;
-      if (!avatarId) {
-        try {
-          const r = await fetch(`${RUNTIME_URL}/status`);
-          if (r.ok) {
-            const s = await r.json();
-            avatarId = s?.avatar?.avatarId;
-          }
-        } catch { /* runtime offline; default below */ }
-      }
-      avatarId = avatarId || "dawn-v0";
+  async function refreshBundle(avatarId?: string, bundleVersion?: string) {
+    const cacheKey = encodeURIComponent(bundleVersion || avatarId || String(Date.now()));
+    const fallbackAvatar = BUILD_TIME_AVATAR || DEV_DEFAULT_AVATAR || avatarId || "dawn-v0";
+
+    if (BUILD_TIME_AVATAR || DEV_DEFAULT_AVATAR) {
       try {
-        // Prefer the runtime-served bundle. This lets OpenClaw own avatar
-        // appearance/assets and push them to the target runtime over Tailscale.
-        const resolved = await loadAvatarBundle(`${RUNTIME_URL}/avatar-bundle/current`);
-        if (!cancelled) setBundle(resolved);
+        const resolved = await loadAvatarBundle(`/avatars/${fallbackAvatar}`);
+        setBundle(resolved);
         return;
-      } catch { /* fall back to bundled static assets below */ }
-      try {
-        const resolved = await loadAvatarBundle(`/avatars/${avatarId}`);
-        if (!cancelled) setBundle(resolved);
-      } catch { /* leave null, shows loading shell */ }
+      } catch { /* if local preview bundle is unavailable, try runtime-served bundle below */ }
     }
-    void pickBundle();
-    return () => { cancelled = true; };
+
+    try {
+      // Prefer the runtime-served bundle unless a build-time avatar override is explicitly set.
+      const resolved = await loadAvatarBundle(`${RUNTIME_URL}/avatar-bundle/current`);
+      const withCacheBust: ResolvedAvatarBundle = {
+        ...resolved,
+        resolveAsset(nextState) {
+          const asset = resolved.resolveAsset(nextState);
+          return { ...asset, src: `${asset.src}?v=${cacheKey}` };
+        },
+        resolveFrames(nextState) {
+          return resolved.resolveFrames(nextState).map((frame) => ({ ...frame, src: `${frame.src}?v=${cacheKey}` }));
+        },
+      };
+      setBundle(withCacheBust);
+      return;
+    } catch { /* fall back to bundled static assets below */ }
+
+    try {
+      const resolved = await loadAvatarBundle(`/avatars/${fallbackAvatar}`);
+      setBundle(resolved);
+    } catch { /* leave null, shows loading shell */ }
+  }
+
+  // Load an initial bundle immediately; status polling below keeps it current.
+  useEffect(() => {
+    void refreshBundle();
   }, []);
 
   useEffect(() => {
@@ -63,6 +95,13 @@ function OverlayApp() {
         setRuntimeConnected(Boolean(status.connected));
         setLastEventAt(status.lastEventAt ?? null);
         setOnline(true);
+        const statusAvatarId = status.avatar.avatarId;
+        const statusBundleVersion = status.avatar.bundleVersion;
+        const loadedAvatarId = bundle?.manifest.name;
+        const loadedBundleVersion = bundle?.manifest.version;
+        if (statusAvatarId && statusBundleVersion && (statusAvatarId !== loadedAvatarId || statusBundleVersion !== loadedBundleVersion)) {
+          void refreshBundle(statusAvatarId, statusBundleVersion);
+        }
       } catch {
         setOnline(false);
         setRuntimeConnected(false);
@@ -72,7 +111,7 @@ function OverlayApp() {
     void refresh();
     const id = window.setInterval(() => void refresh(), 1000);
     return () => window.clearInterval(id);
-  }, []);
+  }, [bundle?.manifest.name, bundle?.manifest.version]);
 
   const linkState = !online ? "offline" : runtimeConnected ? "ready" : "waiting";
   const linkLabel = linkState === "ready"

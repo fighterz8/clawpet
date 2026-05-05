@@ -330,6 +330,54 @@ describe("runtime API", () => {
     expect(Array.from(bytes.slice(0, 4))).toEqual([0x89, 0x50, 0x4e, 0x47]);
   });
 
+  it("accepts and serves frame-based avatar bundles", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "clawpet-frame-bundle-test-"));
+    const bundleStore = new AvatarBundleStore(dir);
+    const app = createRuntimeApp({ avatarBundleStore: bundleStore });
+    const png = readFileSync("public/avatars/dawn-v0/assets/idle.png").toString("base64");
+    const manifest = {
+      schemaVersion: "0.5.0",
+      name: "Dawn",
+      version: "0.5.0",
+      defaultState: "idle",
+      states: {
+        idle: {
+          frames: ["frames/idle-0.png", "frames/idle-1.png"],
+          fps: 4,
+          loop: true,
+          fallbackAsset: "assets/idle.png",
+        },
+        focused: {
+          frames: ["frames/focused-0.png"],
+          fps: 1,
+          loop: false,
+          fallbackAsset: "assets/focused.png",
+        },
+      },
+    };
+
+    const pushed = await app.request("/admin/avatar-bundle", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        manifest,
+        assets: {
+          "assets/idle.png": png,
+          "assets/focused.png": png,
+          "frames/idle-0.png": png,
+          "frames/idle-1.png": png,
+          "frames/focused-0.png": png,
+        },
+      }),
+    });
+    expect(pushed.status).toBe(200);
+    expect(await pushed.json()).toMatchObject({ ok: true, avatarId: "Dawn", bundleVersion: "0.5.0", assetCount: 5 });
+
+    const frame = await app.request("/avatar-bundle/current/frames/idle-1.png");
+    expect(frame.status).toBe(200);
+    expect(frame.headers.get("content-type")).toContain("image/png");
+  });
+
   it("rejects malformed or unsafe events", async () => {
     const app = createRuntimeApp();
     const response = await app.request("/avatar/state", {

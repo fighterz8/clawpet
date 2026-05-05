@@ -36,3 +36,11 @@ h2 { margin-bottom: 6px; font-size: 18px; }
 .ob-help strong { color: #f7f2ff; }
 .ob-help ul { margin: 8px 0; padding-left: 18px; }
 .ob-help p { margin: 0; color: #cfc8db; }
+
+.ob-button-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.ob-primary--pair { min-width: 168px; white-space: nowrap; }
+.ob-secondary { border: 1px solid rgba(255,255,255,.16); border-radius: 999px; padding: 10px 14px; font-weight: 800; cursor: pointer; color: #f3dcff; background: rgba(255,255,255,.06); }
+.ob-secondary:disabled { opacity: .5; cursor: not-allowed; }
+.ob-actions { margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap; }
+.ob-diagnostics--wide { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 760px) { .ob-diagnostics--wide { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

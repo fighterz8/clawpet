@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  AVATAR_BUNDLE_FRAME_SCHEMA_VERSION,
   AVATAR_BUNDLE_SCHEMA_VERSION,
   loadAvatarBundle,
   resolveBundle,
@@ -17,10 +18,32 @@ const validManifest = {
   },
 };
 
+const validFrameManifest = {
+  schemaVersion: AVATAR_BUNDLE_FRAME_SCHEMA_VERSION,
+  name: "Dawn",
+  version: "0.5.0",
+  defaultState: "idle",
+  states: {
+    idle: { frames: ["frames/idle-0.png", "frames/idle-1.png"], fps: 4, loop: true, fallbackAsset: "assets/idle.png" },
+    focused: { frames: ["frames/focused-0.png"], fps: 1, loop: false, fallbackAsset: "assets/focused.png" },
+  },
+};
+
 describe("validateAvatarBundleManifest", () => {
   it("accepts a valid manifest", () => {
     const result = validateAvatarBundleManifest(validManifest);
     expect(result.ok).toBe(true);
+  });
+
+  it("accepts v0.5 frame manifests with variable frame counts", () => {
+    const result = validateAvatarBundleManifest(validFrameManifest);
+    expect(result.ok).toBe(true);
+  });
+
+  it("rejects empty frame lists", () => {
+    const bad = { ...validFrameManifest, states: { idle: { frames: [], fps: 4, loop: true, fallbackAsset: "assets/idle.png" } } };
+    const result = validateAvatarBundleManifest(bad);
+    expect(result.ok).toBe(false);
   });
 
   it("rejects unknown state keys", () => {
@@ -46,6 +69,12 @@ describe("validateAvatarBundleManifest", () => {
     const result = validateAvatarBundleManifest(bad);
     expect(result.ok).toBe(false);
   });
+
+  it("rejects unsafe frame paths", () => {
+    const bad = { ...validFrameManifest, states: { idle: { frames: ["https://evil.example/x.png"], fps: 4, loop: true, fallbackAsset: "assets/idle.png" } } };
+    const result = validateAvatarBundleManifest(bad);
+    expect(result.ok).toBe(false);
+  });
 });
 
 describe("resolveBundle", () => {
@@ -53,6 +82,20 @@ describe("resolveBundle", () => {
     const bundle = resolveBundle(validManifest as never, "/avatars/dawn-v0/");
     expect(bundle.resolveAsset("idle")).toEqual({ src: "/avatars/dawn-v0/assets/idle.svg", animation: "breathe" });
     expect(bundle.resolveAsset("alert")).toEqual({ src: "/avatars/dawn-v0/assets/idle.svg", animation: "breathe" });
+  });
+
+  it("resolves frame URLs and single-asset manifests as one-frame loops", () => {
+    const frameBundle = resolveBundle(validFrameManifest as never, "/avatars/dawn-v1/");
+    expect(frameBundle.resolveAsset("idle")).toEqual({ src: "/avatars/dawn-v1/assets/idle.png", animation: "none" });
+    expect(frameBundle.resolveFrames("idle")).toEqual([
+      { src: "/avatars/dawn-v1/frames/idle-0.png", fps: 4, loop: true, animation: "none" },
+      { src: "/avatars/dawn-v1/frames/idle-1.png", fps: 4, loop: true, animation: "none" },
+    ]);
+
+    const assetBundle = resolveBundle(validManifest as never, "/avatars/dawn-v0/");
+    expect(assetBundle.resolveFrames("happy")).toEqual([
+      { src: "/avatars/dawn-v0/assets/happy.svg", fps: 1, loop: true, animation: "bounce" },
+    ]);
   });
 });
 

@@ -14,7 +14,7 @@ export type StoredAvatarAsset = {
 
 function safeAssetPath(path: string): string | null {
   if (!path || path.includes("..") || path.startsWith("/") || /^[a-z]+:\/\//i.test(path)) return null;
-  if (!/^assets\/[A-Za-z0-9._-]+\.png$/.test(path)) return null;
+  if (!/^(assets|frames)\/[A-Za-z0-9._-]+\.png$/.test(path)) return null;
   return path;
 }
 
@@ -26,7 +26,7 @@ export class AvatarBundleStore {
   }
 
   private manifestPath() { return join(this.dir, "current", "avatar.json"); }
-  private assetPath(rel: string) { return join(this.dir, "current", "assets", basename(rel)); }
+  private assetPath(rel: string) { return join(this.dir, "current", rel.startsWith("frames/") ? "frames" : "assets", basename(rel)); }
 
   private loadFromDisk() {
     try {
@@ -37,11 +37,14 @@ export class AvatarBundleStore {
       if (!result.ok) return;
       const assets: Record<string, string> = {};
       for (const def of Object.values(result.value.states)) {
-        if (!def?.asset) continue;
-        const rel = safeAssetPath(def.asset);
-        if (!rel) continue;
-        const file = this.assetPath(rel);
-        if (existsSync(file)) assets[rel] = Buffer.from(readFileSync(file)).toString("base64");
+        if (!def) continue;
+        const paths = "frames" in def ? [...def.frames, def.fallbackAsset] : [def.asset];
+        for (const path of paths) {
+          const rel = safeAssetPath(path);
+          if (!rel) continue;
+          const file = this.assetPath(rel);
+          if (existsSync(file)) assets[rel] = Buffer.from(readFileSync(file)).toString("base64");
+        }
       }
       this.current = { manifest: result.value, assets };
     } catch {
@@ -70,7 +73,13 @@ export class AvatarBundleStore {
     const assetsInput = body.assets as Record<string, unknown>;
     const required = new Set<string>();
     for (const def of Object.values(result.value.states)) {
-      if (def?.asset) required.add(def.asset);
+      if (!def) continue;
+      if ("frames" in def) {
+        for (const frame of def.frames) required.add(frame);
+        required.add(def.fallbackAsset);
+      } else {
+        required.add(def.asset);
+      }
     }
     const assets: Record<string, string> = {};
     const errors: string[] = [];
@@ -94,6 +103,7 @@ export class AvatarBundleStore {
     if (errors.length) return { ok: false, errors };
 
     mkdirSync(join(this.dir, "current", "assets"), { recursive: true });
+    mkdirSync(join(this.dir, "current", "frames"), { recursive: true });
     writeFileSync(this.manifestPath(), JSON.stringify(result.value, null, 2) + "\n", { mode: 0o600 });
     for (const [rel, b64] of Object.entries(assets)) {
       writeFileSync(this.assetPath(rel), Buffer.from(b64, "base64"), { mode: 0o600 });
