@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { randomBytes } from "node:crypto";
 import { validateAvatarStateEvent } from "../contracts/avatarEvent";
 import { RuntimeStateStore } from "./stateStore";
 
@@ -14,6 +15,8 @@ export type CreateRuntimeAppOptions = {
   allowCorsOrigin?: string | string[];
   /** When set, all routes except /health require Authorization: Bearer <token>. */
   authToken?: string;
+  /** Called when /admin/rotate-token issues a new token. Should persist the new value. */
+  onTokenRotated?: (newToken: string) => void;
 };
 
 function timingSafeEqual(a: string, b: string): boolean {
@@ -26,7 +29,8 @@ function timingSafeEqual(a: string, b: string): boolean {
 export function createRuntimeApp(options: CreateRuntimeAppOptions = {}) {
   const store = options.store ?? new RuntimeStateStore();
   const app = new Hono();
-  const authToken = options.authToken;
+  // Held in a closure so /admin/rotate-token can swap it in-place without restart.
+  let authToken = options.authToken;
 
   app.use(
     "*",
@@ -58,10 +62,12 @@ export function createRuntimeApp(options: CreateRuntimeAppOptions = {}) {
         remote.startsWith("127.");
       if (isLoopback) return next();
 
+      const current = authToken;
+      if (!current) return next();
       const header = c.req.header("authorization") ?? "";
       const match = /^Bearer\s+(.+)$/i.exec(header.trim());
       const provided = match?.[1] ?? "";
-      if (!provided || !timingSafeEqual(provided, authToken)) {
+      if (!provided || !timingSafeEqual(provided, current)) {
         return c.json({ ok: false, errors: ["authentication required"] }, 401);
       }
       return next();
@@ -85,6 +91,13 @@ export function createRuntimeApp(options: CreateRuntimeAppOptions = {}) {
 
     const entry = store.applyEvent(result.value);
     return c.json({ ok: true, status: store.getStatus(), receivedAt: entry.receivedAt, latencyMs: entry.latencyMs });
+  });
+
+  app.post("/admin/rotate-token", async (c) => {
+    const newToken = randomBytes(32).toString("hex");
+    authToken = newToken;
+    options.onTokenRotated?.(newToken);
+    return c.json({ ok: true, token: newToken });
   });
 
   app.post("/diagnostics/ping", async (c) => {

@@ -99,6 +99,52 @@ describe("runtime API", () => {
     expect(status.status).toBe(200);
   });
 
+  it("decays active state to idle then sleepy on its own", async () => {
+    let nowMs = Date.parse("2026-05-04T19:30:01.000Z");
+    const store = new RuntimeStateStore({
+      now: () => new Date(nowMs),
+      idleAfterMs: 8000,
+      sleepyAfterMs: 60000,
+    });
+    const app = createRuntimeApp({ store });
+
+    await app.request("/avatar/state", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...event, state: "happy", sentAt: new Date(nowMs).toISOString() }),
+    });
+    expect((await (await app.request("/status")).json()).avatar.state).toBe("happy");
+
+    nowMs += 9000; // past idleAfterMs
+    expect((await (await app.request("/status")).json()).avatar.state).toBe("idle");
+
+    nowMs += 70000; // well past sleepyAfterMs after going idle
+    expect((await (await app.request("/status")).json()).avatar.state).toBe("sleepy");
+  });
+
+  it("rotates the auth token via /admin/rotate-token", async () => {
+    let persisted: string | undefined;
+    const app = createRuntimeApp({ authToken: "old-token", onTokenRotated: (t) => { persisted = t; } });
+
+    const denied = await app.request("/admin/rotate-token", { method: "POST" });
+    expect(denied.status).toBe(401);
+
+    const ok = await app.request("/admin/rotate-token", {
+      method: "POST", headers: { Authorization: "Bearer old-token" },
+    });
+    expect(ok.status).toBe(200);
+    const body = await ok.json();
+    expect(typeof body.token).toBe("string");
+    expect(body.token).toHaveLength(64);
+    expect(persisted).toBe(body.token);
+
+    // Old token now rejected.
+    const oldRejected = await app.request("/status", { headers: { Authorization: "Bearer old-token" } });
+    expect(oldRejected.status).toBe(401);
+    // New token accepted.
+    const newAccepted = await app.request("/status", { headers: { Authorization: `Bearer ${body.token}` } });
+    expect(newAccepted.status).toBe(200);
+  });
+
   it("rejects malformed or unsafe events", async () => {
     const app = createRuntimeApp();
     const response = await app.request("/avatar/state", {

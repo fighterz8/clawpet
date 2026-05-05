@@ -36,7 +36,19 @@ const allowCorsOrigin = process.env.CLAWPET_RUNTIME_CORS
   : undefined;
 
 serve({
-  fetch: createRuntimeApp({ authToken, allowCorsOrigin }).fetch,
+  fetch: createRuntimeApp({
+    authToken,
+    allowCorsOrigin,
+    onTokenRotated: (newToken) => {
+      try {
+        mkdirSync(dirname(tokenFile), { recursive: true });
+        writeFileSync(tokenFile, newToken + "\n", { mode: 0o600 });
+        console.log(`Auth token rotated. New token persisted to ${tokenFile}.`);
+      } catch (err) {
+        console.error(`Failed to persist rotated token: ${(err as Error).message}`);
+      }
+    },
+  }).fetch,
   port,
   hostname,
 });
