@@ -15,15 +15,20 @@ Where we are after v0.3 and where this is heading. Items are grouped by horizon.
 
 These are the next obvious wins; mostly incremental on what we have.
 
-### Automatic turn/tool reactions via OpenClaw hook (highest priority)
-Make reactions reflexive at the runtime layer instead of the model's discretion. OpenClaw exposes `TurnStartEvent`, `ToolExecutionStartEvent`, `ToolExecutionEndEvent`, `TurnEndEvent`, and `AgentApprovalEventData` (with `requested`/`resolved` phases) through its extension API. A small Clawpet hook subscribes to these and fires the matching `clawpet react` event automatically:
-- `TurnStartEvent` → `react user-message`
-- `ToolExecutionStartEvent` (long-running tools only, e.g. exec/edit/build) → `react long-task`
-- `ToolExecutionEndEvent` with error → `react tool-error`
-- `AgentApprovalEventData` phase=requested → `react blocker`
-- `TurnEndEvent` with notable completion → `react done`
+### ✅ Automatic tool/turn reactions via session-JSONL daemon (shipped 2026-05-04)
+Dawn now reacts in real time to whatever OpenClaw is doing, with **zero LLM-token cost**, via a sidecar daemon that tails the active session JSONL at `~/.openclaw/agents/main/sessions/*.jsonl`. The daemon classifies events as they're appended and dispatches `clawpet react`/`clawpet send` accordingly. Activity-level dial-down (`off`/`minimal`/`balanced`/`expressive`/`maximum`) controls reaction density.
 
-Value: Dawn becomes a real-time tracker of OpenClaw activity without the assistant having to remember anything. Until this lands, the SKILL.md "turn protocol" section is the soft-rule fallback.
+```
+clawpet daemon start | stop | status | run
+```
+
+This turned out to be much simpler than the OpenClaw extension/hook path because OpenClaw already writes a clean structured event stream to disk. The daemon is ~250 lines of Node, no extension API needed, works on any model.
+
+**Future polish on this path:**
+- Auto-start daemon on overlay launch (so users don't have to remember).
+- Bubble-copy variation that pulls tool args (e.g., "Reading SKILL.md…" instead of just "Reading…").
+- Map approval events (`AgentApprovalEventData`) to `react blocker` once we wire those into the JSONL stream.
+- Optional Windows service / launchd plist for daemon auto-start.
 
 ### Multi-avatar selection
 - Runtime accepts `CLAWPET_AVATAR_BUNDLE` (default `dawn-v0`) and reports it in `/status`.
