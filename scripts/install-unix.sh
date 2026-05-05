@@ -33,8 +33,8 @@ else
   git -C "$REPO_DIR" pull --ff-only
 fi
 
-cyan "==> Installing npm deps..."
-( cd "$REPO_DIR" && npm install )
+cyan "==> Installing npm deps and linking clawpet command..."
+( cd "$REPO_DIR" && npm install && npm link )
 
 # Ensure runtime state directory exists; the runtime owns token creation.
 mkdir -p "$HOME/.openclaw/clawpet"
@@ -53,7 +53,7 @@ green "==> Clawpet installed."
 echo
 cyan "Try demo mode first (no OpenClaw pairing required):"
 echo "  cd $REPO_DIR"
-echo "  CLAWPET_DEMO=1 npm run runtime:dev"
+echo "  npm run runtime:demo"
 echo "  # in a second terminal:"
 echo "  cd $REPO_DIR && npm run desktop:dev"
 echo
@@ -61,7 +61,7 @@ cyan "Cross-machine pairing flow:"
 echo "  # on this display machine, start the runtime:"
 echo "  cd $REPO_DIR && CLAWPET_RUNTIME_HOST=0.0.0.0 CLAWPET_RUNTIME_PORT=8737 npm run runtime:dev"
 echo "  # in another terminal on this display machine:"
-echo "  cd $REPO_DIR && node skills/clawpet/bin/clawpet.mjs pair-mode"
+echo "  cd $REPO_DIR && clawpet pair-mode"
 echo "  # on the OpenClaw machine, claim the shown code:"
 yellow "  clawpet pair --code <6-digit-code> --host $DISPLAY_HOST:8737"
 echo

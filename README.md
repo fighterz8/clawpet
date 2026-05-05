@@ -40,13 +40,13 @@ Try the pet before connecting OpenClaw:
 
 ```bash
 # terminal 1 — runtime demo mode
-cd ~/clawpet && CLAWPET_DEMO=1 npm run runtime:dev
+cd ~/clawpet && npm run runtime:demo
 
 # terminal 2 — desktop overlay
 npm run desktop:dev
 ```
 
-`CLAWPET_DEMO=1` cycles through idle → thinking → focused → happy → alert → sleepy every 6 seconds. No OpenClaw pairing required.
+`npm run runtime:demo` sets `CLAWPET_DEMO=1` and cycles through idle → thinking → focused → happy → alert → sleepy every 6 seconds. No OpenClaw pairing required. `npm run desktop:dev` opens the transparent overlay, not the landing page.
 
 ## Cross-machine setup
 
@@ -68,14 +68,15 @@ clawpet pair --code 472091 --host <desktop-host>.<tailnet>.ts.net:8737
 
 ### 1. On the OpenClaw side
 
-Install the skill (one-time):
+Install/link the command (one-time, already done by the installer):
 
 ```bash
-git clone https://github.com/fighterz8/clawpet ~/clawpet 2>/dev/null || true
-mkdir -p ~/.openclaw/skills
-ln -sf ~/clawpet/skills/clawpet ~/.openclaw/skills/clawpet 2>/dev/null \
-  || ln -sf ~/clawpet/skills/clawpet ~/.openclaw/workspace/skills/clawpet
+cd ~/clawpet
+npm link
+clawpet config
 ```
+
+The repo exposes a `clawpet` bin that points at `skills/clawpet/bin/clawpet.mjs`.
 
 ### 2. Pair the two machines (Plex/Spotify-style 6-digit code)
 

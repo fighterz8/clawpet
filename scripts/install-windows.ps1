@@ -39,8 +39,9 @@ if (-not (Test-Path $repoDir)) {
 }
 
 Push-Location $repoDir
-Write-Host "==> Installing npm deps..." -ForegroundColor Cyan
+Write-Host "==> Installing npm deps and linking clawpet command..." -ForegroundColor Cyan
 npm install
+npm link
 Pop-Location
 
 $stateDir = Join-Path $HOME ".openclaw\clawpet"
@@ -57,8 +58,7 @@ Write-Host "==> Clawpet installed." -ForegroundColor Green
 Write-Host ""
 Write-Host "Try demo mode first (no OpenClaw pairing required):" -ForegroundColor Cyan
 Write-Host "  cd $repoDir"
-Write-Host "  `$env:CLAWPET_DEMO = '1'"
-Write-Host "  Start-Process powershell -ArgumentList '-NoExit','-Command','npm run runtime:dev'"
+Write-Host "  Start-Process powershell -ArgumentList '-NoExit','-Command','npm run runtime:demo'"
 Write-Host "  npm run desktop:dev"
 Write-Host ""
 Write-Host "Cross-machine pairing flow:" -ForegroundColor Cyan
@@ -68,6 +68,6 @@ Write-Host "  `$env:CLAWPET_RUNTIME_HOST = '0.0.0.0'"
 Write-Host "  `$env:CLAWPET_RUNTIME_PORT = '8737'"
 Write-Host "  Start-Process powershell -ArgumentList '-NoExit','-Command','npm run runtime:dev'"
 Write-Host "  # then open pair mode on this display machine:"
-Write-Host "  node skills/clawpet/bin/clawpet.mjs pair-mode"
+Write-Host "  clawpet pair-mode"
 Write-Host "  # on the OpenClaw machine, claim the shown code:"
 Write-Host "  clawpet pair --code <6-digit-code> --host ${displayHost}:8737" -ForegroundColor Yellow

@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "bin": {
+    "clawpet": "skills/clawpet/bin/clawpet.mjs"
+  },
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 5173",
     "build": "tsc && vite build",
@@ -10,6 +13,7 @@
     "check": "tsc --noEmit",
     "test": "vitest run",
     "runtime:dev": "tsx src/runtime/server.ts",
+    "runtime:demo": "CLAWPET_DEMO=1 tsx src/runtime/server.ts",
     "send-test": "tsx src/runtime/send-test.ts",
     "desktop:dev": "tauri dev",
     "desktop:build": "tauri build --no-bundle"
