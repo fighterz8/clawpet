@@ -182,7 +182,8 @@
 
 /* avatar showcase */
 .lp-stages { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 40px; }
-@media (max-width: 900px) { .lp-stages { grid-template-columns: 1fr; } }
+.lp-stages--presets { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 900px) { .lp-stages, .lp-stages--presets { grid-template-columns: 1fr; } }
 .lp-stage-wrap { display: flex; flex-direction: column; align-items: center; }
 .lp-stage-caption { color: var(--fg-dim); margin-top: 14px; font-size: 14px; letter-spacing: 0.04em; }
 
