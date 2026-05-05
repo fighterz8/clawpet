@@ -13,7 +13,24 @@ Today the core experience is:
 
 > **Status:** active v0.5-era development. The desktop app/runtime path, pairing flow, animated Dawn bundles, and secondary showcase character are working.
 
-![Clawpet animated Dawn demo](public/previews/dawn-v2-preview.gif)
+## Readme demo
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="public/previews/dawn-v2-preview.gif" alt="Animated Dawn v2 preview" width="220" />
+      <div><strong>Dawn Ashgold</strong></div>
+      <div><sub>Reading your message…</sub></div>
+    </td>
+    <td align="center">
+      <img src="public/previews/lantern-moth-preview.gif" alt="Animated Lantern Moth preview" width="220" />
+      <div><strong>Lantern Moth</strong></div>
+      <div><sub>Focused on the task…</sub></div>
+    </td>
+  </tr>
+</table>
+
+These captions are meant to mirror the real overlay style: short, informative, and ambient rather than chatty.
 
 ---
 
@@ -110,6 +127,18 @@ Use a new pair code only when:
 ## Downloads
 
 Clawpet is moving toward a simple download-first install flow surfaced from the landing page.
+
+### What you are downloading
+
+You are downloading the **native Clawpet desktop app** for your operating system.
+
+That app is needed because it:
+- creates the tray icon and visible pet window on the display machine
+- starts the local runtime that serves pet state
+- shows the pair code during setup
+- gives OpenClaw a real local target to authenticate with and control
+
+Without the desktop app running on the display machine, OpenClaw has nothing to connect to.
 
 ### Current package source
 
@@ -297,7 +326,7 @@ Standard Dawn (`dawn-v0`) is the original default avatar. The current showcase/d
 
 ### Built-in animated showcase bundles
 
-- `dawn-v2-ember` (shown as Dawn Amber / Dawn Ember in the showcase)
+- `dawn-v2-ember`
 - `dawn-v2-amethyst`
 - `dawn-v2-ashgold`
 - `lantern-moth-v0`
@@ -313,14 +342,14 @@ They are useful for:
 
 ### Current showcase intent
 
-- **Dawn Amber / Ember / Amethyst / Ashgold** show variation within one established character family
+- **Dawn Ember / Amethyst / Ashgold** show variation within one established character family
 - **Lantern Moth** shows a fully different companion silhouette and mood
 
 ### Animated bundle note
 
 - Dawn v2 preset bundles now use real per-state frame loops
 - `lantern-moth-v0` is also animated across all six states
-- the landing page showcase is intended to use those motion-capable bundles, not static fallback stills
+- the landing page showcase uses those motion-capable bundles instead of static fallback stills
 
 ---
 

@@ -17,10 +17,9 @@ const DAWN_DEMO: ScriptedBeat[] = [
 ];
 
 const PRESET_SHOWCASE = [
-  { avatarId: "dawn-v2-ember", title: "Dawn Amber", accent: "#ff8a5b" },
-  { avatarId: "lantern-moth-v0", title: "Lantern Moth", accent: "#5fc8b5" },
   { avatarId: "dawn-v2-ember", title: "Dawn Ember", accent: "#ff8a5b" },
-  { avatarId: "dawn-v2-amethyst", title: "Dawn Amethyst", accent: "#b884ff" },
+  { avatarId: "lantern-moth-v0", title: "Lantern Moth", accent: "#5fc8b5" },
+  { avatarId: "dawn-v2-ashgold", title: "Dawn Ashgold", accent: "#d7b36a" },
 ];
 
 const DOWNLOADS = {
@@ -253,7 +252,7 @@ clawpet activity balanced`}</pre>
               <p className="lp-install-os">Linux</p>
               <a className="lp-btn lp-btn--ghost" href={DOWNLOADS.linux.href} target="_blank" rel="noreferrer">{DOWNLOADS.linux.label}</a>
               <p className="lp-install-artifact">{DOWNLOADS.linux.artifact}</p>
-              <p className="lp-install-note">Current downloads come from the latest GitHub Actions desktop build until dedicated release-package URLs are wired into the site.</p>
+              <p className="lp-install-note">Download the native Clawpet desktop app for your OS. This is the local app that creates the tray icon, starts the runtime on your display machine, shows the pair code, and gives OpenClaw something real to connect to and control.</p>
             </div>
           </Reveal>
           <Reveal delay={160}>
