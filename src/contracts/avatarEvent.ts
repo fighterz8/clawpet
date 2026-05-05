@@ -21,7 +21,10 @@ export type AvatarStateEvent = {
     avatarId?: string;
   };
   state: AvatarState;
+  /** Long-form status text (shown in console/event log). */
   message?: string;
+  /** Short overlay caption (<= 64 chars). Falls back to truncated message if absent. */
+  bubble?: string;
   ttlMs?: number;
   priority?: AvatarPriority;
   correlationId?: string;
@@ -53,6 +56,7 @@ export type ValidationResult<T> =
   | { ok: false; errors: string[] };
 
 const MAX_MESSAGE_LENGTH = 280;
+const MAX_BUBBLE_LENGTH = 64;
 const MAX_TTL_MS = 60 * 60 * 1000;
 const MAX_METADATA_KEYS = 20;
 const MAX_EVENT_BYTES = 16 * 1024;
@@ -128,6 +132,15 @@ export function validateAvatarStateEvent(input: unknown): ValidationResult<Avata
     }
   }
 
+  if (input.bubble !== undefined) {
+    if (!isString(input.bubble)) {
+      errors.push("bubble must be a string");
+    } else {
+      if (input.bubble.length > MAX_BUBBLE_LENGTH) errors.push(`bubble must be <= ${MAX_BUBBLE_LENGTH} characters`);
+      if (rejectSecretLikeMessage(input.bubble)) errors.push("bubble appears to contain a secret or OAuth code");
+    }
+  }
+
   if (input.ttlMs !== undefined) {
     if (typeof input.ttlMs !== "number" || !Number.isFinite(input.ttlMs) || input.ttlMs < 0 || input.ttlMs > MAX_TTL_MS) {
       errors.push(`ttlMs must be a number between 0 and ${MAX_TTL_MS}`);
@@ -160,3 +173,17 @@ export function validateAvatarStateEvent(input: unknown): ValidationResult<Avata
 export function fallbackAvatarState(state: unknown): AvatarState {
   return avatarStates.includes(state as AvatarState) ? (state as AvatarState) : "idle";
 }
+
+/**
+ * Resolve the short overlay caption for an event.
+ * Prefers `bubble`; otherwise truncates `message` to MAX_BUBBLE_LENGTH.
+ */
+export function resolveBubbleText(event: Pick<AvatarStateEvent, "bubble" | "message">): string {
+  if (event.bubble && event.bubble.trim()) return event.bubble.trim();
+  if (!event.message) return "";
+  const msg = event.message.trim();
+  if (msg.length <= MAX_BUBBLE_LENGTH) return msg;
+  return msg.slice(0, MAX_BUBBLE_LENGTH - 1).trimEnd() + "…";
+}
+
+export const BUBBLE_MAX_LENGTH = MAX_BUBBLE_LENGTH;

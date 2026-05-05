@@ -9,7 +9,7 @@ if (typeof window !== "undefined" && new URLSearchParams(window.location.search)
   document.body.classList.add("clawpet-overlay");
 }
 
-import { AVATAR_EVENT_VERSION, avatarStates, type AvatarState, type AvatarStateEvent, type ClawpetStatus } from "./contracts/avatarEvent";
+import { AVATAR_EVENT_VERSION, avatarStates, resolveBubbleText, type AvatarState, type AvatarStateEvent, type ClawpetStatus } from "./contracts/avatarEvent";
 import { loadAvatarBundle, type ResolvedAvatarBundle } from "./avatars/bundle";
 
 const DEFAULT_AVATAR_BUNDLE_URL = "/avatars/dawn-v0";
@@ -271,9 +271,12 @@ function OverlayApp() {
         if (!statusResponse.ok) throw new Error(`status returned ${statusResponse.status}`);
         const nextStatus = await statusResponse.json() as ClawpetStatus;
         const eventBody = await eventsResponse.json().catch(() => ({ events: [] })) as { events?: RuntimeEventLogEntry[] };
-        const latestMessage = eventBody.events?.[0]?.event.message;
+        const latestEvent = eventBody.events?.[0]?.event;
+        const bubbleText = latestEvent
+          ? resolveBubbleText(latestEvent)
+          : resolveBubbleText({ message: stateCopy[nextStatus.avatar.state].message });
         setState(nextStatus.avatar.state);
-        setMessage(latestMessage ?? stateCopy[nextStatus.avatar.state].message);
+        setMessage(bubbleText);
         setOnline(true);
       } catch {
         setOnline(false);

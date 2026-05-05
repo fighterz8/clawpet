@@ -107,19 +107,25 @@ main {
 
 .overlay-floating__bubble {
   position: absolute;
-  bottom: -8px;
+  bottom: 8px;
   left: 50%;
   transform: translate(-50%, 100%);
-  max-width: 280px;
-  padding: 8px 12px;
+  width: max-content;
+  max-width: 300px;
+  padding: 7px 12px;
   border-radius: 14px;
-  background: rgba(8, 10, 18, 0.78);
+  background: rgba(8, 10, 18, 0.82);
   border: 1px solid rgba(255, 255, 255, 0.14);
   color: #edf4ff;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
+  line-height: 1.25;
   text-align: center;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: break-word;
   pointer-events: none;
   -webkit-app-region: no-drag;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
 }
 
 .overlay-floating__bubble--warn {
