@@ -31,10 +31,11 @@ FORMAT
   • Single character, centered, no scene, no ground line, no text
   • Hard 1-pixel outline (4px after upscale) in a darker variant of the
     body's dominant hue — never pure black unless the pet IS black
-  • 8–12 unique colors total, palette locked across all 6 states
+  • 8–12 unique colors total, palette locked across all 6 states, including accessories
   • Cel-shaded with directional light from the upper-left — no smooth
     gradients, no anti-aliasing, no soft brushes
   • Chibi proportions: head dominates roughly 40% of vertical space
+  • Choose and lock pose framing up front (front-facing or 3/4 front) and keep it consistent
 
 SIX STATES, ALL REQUIRED — same character throughout
   idle      — neutral, alive, watching
@@ -50,99 +51,63 @@ CREATIVE BRIEF — your job, do it well
 
 SPECIES — invent it.
   Don't default to "small fox" or "baby dragon" because those are easy.
+  If you are generating an established character with a locked identity, do not use this prompt as-is; use a character-specific prompt instead.
   The species should feel like an answer to the question "what creature
   would naturally embody this soul?" Real animals are fine. Imagined
-  hybrids are better when justified. A few directions worth exploring:
-
-    • familiar mammals reimagined (otter that looks like a sage,
-      raccoon that looks like a tinkerer, fennec with oversized ears)
-    • tiny mythological creatures (kodama, tiny golem, baby phoenix,
-      domesticated wisp)
-    • soft invertebrates (axolotl, cuttlefish, tardigrade, snail with
-      a glowing shell)
-    • plant-creature hybrids (mushroom sprite, moss-back lizard,
-      acorn-headed forest spirit)
-    • impossible-but-believable (cloud cat, paper-lantern moth, ink
-      blob with eyes, gem-cored slime)
-
-  Pick whatever the soul actually suggests. If the soul reads like a
-  careful researcher, don't draw a hyperactive puppy. If it reads scrappy
-  and chaotic, don't draw a stoic owl.
+  hybrids are better when justified.
 
 PALETTE — earn the colors.
-  Pull a dominant emotional hue from the SOUL.md (warm/cool/saturated/
-  muted) and build outward. Avoid the obvious orange-fox / cyan-slime
-  combos already in use by Dawn and Pip. Memorable Clawpets have
-  unexpected accent colors — a sage-green creature with hot-pink ear
-  interiors; a deep-purple shadow pet with one bright gold eye; a cream
-  creature with deep teal markings. The accent should be the thing
-  someone describes when they tell a friend about it.
+  Pull a dominant emotional hue from the SOUL.md and build outward.
+  Avoid default orange-fox / cyan-slime combos already in use by Dawn and Pip.
+  Memorable Clawpets have one describable accent.
 
 SILHOUETTE — make it readable at thumbnail size.
   The pet will be seen at 1/4 size on a desktop. If you can't recognize
-  it as a black silhouette, redesign. One memorable shape feature is
-  worth ten subtle ones. Big ears, a curled tail, a tall hat, a trailing
-  ribbon, a glowing core — pick ONE signature element and lean on it.
+  it as a black silhouette, redesign. Pick ONE signature feature and lean on it.
 
 PERSONALITY EXPRESSION — let it show.
   Across the six states, this creature should read as an individual.
-  Examples of personality choices worth making:
-
-    • Does it sit upright or hunch? (alert vs. relaxed pets feel different)
-    • What does it do with its hands/paws/tendrils when thinking?
-    • Does it show teeth when happy, or close its eyes in a soft smile?
-    • What's its "alert" tell? Wide eyes, raised hackles, glow flare,
-      ear-spike, mouth-open?
-    • In sleepy mode, does it slump, curl, lean, or float lower?
-
-  Pick distinctive answers. Boring choices = forgettable pet.
 
 ACCESSORIES (use sparingly, only where listed)
   • alert: a single 4-pointed star OR exclamation spark above the head
   • happy: small heart sparkle near the body (one or two, never more)
   • sleepy: one small blue "Z" drifting upward from above the head
-  • thinking: small thought bubble OR paw-to-chin gesture (pick one,
-    not both)
-  Other states: no accessories. Cleaner is better.
+  • thinking: small thought bubble OR paw-to-chin gesture (pick one, not both)
+  • other states: no accessories
+
+  Important: accessory colors must come from the same locked palette.
+  Do not invent extra colors later during motion generation.
 
 ═══════════════════════════════════════════════════════════════
 WHAT TO AVOID
 ═══════════════════════════════════════════════════════════════
 
-  ✗ Generic "kawaii blob with two dots for eyes" — be specific
-  ✗ Pure black outline on a non-black pet — use a dark hue variant
-  ✗ Backgrounds, ground lines, shadow circles in the PNG — keep alpha clean
-  ✗ Inconsistent palette between frames — lock 8–12 colors and stick to them
-  ✗ Anti-aliased edges or smooth gradients — pixel art is HARD edges
-  ✗ Text, symbols, watermarks, signatures
-  ✗ Anything resembling Dawn (small orange dragon) or Pip (cyan slime)
-    unless the user explicitly asks for that aesthetic
-  ✗ Realistic proportions — chibi only
-  ✗ Asymmetric "weird for weird's sake" designs that fight readability
+  ✗ Generic blob mascots
+  ✗ Pure black outlines on non-black pets
+  ✗ Backgrounds, ground lines, shadow circles baked into the PNG
+  ✗ Inconsistent palette between frames
+  ✗ Anti-aliased edges or smooth gradients
+  ✗ Text, symbols, signatures
+  ✗ Anything resembling Dawn or Pip unless explicitly requested
+  ✗ Realistic proportions
+  ✗ Detail noise that hurts readability
 
 ═══════════════════════════════════════════════════════════════
 PROCESS
 ═══════════════════════════════════════════════════════════════
 
 1. Read SOUL.md and the agent name. Identify dominant tone and 2–3 traits.
-2. Decide the species and the ONE signature silhouette feature. Write
-   them down internally before generating anything — this anchors
-   consistency across frames.
-3. Build the palette. Lock it. Same hex codes across all six states.
-4. Generate idle FIRST. This is the reference frame. Every other state
-   must match its proportions, palette, and lighting.
-5. Generate the remaining states using idle as the visual anchor — same
-   pose framing, same palette, only the expression and posture change.
-6. If a frame drifts off-model from idle, regenerate that single frame.
-   Don't drag the whole bundle off-style chasing a fix.
+2. Decide species, signature silhouette feature, palette, and pose framing before generating.
+3. Generate idle FIRST. This is the **character anchor**.
+4. Generate the remaining states to match the character anchor.
+5. For animation, each state's frame 0 becomes that state's **motion anchor**.
+6. If a frame drifts, regenerate only that frame.
 
 ═══════════════════════════════════════════════════════════════
 DELIVERABLE
 ═══════════════════════════════════════════════════════════════
 
-A creature whose owner will recognize themselves in it. Someone seeing
-this on their desktop should feel "yeah, that's mine" within the first
-five seconds.
+A creature whose owner will recognize themselves in it.
 
 Show me you understood the soul, not just the requirements.
 ```
@@ -151,17 +116,8 @@ Show me you understood the soul, not just the requirements.
 
 ## How to use this prompt
 
-In the skill's prompt-assembly step (§7 of `clawpet-generate-SKILL.md`):
-
-1. Inject the user's `SOUL.md` content as a single fenced block right after
-   the prompt, labeled `SOUL.md INPUT:`.
+1. Inject `SOUL.md` as `SOUL.md INPUT:`.
 2. Inject the agent name as `AGENT NAME:`.
-3. Inject the chosen tier (A/B/C) frame plan as `FRAME PLAN:`.
-4. After the agent decides species/palette/silhouette, **lock those choices
-   into a base prompt string** that's stored in `avatar.json.seed`.
-5. For each subsequent frame call, append only the state delta and frame
-   delta (§5 motion specifics) — never re-roll the species or palette.
-
-This is what makes the pet personalized AND stable: the creative decisions
-happen ONCE per pet, and after that every frame is a tight consistency play
-against the locked base.
+3. Inject the chosen frame plan as `FRAME PLAN:`.
+4. After deciding species/palette/silhouette/framing, lock them into a base prompt string stored in `avatar.json.seed`.
+5. For subsequent frame calls, append only state delta and frame delta — never re-roll species or palette.

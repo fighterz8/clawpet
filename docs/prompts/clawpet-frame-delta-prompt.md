@@ -1,310 +1,198 @@
 # Clawpet Frame-Delta Prompt Template
 
 This is the prompt the agent uses **per frame**, after the character's species,
-palette, and silhouette have been locked in by the creative-mode prompt.
+palette, silhouette, and pose framing have been locked.
 
-The challenge: pixel-art animation lives or dies on tiny, intentional changes.
-A 128×128 idle blink is **2 pixels** of difference. A happy bounce is **4
-pixels** of vertical shift. Generation models will either over-deliver (redraw
-the whole creature, breaking consistency) or under-deliver (output a near-
-duplicate that doesn't read as motion). This prompt steers between the two.
+## Core principle
 
----
+> Motion in pixel art is subtractive, not additive.
 
-## The core principle
-
-> **Motion in pixel art is subtractive, not additive.**
-> Don't ask "what should change in frame 2?" Ask "what is the smallest
-> change that, when alternated with frame 1, reads as a specific behavior?"
-
-A 2-pixel eyelid drop reads as a blink.
-A 3-pixel body shift reads as a breath.
-A 4-pixel vertical translation reads as a bounce.
-A horizontal pupil move of 1 pixel reads as a glance.
-
-These are the *real* deltas. The agent's job is to commit to them precisely.
+Ask for the smallest possible change that reads as life.
 
 ---
 
-## The per-frame prompt template
-
-This is what gets sent for each frame after frame 0 (the anchor). Frame 0
-uses the creative-mode prompt unchanged.
+## Per-frame prompt template
 
 ```
 FRAME GENERATION — STRICT CONSISTENCY MODE
 
 You are generating frame <N> of <M> for the <state> state of the Clawpet
-named <pet_name>. Frame 0 (the anchor) has already been generated. Your
-job is to produce frame <N> as a precise micro-variation of the anchor,
-not a redraw.
+named <pet_name>. Frame 0 for this state already exists. Produce frame <N>
+as a micro-variation of that state anchor, not a redraw.
 
-═══════════════════════════════════════════════════════════════
-THE ANCHOR (do NOT deviate from these)
-═══════════════════════════════════════════════════════════════
+THE ANCHOR
+  Species: <locked species>
+  Silhouette tag: <locked signature feature>
+  Palette: <locked hex list>
+  Outline color: <locked dark hue>
+  Pose framing: <locked front-facing or 3/4 front>
+  Head position: same as anchor
+  Body proportions: same as anchor
 
-  Species:         <locked species>
-  Silhouette tag:  <locked signature feature, e.g. "oversized curled ears">
-  Palette:         <locked hex list, exactly N colors>
-  Outline color:   <locked dark hue>
-  Pose framing:    <"3/4 front" or "front-facing" — match anchor exactly>
-  Head position:   centered at anchor's pixel coordinates
-  Body proportions: identical to anchor
+All of the above are frozen.
 
-  All of the above are FROZEN. If your output changes any of them, the
-  bundle is broken. Treat the anchor frame as the source of truth — your
-  output should look like someone moved 2–8 logical pixels and nothing else.
+STATE CONTEXT
+  Character anchor: idle/reference state defines the overall character.
+  Motion anchor: this state's frame 0 defines this loop.
 
-═══════════════════════════════════════════════════════════════
-WHAT THIS FRAME IS DOING
-═══════════════════════════════════════════════════════════════
+APPLY ONLY THIS DELTA
+  <DELTA SPEC>
 
-State:      <state>
-Frame:      <N> of <M>
-Behavior:   <one-line description of what's happening this frame>
-
-Specific motion delta from anchor (apply ONLY these changes):
-
-  <DELTA SPEC — see motion catalog below>
-
-Everything not in the delta spec must be byte-identical to the anchor.
-
-═══════════════════════════════════════════════════════════════
-SCALE CALIBRATION
-═══════════════════════════════════════════════════════════════
-
-You are working at 128×128 logical pixels. To help calibrate magnitude:
-
-  • A blink moves the eyelid by 2 logical pixels — barely.
-  • A breath moves the body silhouette by 2–3 logical pixels — slightly.
-  • A bounce moves the whole body by 4 logical pixels — clearly.
-  • A look-shift moves a pupil by 1 logical pixel — almost invisibly.
-  • An accessory (Z, spark, heart) appears or moves 4–6 pixels — visibly.
-
-If your frame change feels "barely visible at 128×128", that's correct.
-Pixel-art animation is supposed to feel subtle in stills and alive in motion.
-Big changes between frames are the AMATEUR mistake — they make the creature
-twitch instead of breathe.
-
-═══════════════════════════════════════════════════════════════
-THE DON'T-LIST
-═══════════════════════════════════════════════════════════════
-
-Do NOT:
-  ✗ Redraw the creature from scratch — copy the anchor and apply the delta
-  ✗ Reposition the creature on the canvas — center stays put unless the
-    delta explicitly says "translate +N pixels vertical"
-  ✗ Re-render the lighting — the upper-left light direction is locked
-  ✗ Change which side limbs/ears are on
-  ✗ Vary the outline thickness or color
-  ✗ Add new color tones — work within the locked palette only
-  ✗ "Improve" anything — your job is consistency, not polish
-  ✗ Combine multiple deltas to "make it more dynamic" — apply only the
-    listed delta
+Everything else should remain byte-identical in spirit to the anchor.
 ```
 
 ---
 
-## The motion delta catalog
+## Scale calibration
 
-Inject the appropriate block into `<DELTA SPEC>` based on state and frame.
+All motion instructions are in **128×128 logical pixels** before 4× export.
+
+- blink: 1–2 px
+- breath: 1–2 px internal silhouette change
+- bounce: 2–4 px vertical move
+- glance: 1 px pupil move
+- accessory drift: 2–4 px
+
+If it feels almost too subtle in the still frame, that's usually right.
+
+Accessory colors must already exist in the locked palette.
+
+---
+
+## Don't list
+
+Do NOT:
+- redraw from scratch
+- move the character unless the delta says to
+- change framing, palette, outline, lighting, or side orientation
+- add new colors
+- "improve" the sprite
+- combine multiple motion ideas into one frame
+
+---
+
+## Motion catalog
 
 ### IDLE
 
 ```
-Frame 0 (anchor): generated by creative-mode prompt.
+Frame 0: anchor
 
-Frame 1 (mid-bob):
-  - Translate ENTIRE body up by 1 logical pixel
-  - Eyes unchanged
-  - Ground shadow widens by 1 pixel on each side (if shadow is rendered)
-  - All other features identical
+Frame 1:
+- feet/base stay locked
+- chest / cheek / neck / wing-accent region expands by 1 px where the design allows
+- eyes unchanged
 
-Frame 2 (top of bob):
-  - Translate ENTIRE body up by 2 logical pixels
-  - Eyes unchanged
-  - Ground shadow at minimum width
-  - All other features identical
+Frame 2:
+- return to anchor or settle 1 px softer than frame 1
+- eyes unchanged
 
-Frame 3 (returning):
-  - Translate ENTIRE body up by 1 logical pixel (matching frame 1 pose)
-  - Eyes unchanged
-  - All other features identical
+Frame 3:
+- identical to anchor
 
-Frame 4 (blink, settled):
-  - Body at anchor position (no translation)
-  - EYES CLOSED: replace each eye's open shape with a single dark
-    horizontal 3-pixel line at the lower edge of where the eye was
-  - Everything else identical to anchor
+Frame 4:
+- upper lids descend 1 px using predesigned lid geometry
+- no repainting of surrounding face shading
 
-Frame 5 (eyes open, glance):
-  - Body at anchor position
-  - Eyes open, but each pupil shifted 1 pixel to the LEFT
-  - Bright shine highlight stays at upper-left of pupil (don't move it)
-  - All other features identical
-```
+Frame 5:
+- eyes closed using anchor-compatible lid shape only
 
-### SLEEPY
-
-```
-Frame 0 (anchor): generated as sleepy state — eyes closed, posture slumped,
-no Z accessory yet.
-
-Frame 1 (breath in, Z appearing low):
-  - Body silhouette compressed by 1 pixel vertically (top stays, bottom
-    moves up 1px)
-  - Add small blue "Z" sprite at coordinates 8 pixels above the head
-  - Z is 6×6 pixels in zzz palette color
-
-Frame 2 (mid-breath, Z rising):
-  - Body silhouette at anchor proportions
-  - Z now positioned 12 pixels above head
-  - Z opacity reduced (use dimmer zzz tone)
-
-Frame 3 (breath out, Z faded):
-  - Body silhouette expanded by 1 pixel vertically (slight inhale puff)
-  - Z removed (faded out)
-
-Frame 4–7: repeat the cycle, optionally with a SECOND Z drifting on the
-  alternate phase so two Z's are always somewhere in motion.
+Frame 6:
+- identical to anchor
 ```
 
 ### THINKING
 
 ```
-Frame 0 (anchor): contemplative pose, head slightly tilted right, paw to
-  chin OR nothing — pick one and lock it. No thought bubble yet.
+Frame 0: contemplative state anchor
 
-Frame 1 (small bubble appears):
-  - Body identical to anchor
-  - Add a single 2×2-pixel bubble at coordinates [head_top + 4 right,
-    head_top - 6 up], in thought palette color
-  - Eyes shift pupil 1 pixel right (looking up at bubble)
+Frame 1:
+- body identical
+- small palette-locked bubble appears above head OR paw-to-chin accent shifts 1 px
+- pupils shift 1 px toward the thought cue
 
-Frame 2 (medium bubble + tiny bubble):
-  - Body identical to anchor
-  - Replace 2×2 bubble with a 4×4 bubble, 2 pixels further up-right
-  - Add a 1×1 trail bubble at original 2×2 position
-  - Eyes shift pupil 1 pixel left (looking back to thought)
+Frame 2:
+- bubble grows slightly / trail appears OR paw settles back
+- body identical
 
-Frame 3 (full thought bubble with dots):
-  - Body identical to anchor
-  - 4×4 bubble grows to 8×6 bubble at [head_top + 10 right, head_top - 14 up]
-  - Three dark "..." dots inside the bubble
-  - Tiny bubble trail still present
-  - Eyes shift pupil 1 pixel up (looking at finished thought)
+Frame 3:
+- return close to anchor
 ```
 
 ### FOCUSED
 
 ```
-Frame 0 (anchor): narrowed eyes, leaning slightly forward, mouth flat.
+Frame 0: narrowed eyes, slight forward lean
 
-Frame 1 (subtle ear/tail flick):
-  - Body identical to anchor
-  - One ear (or tail tip, or signature feature) shifts 1 pixel in a
-    natural direction — pick the ear closer to camera and shift its
-    tip 1 pixel up
+Frame 1:
+- one ear / horn / tail-tip / signature feature shifts 1 px
 
-Frame 2 (return):
-  - Identical to anchor
+Frame 2:
+- anchor
 
-Frame 3 (other-side flick):
-  - Body identical to anchor
-  - The OTHER ear (or opposite tail segment) shifts 1 pixel up
-
-Note: focused is intentionally low-motion. The pet is concentrating.
-Resist the urge to add more. Stillness reads as focus.
+Frame 3:
+- opposite side feature shifts 1 px
 ```
 
 ### HAPPY
 
 ```
-Frame 0 (anchor): wide smile, bright eyes, neutral standing pose, no
-  hearts yet.
+Frame 0: happy anchor
 
-Frame 1 (squashed pre-bounce):
-  - Body compressed: bottom unchanged, top of body moves DOWN 1 pixel
-  - Eyes squinted slightly (eye height reduced by 1 pixel)
-  - Smile a touch wider (mouth corners 1 pixel further out)
-  - Add 1 small heart sparkle at [body_left - 6, body_top - 4]
+Frame 1:
+- subtle squash: top of body moves down 1 px
+- smile widens 1 px each side
+- optional tiny palette-locked heart only if accessory margin exists
 
-Frame 2 (peak bounce):
-  - ENTIRE body translated UP by 4 logical pixels
-  - Stretched: body height +1 pixel
-  - Eyes fully open (anchor shape)
-  - Heart sparkle now at [body_left - 8, body_top - 8] (drifted up-left)
-  - Add SECOND heart at [body_right + 4, body_top - 2]
-  - Optional: tiny ground shadow visible (creature is airborne)
+Frame 2:
+- whole body moves up 2–3 px
+- very slight stretch if needed
 
-Frame 3 (landing):
-  - Body translated UP by 1 logical pixel (descending from peak)
-  - Eyes back to anchor shape
-  - Hearts removed (off-screen drift complete)
+Frame 3:
+- descend toward anchor
+- remove optional hearts
 ```
 
 ### ALERT
 
 ```
-Frame 0 (anchor): wide round eyes, ears straight up, mouth open in
-  surprise, NO spark yet.
+Frame 0: alert anchor, no spark yet
 
-Frame 1 (spark visible, full alert):
-  - Body identical to anchor
-  - Add 4-pointed star spark above the head, 6 pixels above head_top
-  - Spark is 8×8 pixels, bright spark color with white hot core
-  - Add 4 white rim-light pixels at the outer corners of the head
-    (these flash for one frame only)
+Frame 1:
+- body identical or 1 px upward jolt if the design supports it
+- add 4-point spark above head using locked palette
 ```
 
-Alert is a 2-frame loop intentionally. The flicker between "spark / no
-spark" reads as the attention-spike. More frames soften the impact.
+### SLEEPY
+
+```
+Frame 0: sleepy anchor, no Z yet
+
+Frame 1:
+- body softens / settles internally by 1 px
+- small palette-locked Z appears above head
+
+Frame 2:
+- Z rises 2–4 px and dims using an existing lighter/darker palette tone
+- body returns toward anchor
+
+Frame 3:
+- Z removed or nearly gone
+- body anchor
+```
 
 ---
 
-## Consistency repair instructions
-
-When a frame fails validation or drifts off-model, the agent should NOT
-re-roll from scratch. Instead, append this addendum to the frame prompt:
+## Repair mode addendum
 
 ```
-═══════════════════════════════════════════════════════════════
 REPAIR MODE
-═══════════════════════════════════════════════════════════════
 
-A previous attempt at this frame drifted from the anchor in the following
-way: <specific failure description>
+A previous attempt drifted from the anchor in this way:
+<specific failure>
 
-Regenerate this frame with EXTRA emphasis on:
-  • Pixel-perfect copy of anchor pose, lighting, palette
-  • Apply ONLY the listed delta
-  • If in doubt, do less
-
-Most off-model frames result from over-interpreting the delta. The
-correct response to "frame looks too different" is to apply a SMALLER
-change, not a different one.
+Regenerate with extra emphasis on:
+- pixel-perfect match to anchor palette, pose, and lighting
+- apply only the listed delta
+- if in doubt, do less
 ```
-
----
-
-## Why this works
-
-The agent doesn't actually "see" the anchor PNG — it generates from
-prompts. So the trick is making the prompt itself describe the anchor
-precisely enough that frame N reads as a delta from a remembered state,
-not as an independent generation.
-
-Three mechanisms carry the consistency:
-
-1. **The locked palette** — even if proportions drift slightly, identical
-   hex codes across frames anchor the pet's "color identity."
-2. **The silhouette tag** — "oversized curled ears" or "trailing ribbon"
-   becomes a callsign the agent rebuilds toward each frame.
-3. **The explicit delta scale calibration** — telling the agent that a
-   blink is 2 pixels and a bounce is 4 pixels prevents the most common
-   failure mode (overshooting the change).
-
-The motion catalog gives the agent permission to be small. Without it,
-agents over-deliver — they think "make it look more thinking" and
-redesign the head tilt, mouth shape, and ears, all at once. The catalog
-says "shift the pupil 1 pixel and add a 2×2 bubble." That's the whole job.
