@@ -55,33 +55,33 @@ const RUNTIME_URL = "http://127.0.0.1:8737";
 const stateCopy: Record<PetState, { label: string; message: string; api: string }> = {
   idle: {
     label: "Idle",
-    message: "OpenClaw is available.",
-    api: '{ "state": "idle", "message": "OpenClaw is available." }',
+    message: "Hi.",
+    api: '{ "state": "idle", "message": "Hi." }',
   },
   thinking: {
     label: "Thinking",
-    message: "Dawn is working through a task…",
-    api: '{ "state": "thinking", "message": "Inspecting the repo…" }',
+    message: "Thinking through this one…",
+    api: '{ "state": "thinking", "message": "Thinking through this one…" }',
   },
   focused: {
     label: "Focused",
-    message: "Long-running work is in progress.",
-    api: '{ "state": "focused", "message": "Building the demo packet." }',
+    message: "Focused on building the PocketPulse demo packet for Nick.",
+    api: '{ "state": "focused", "message": "Focused on building the PocketPulse demo packet for Nick." }',
   },
   happy: {
     label: "Happy",
-    message: "Task completed successfully.",
-    api: '{ "state": "happy", "message": "Deploy finished." }',
+    message: "Done! 🐲",
+    api: '{ "state": "happy", "message": "Done! 🐲" }',
   },
   alert: {
     label: "Alert",
-    message: "Something needs attention.",
-    api: '{ "state": "alert", "message": "OAuth approval needed." }',
+    message: "Heads up: OAuth approval needed and a calendar event is starting in five minutes — quick action required from you.",
+    api: '{ "state": "alert", "message": "Heads up: OAuth approval needed and a calendar event is starting in five minutes — quick action required from you." }',
   },
   sleepy: {
     label: "Sleepy",
-    message: "Quiet hours / low activity.",
-    api: '{ "state": "sleepy", "message": "Quiet mode." }',
+    message: "Quiet hours, dozing off… 💤",
+    api: '{ "state": "sleepy", "message": "Quiet hours, dozing off… 💤" }',
   },
 };
 
