@@ -74,5 +74,36 @@
         "/home/nick/.openclaw/media/tool-image-generation/pocket-golem-sleepy-opaque---8377dbcd-1cde-4f26-a2d0-dbf394b68dea.png"
       ]
     }
+  },
+  "generation": {
+    "coreConcept": "A tiny slate-and-moss pocket golem companion for local-only Clawpet avatar generation tests.",
+    "locked": {
+      "species": "pocket golem made of stacked slate stones with a moss-green glowing core",
+      "silhouette": "rounded stacked stones, stubby arms, central glowing core, simple bright eyes",
+      "palette": [
+        "slate gray",
+        "dark stone blue",
+        "moss green glow",
+        "soft eye highlight"
+      ],
+      "poseFraming": "front-facing, centered, thumbnail-readable",
+      "logicalCanvas": "128x128"
+    }
+  },
+  "coherency": {
+    "minFramesPerState": 3,
+    "maxRepairAttempts": 3,
+    "bboxTolerancePct": 0.28,
+    "centerTolerancePct": 0.14,
+    "paletteTolerancePct": 0.55,
+    "requiredChecks": [
+      "silhouette",
+      "palette",
+      "face",
+      "proportions",
+      "framing",
+      "stateExpression"
+    ],
+    "repairStrategy": "Regenerate only failed frames from the state anchor using repair mode; do not rebuild coherent frames."
   }
 }

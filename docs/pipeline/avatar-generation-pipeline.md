@@ -53,6 +53,8 @@ Supported actions:
 ```bash
 python3 scripts/run_avatar_pipeline.py scaffold <job.json>
 python3 scripts/run_avatar_pipeline.py validate <job.json>
+python3 scripts/run_avatar_pipeline.py emit-prompts <job.json>
+python3 scripts/run_avatar_pipeline.py coherency-report <job.json>
 python3 scripts/run_avatar_pipeline.py build <job.json>
 python3 scripts/run_avatar_pipeline.py push <job.json>
 python3 scripts/run_avatar_pipeline.py verify <job.json>
@@ -63,6 +65,9 @@ What the wrapper does:
 - validates that all 6 required states exist
 - checks that referenced frame files exist
 - emits a generated build spec under `.avatar-pipeline/<job-id>/`
+- emits a provider/agent-ready prompt plan
+- runs deterministic coherency checks before building
+- writes a repair queue for frames that drift
 - calls `scripts/build_avatar_bundle.py`
 - optionally pushes the bundle through the existing Clawpet pairing
 - verifies runtime avatar id + bundle version after push
@@ -77,7 +82,7 @@ Prompt-pack scaffold:
 
 ## Current limitation
 
-This wrapper productizes **build/push/verify orchestration** and the manifest shape.
+This wrapper productizes **prompt-plan/build/coherency/push/verify orchestration** and the manifest shape.
 It does **not** yet call the image-generation provider directly on its own.
 The current generation flow is still:
 1. generate source frames with the image tool / agent
@@ -89,6 +94,11 @@ That means the remaining automation gap is specifically the provider-backed fram
 ## Future improvement targets
 
 - provider-backed frame generation inside the wrapper
+- vision-model subjective coherency review for face/eyes/expression charm
 - bundle validation screenshots/contact sheets
 - richer prompt-pack storage with per-character locked specs
 - download/package link refresh as part of release prep
+
+## Coherency QA
+
+See `docs/pipeline/avatar-coherency-qa.md` for the frame rejection/repair contract.
