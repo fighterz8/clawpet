@@ -43,9 +43,21 @@ export function createRuntimeApp(options: CreateRuntimeAppOptions = {}) {
   );
 
   // Auth middleware for everything else.
+  // Loopback connections (same machine) are always trusted so the local
+  // desktop overlay can poll without knowing the token.
   if (authToken) {
     app.use("*", async (c, next) => {
       if (c.req.path === "/health") return next();
+
+      const remote = (c.env as { incoming?: { socket?: { remoteAddress?: string } } } | undefined)
+        ?.incoming?.socket?.remoteAddress ?? "";
+      const isLoopback =
+        remote === "127.0.0.1" ||
+        remote === "::1" ||
+        remote === "::ffff:127.0.0.1" ||
+        remote.startsWith("127.");
+      if (isLoopback) return next();
+
       const header = c.req.header("authorization") ?? "";
       const match = /^Bearer\s+(.+)$/i.exec(header.trim());
       const provided = match?.[1] ?? "";
