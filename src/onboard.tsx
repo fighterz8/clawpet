@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import "./styles.css";
 import "./onboard.css";
 
@@ -26,6 +27,15 @@ async function fetchJson(url: string, init?: RequestInit) {
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
   return <button className="ob-copy" onClick={() => { void navigator.clipboard.writeText(text); setCopied(true); window.setTimeout(() => setCopied(false), 1200); }}>{copied ? "Copied" : "Copy"}</button>;
+}
+
+async function hideSetupWindow() {
+  try {
+    await getCurrentWindow().hide();
+  } catch {
+    // Browser/dev fallback: avoid window.close(), which can blank the webview.
+    document.body.classList.add("ob-hidden");
+  }
 }
 
 function OnboardApp() {
@@ -90,7 +100,7 @@ function OnboardApp() {
         <div>
           <p className="ob-eyebrow">Clawpet setup</p>
           <h1>A tiny desktop pet for OpenClaw.</h1>
-          <p className="ob-muted">The app is becoming the installer: it starts the local runtime, shows connection status, gives OpenClaw a pair code, and keeps the command-line pieces out of the normal user path.</p>
+          <p className="ob-muted">The app starts the local runtime, shows connection status, gives OpenClaw a pair code when needed, and then gets out of the way.</p>
         </div>
       </section>
 
@@ -98,7 +108,7 @@ function OnboardApp() {
         <div className="ob-row">
           <div>
             <h2>1. Runtime</h2>
-            <p className="ob-muted">The local runtime powers the pet and pairing.</p>
+            <p className="ob-muted">The local runtime powers the pet, reconnect, and pairing.</p>
           </div>
           <span className={`ob-pill ${runtimeOnline ? "ob-pill--ok" : "ob-pill--bad"}`}>{runtimeOnline ? "online" : "offline"}</span>
         </div>
@@ -111,9 +121,9 @@ function OnboardApp() {
         <section className="ob-card ob-complete">
           <div>
             <h2>Connected — setup complete</h2>
-            <p className="ob-muted">The pet is ready. Closing this setup window will keep Clawpet running in the tray.</p>
+            <p className="ob-muted">The pet is ready. You do not need another pair code — just start chatting with OpenClaw. Closing setup keeps Clawpet running in the tray.</p>
           </div>
-          <button className="ob-primary" onClick={() => window.close()}>Close setup</button>
+          <button className="ob-primary" onClick={() => void hideSetupWindow()}>Close setup</button>
         </section>
       )}
 
@@ -121,7 +131,7 @@ function OnboardApp() {
         <div className="ob-row">
           <div>
             <h2>2. Pair with OpenClaw</h2>
-            <p className="ob-muted">Open pair mode, then send the code to your OpenClaw assistant.</p>
+            <p className="ob-muted">Only use this if the pet is yellow/not responding or this is the first connection. If you have paired before, start chatting first — OpenClaw should reconnect automatically.</p>
           </div>
           <button className="ob-primary" disabled={!runtimeOnline || busy} onClick={() => void startPairMode()}>{busy ? "Opening…" : "Show pair code"}</button>
         </div>
