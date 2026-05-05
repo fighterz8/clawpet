@@ -17,6 +17,7 @@ type RuntimeStatus = {
 
 type PairMode = { active: boolean; code?: string; expiresAt?: number; runtimeUrl?: string };
 type ClawpetStatus = { connected?: boolean; lastEventAt?: string | null; avatar?: { state?: string; bubble?: string; avatarId?: string; bundleVersion?: string } };
+type BundleManifest = { name?: string; version?: string; states?: Record<string, unknown> };
 
 async function fetchJson(url: string, init?: RequestInit) {
   const res = await fetch(url, init);
@@ -46,7 +47,9 @@ function OnboardApp() {
   const [runtimeError, setRuntimeError] = useState<string | null>(null);
   const [pair, setPair] = useState<PairMode>({ active: false });
   const [status, setStatus] = useState<ClawpetStatus | null>(null);
+  const [bundleManifest, setBundleManifest] = useState<BundleManifest | null>(null);
   const [busy, setBusy] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   async function refresh() {
     try {
@@ -61,6 +64,12 @@ function OnboardApp() {
         const s = await fetchJson(`${RUNTIME_URL}/status`) as ClawpetStatus;
         setStatus(s);
       } catch { /* ignore */ }
+      try {
+        const m = await fetchJson(`${RUNTIME_URL}/avatar-bundle/current/avatar.json`) as BundleManifest;
+        setBundleManifest(m);
+      } catch {
+        setBundleManifest(null);
+      }
     } catch (e) {
       setHealth(null);
       setStatus(null);
@@ -90,6 +99,28 @@ function OnboardApp() {
     }
   }
 
+  async function refreshNow() {
+    setRefreshing(true);
+    try {
+      await refresh();
+    } finally {
+      window.setTimeout(() => setRefreshing(false), 250);
+    }
+  }
+
+  async function cancelPairMode() {
+    setBusy(true);
+    try {
+      await fetchJson(`${RUNTIME_URL}/admin/pair-mode/cancel`, { method: "POST" });
+      setPair({ active: false });
+      await refresh();
+    } catch (e) {
+      setRuntimeError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const groupedCode = pair.code ? `${pair.code.slice(0, 3)} · ${pair.code.slice(3)}` : "—";
   const displayHost = health?.displayHost || "<display-host>";
   const hostArg = displayHost.includes(":") ? displayHost : `${displayHost}:8737`;
@@ -112,6 +143,9 @@ function OnboardApp() {
   }, [status?.lastEventAt]);
   const avatarState = status?.avatar?.state ?? "unknown";
   const avatarBubble = status?.avatar?.bubble ?? "—";
+  const runtimeAvatarId = status?.avatar?.avatarId ?? bundleManifest?.name ?? "unknown";
+  const runtimeBundleVersion = status?.avatar?.bundleVersion ?? bundleManifest?.version ?? "—";
+  const runtimeBundleStateCount = bundleManifest?.states ? Object.keys(bundleManifest.states).length : 0;
 
   return (
     <main className="ob-shell">
@@ -137,11 +171,20 @@ function OnboardApp() {
         {runtimeOnline && !appOwnedRuntime && <div className="ob-warn">A runtime is already using port 8737, but it is not the packaged desktop-app runtime. This is okay for development, but packaged installs should show <strong>desktop app runtime</strong>. Quit stale dev runtimes if setup behaves strangely.</div>}
         {runtimeOnline && <div className={openClawReady ? "ob-ok" : "ob-warn"}>{openClawConnected ? (hasOpenClawActivity ? "OpenClaw is connected and has sent activity. You can close setup and leave the pet running." : "OpenClaw is connected. Waiting for the first avatar activity, but setup is complete if the indicator is green.") : "Runtime is online, but OpenClaw has not connected yet. Show a pair code if the pet is not responding."}</div>}
         {runtimeOnline && (
-          <div className="ob-diagnostics" aria-label="Current avatar diagnostics">
-            <div><span>Avatar</span><strong>{avatarState}</strong></div>
-            <div><span>Bubble</span><strong>{avatarBubble}</strong></div>
-            <div><span>Last event</span><strong>{lastEventAge ?? "none yet"}</strong></div>
-          </div>
+          <>
+            <div className="ob-actions">
+              <button className="ob-secondary" disabled={refreshing} onClick={() => void refreshNow()}>{refreshing ? "Refreshing…" : "Refresh avatar / status"}</button>
+            </div>
+            <div className="ob-diagnostics ob-diagnostics--wide" aria-label="Current avatar diagnostics">
+              <div><span>Avatar state</span><strong>{avatarState}</strong></div>
+              <div><span>Avatar id</span><strong>{runtimeAvatarId}</strong></div>
+              <div><span>Bundle version</span><strong>{runtimeBundleVersion}</strong></div>
+              <div><span>Bundle states</span><strong>{runtimeBundleStateCount || "none"}</strong></div>
+              <div><span>Bubble</span><strong>{avatarBubble}</strong></div>
+              <div><span>Last event</span><strong>{lastEventAge ?? "none yet"}</strong></div>
+            </div>
+            {!bundleManifest && <div className="ob-warn">No runtime avatar bundle is currently stored on the runtime. If the pet is still showing an old avatar, you are likely seeing a local/dev fallback rather than a successfully pushed bundle.</div>}
+          </>
         )}
         {runtimeError && <p className="ob-error">{runtimeError}</p>}
       </section>
@@ -162,9 +205,12 @@ function OnboardApp() {
             <h2>2. Pair with OpenClaw</h2>
             <p className="ob-muted">Only use this if the pet is yellow/not responding or this is the first connection. If the indicator is green, setup is complete even if no chat activity has arrived yet.</p>
           </div>
-          <button className="ob-primary" disabled={!runtimeOnline || busy} onClick={() => void startPairMode()}>{busy ? "Opening…" : openClawReady ? "Re-pair / repair" : "Show pair code"}</button>
+          <div className="ob-button-row">
+            <button className="ob-primary ob-primary--pair" disabled={!runtimeOnline || busy} onClick={() => void startPairMode()}>{busy ? "Opening…" : openClawReady ? "Repair connection" : "Show pair code"}</button>
+            {pair.active && <button className="ob-secondary" disabled={busy} onClick={() => void cancelPairMode()}>Cancel</button>}
+          </div>
         </div>
-        {openClawReady && !pair.active && !pair.code && <div className="ob-ok">Already connected — no pair code needed. Use this section only to repair a stale/yellow connection or after clearing tokens.</div>}
+        {openClawReady && !pair.active && !pair.code && <div className="ob-ok">Already connected — no pair code needed. Use this section only to repair a stale/yellow connection, after clearing tokens, or when avatar sync looks stuck.</div>}
         <div className="ob-codebox">
           <span>Pair code</span>
           <strong>{groupedCode}</strong>
@@ -192,6 +238,7 @@ function OnboardApp() {
           <li>Saves the runtime token on both sides so reopening Clawpet reconnects automatically.</li>
           <li>Starts the zero-token daemon.</li>
           <li>Pushes avatar assets/config over the paired connection.</li>
+          <li>The setup diagnostics above should show the runtime's current avatar id and bundle version after a successful push.</li>
         </ul>
       </section>
     </main>
