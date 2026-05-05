@@ -1,7 +1,7 @@
 {
   "schemaVersion": "0.5.0",
   "name": "Dawn Jade",
-  "version": "0.1.0-preset",
+  "version": "0.2.0-animated",
   "description": "Soft jade-and-gold Dawn preset.",
   "defaultState": "idle",
   "states": {
@@ -18,24 +18,59 @@
       "fallbackAsset": "assets/idle.png"
     },
     "thinking": {
-      "asset": "assets/thinking.png",
-      "animation": "pulse"
+      "frames": [
+        "frames/thinking-00.png",
+        "frames/thinking-01.png",
+        "frames/thinking-02.png",
+        "frames/thinking-03.png"
+      ],
+      "fps": 4,
+      "loop": true,
+      "fallbackAsset": "assets/thinking.png"
     },
     "focused": {
-      "asset": "assets/focused.png",
-      "animation": "bob"
+      "frames": [
+        "frames/focused-00.png",
+        "frames/focused-01.png",
+        "frames/focused-02.png",
+        "frames/focused-03.png"
+      ],
+      "fps": 4,
+      "loop": true,
+      "fallbackAsset": "assets/focused.png"
     },
     "happy": {
-      "asset": "assets/happy.png",
-      "animation": "bounce"
+      "frames": [
+        "frames/happy-00.png",
+        "frames/happy-01.png",
+        "frames/happy-02.png",
+        "frames/happy-03.png"
+      ],
+      "fps": 5,
+      "loop": true,
+      "fallbackAsset": "assets/happy.png"
     },
     "alert": {
-      "asset": "assets/alert.png",
-      "animation": "shake"
+      "frames": [
+        "frames/alert-00.png",
+        "frames/alert-01.png",
+        "frames/alert-02.png",
+        "frames/alert-03.png"
+      ],
+      "fps": 6,
+      "loop": true,
+      "fallbackAsset": "assets/alert.png"
     },
     "sleepy": {
-      "asset": "assets/sleepy.png",
-      "animation": "slowBlink"
+      "frames": [
+        "frames/sleepy-00.png",
+        "frames/sleepy-01.png",
+        "frames/sleepy-02.png",
+        "frames/sleepy-03.png"
+      ],
+      "fps": 3,
+      "loop": true,
+      "fallbackAsset": "assets/sleepy.png"
     }
   }
 }
