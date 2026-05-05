@@ -32,26 +32,23 @@ curl -fsSL https://raw.githubusercontent.com/fighterz8/clawpet/main/scripts/inst
 irm https://raw.githubusercontent.com/fighterz8/clawpet/main/scripts/install-windows.ps1 | iex
 ```
 
-The installer clones the repo into `~/clawpet`, installs deps, ensures Rust + (on Windows) MSVC C++ Build Tools, generates a per-machine auth token, auto-detects your Tailscale hostname if you have one, and prints the exact `clawpet pair --url … --token …` command for the OpenClaw side.
-
 Then start the runtime and the overlay (two terminals):
 
 ```bash
-# terminal 1 — runtime (loopback only is fine for same-machine OpenClaw)
-cd ~/clawpet
-npm run runtime:dev
+# terminal 1 — runtime
+cd ~/clawpet && npm run runtime:dev
 
 # terminal 2 — desktop overlay
 npm run desktop:dev
 ```
 
-Cross-machine? Bind the runtime to your network interface and let Tailscale do the transport:
+Cross-machine? Bind to your network interface and let Tailscale do the transport:
 
 ```bash
 CLAWPET_RUNTIME_HOST=0.0.0.0 CLAWPET_RUNTIME_PORT=8737 npm run runtime:dev
 ```
 
-> When the runtime is **not** on `127.0.0.1`, it requires a bearer token. The token is auto-generated on first boot and stored at `~/.openclaw/clawpet/runtime-token` (mode `0600`).
+> Loopback (`127.0.0.1`) is trusted; non-loopback requires a bearer token. The token is auto-generated on first boot at `~/.openclaw/clawpet/runtime-token` (mode `0600`).
 
 ### 2. On the OpenClaw side
 
@@ -64,25 +61,58 @@ ln -sf ~/clawpet/skills/clawpet ~/.openclaw/skills/clawpet 2>/dev/null \
   || ln -sf ~/clawpet/skills/clawpet ~/.openclaw/workspace/skills/clawpet
 ```
 
-Pair with the target's runtime (the installer printed this exact line):
+### 3. Pair the two machines (Plex/Spotify-style 6-digit code)
+
+On the **target** (the machine running the avatar), open a pair window:
 
 ```bash
-clawpet pair --url http://<target-tailnet-hostname>:8737 --token <hex-token>
+clawpet pair-mode
 ```
+
+It prints a banner with a 6-digit code:
+
+```
+  ┌─────────────────────────────────────────────┐
+  │   Pair code:    472 · 091                   │
+  │   Runtime:      http://127.0.0.1:8737       │
+  │   Expires in:   90 s                        │
+  └─────────────────────────────────────────────┘
+
+  On your OpenClaw machine, run:
+    clawpet pair --code 472091 --host <this-machine-hostname>:8737
+```
+
+On the **OpenClaw machine**, run that command. The runtime rotates the bearer token, sends it back over the same connection, and the CLI saves it to `~/.openclaw/clawpet/config.json`. Pair window closes automatically. No copy-pasting tokens, no editing config files.
+
+> Security: 90-second window, 3 attempts before lockout, 1-second rate limit, timing-safe comparison, public endpoint never reveals the code, returns 404 (not 401) once closed so external scanners can't fingerprint state.
 
 Verify:
 
 ```bash
-clawpet ping     # public, just confirms the runtime is alive
-clawpet status   # auth-required, returns paired source + current state
+clawpet ping     # public — runtime alive?
+clawpet status   # authed — current state + paired source
 clawpet send happy "It works" --bubble "Hello! 🐲" --quiet
 ```
 
-The avatar should pop into `happy` and decay back to `idle` on its own a few seconds later.
+### 4. Start the live tracker daemon (recommended)
+
+This is what makes Dawn actually feel alive — a sidecar that tails OpenClaw's session log and mirrors what the assistant is currently doing in real time, with **zero LLM involvement and zero token cost**:
+
+```bash
+clawpet daemon start    # starts in background, logs to ~/.openclaw/clawpet/daemon.log
+clawpet daemon status   # check it's running
+clawpet daemon stop
+```
+
+The daemon watches `~/.openclaw/agents/main/sessions/<id>.jsonl`, the structured event stream OpenClaw writes for every turn. It maps tool calls → `focused`, errors → `alert`, completion → `happy`, etc. With the daemon running, the avatar reacts continuously and accurately throughout your conversation. The semantic emit commands (next section) are still useful for the LLM to express explicit beats, but the daemon handles the heavy lifting on its own.
 
 ## How OpenClaw drives the avatar
 
-The skill exposes two emit verbs:
+There are **two layers**, in order of priority:
+
+**Layer 1 — the daemon (automatic, free).** Tails the session JSONL, emits states for every tool call / error / completion. No model involvement.
+
+**Layer 2 — semantic emits from the LLM (optional flavor).** Two CLI verbs:
 
 | Command | Use it for |
 | ------- | ---------- |
@@ -124,7 +154,14 @@ Emits are tiny HTTP POSTs — the only cost is the LLM tool call that issues the
 | `expressive`  | 100–400                            |
 | `maximum`     | 200–600                            |
 
-The runtime auto-decays state on its own (active → idle after 8s, idle → sleepy after 5min). That animation is **free** — pure local computation, no LLM involvement, no token cost.
+## Decay rules
+
+The runtime computes effective state lazily on every read. No timers, no LLM cost.
+
+- **Active states (`thinking`, `focused`, `alert`) persist forever** until a new event arrives. The avatar reflects what OpenClaw is *currently* doing, not what it did 8 seconds ago.
+- **`happy` is terminal** — it lingers 8s after being set, then reverts to `idle`. (Configurable via `terminalLingerMs`.)
+- **`idle` drifts to `sleepy` after 5 minutes** of no events. (Configurable via `sleepyAfterMs`.)
+- **Bubble captions are sticky.** The caption under the avatar stays put until a new event sets a new caption — even if the avatar goes idle, the last meaningful thing OpenClaw was doing is still readable. The only thing that replaces a bubble is another bubble.
 
 ## Multi-avatar
 
@@ -186,8 +223,10 @@ Every new sprite must follow [`docs/clawpet-style-guide.md`](docs/clawpet-style-
 **Auth model:**
 
 - `127.0.0.1` (loopback): trusted, no token needed. Local desktop overlay always works.
-- Anything else (LAN / Tailscale / `0.0.0.0`): token required on every request except `GET /health`.
-- Token lives at `~/.openclaw/clawpet/runtime-token` and can be rotated in-place with `clawpet rotate-token`.
+- Anything else (LAN / Tailscale / `0.0.0.0`): token required on every request except `GET /health`, `GET /pair-mode`, and `POST /pair/claim` (the last two are public *only* while pair mode is active).
+- Token lives at `~/.openclaw/clawpet/runtime-token` and can be rotated:
+  - In-place from a paired client: `clawpet rotate-token`.
+  - From scratch via the magic-pair flow: `clawpet pair-mode` on the target, `clawpet pair --code … --host …` on the OpenClaw side. This is also the only way to recover from a lost token without ssh access to the target.
 
 ## Documentation
 
@@ -200,7 +239,7 @@ Every new sprite must follow [`docs/clawpet-style-guide.md`](docs/clawpet-style-
 
 ## Status & non-goals
 
-**Working:** transparent draggable overlay, system tray, six-state pixel sprites, runtime auth, decay, semantic reactions, activity gating, heartbeat opt-in, Tailscale-native cross-machine projection, multi-avatar bundles.
+**Working:** transparent draggable overlay, system tray, six-state pixel sprites (Dawn pack v0.4.0 with proportion/palette-coherent regen of `idle` and `thinking`), runtime auth, lazy state decay with sticky bubbles, semantic reactions, activity gating, heartbeat opt-in, **Plex/Spotify-style 6-digit pair flow**, **session-JSONL daemon for automatic real-time reactivity**, Tailscale-native cross-machine projection, multi-avatar bundles.
 
 **Not yet:**
 - Signed binary releases (currently install via `git + npm + tauri`).

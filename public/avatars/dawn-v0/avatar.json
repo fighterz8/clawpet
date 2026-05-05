@@ -1,8 +1,8 @@
 {
   "schemaVersion": "0.1.0",
   "name": "Dawn",
-  "version": "0.3.0",
-  "description": "Pixel-art Dawn (baby AGI dragon familiar). Generated with the locked Clawpet style guide v1.",
+  "version": "0.4.0",
+  "description": "Pixel-art Dawn (baby AGI dragon familiar). Generated with the locked Clawpet style guide v1. [v0.4.0: regenerated idle and thinking via image-edit pipeline for proportion/palette consistency]",
   "defaultState": "idle",
   "states": {
     "idle": {

@@ -24,7 +24,11 @@ export type RuntimeStateStoreOptions = {
   terminalLingerMs?: number;
   /** ms after going idle before transitioning to sleepy. Default 5min. 0 disables. */
   sleepyAfterMs?: number;
-  /** ms after last event before bubble caption clears. Default 12s. 0 disables (bubble persists with state). */
+  /**
+   * Deprecated. Bubbles are sticky now — they only change when a new event sets
+   * a new bubble. The option is retained for backward compatibility but is
+   * ignored by the store. Kept only so existing test fixtures still type-check.
+   */
   bubbleTtlMs?: number;
 };
 
@@ -45,7 +49,6 @@ export class RuntimeStateStore {
   private events: RuntimeEventLogEntry[] = [];
   private readonly terminalLingerMs: number;
   private readonly sleepyAfterMs: number;
-  private readonly bubbleTtlMs: number;
   private lastBubble?: string;
 
   constructor(options: RuntimeStateStoreOptions = {}) {
@@ -58,7 +61,6 @@ export class RuntimeStateStore {
     this.now = options.now ?? (() => new Date());
     this.terminalLingerMs = options.terminalLingerMs ?? 8000;
     this.sleepyAfterMs = options.sleepyAfterMs ?? 5 * 60 * 1000;
-    this.bubbleTtlMs = options.bubbleTtlMs ?? 12000;
   }
 
   applyEvent(event: AvatarStateEvent): RuntimeEventLogEntry {
@@ -114,17 +116,13 @@ export class RuntimeStateStore {
   }
 
   /**
-   * Bubble caption with TTL. Empty when:
-   * - bubble TTL elapsed since last event, OR
-   * - effective state has decayed to idle/sleepy (caption no longer relevant).
+   * Bubble caption is sticky: once set, it stays under the avatar until a new
+   * event sets a new bubble. It does not auto-clear on TTL or on idle.
+   * The caption represents the latest meaningful thing OpenClaw was doing,
+   * which is still useful even when the avatar has gone idle.
    */
   private effectiveBubble(): string | undefined {
-    if (this.lastEventAtMs == null || !this.lastBubble) return undefined;
-    const eff = this.effectiveState();
-    if (eff === "idle" || eff === "sleepy") return undefined;
-    const elapsed = this.now().getTime() - this.lastEventAtMs;
-    if (this.bubbleTtlMs > 0 && elapsed >= this.bubbleTtlMs) return undefined;
-    return this.lastBubble;
+    return this.lastBubble || undefined;
   }
 
   getStatus(): ClawpetStatus {

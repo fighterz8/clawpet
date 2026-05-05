@@ -142,13 +142,12 @@ describe("runtime API", () => {
     expect((await (await app.request("/status")).json()).avatar.state).toBe("sleepy");
   });
 
-  it("clears bubble after bubbleTtlMs even if state persists", async () => {
+  it("keeps the bubble sticky across state changes until replaced", async () => {
     let nowMs = Date.parse("2026-05-04T19:30:01.000Z");
     const store = new RuntimeStateStore({
       now: () => new Date(nowMs),
       terminalLingerMs: 8000,
       sleepyAfterMs: 60000,
-      bubbleTtlMs: 5000,
     });
     const app = createRuntimeApp({ store });
 
@@ -158,10 +157,16 @@ describe("runtime API", () => {
     });
     expect((await (await app.request("/status")).json()).avatar.bubble).toBe("Working…");
 
-    nowMs += 6000; // past bubbleTtlMs but state still focused
-    const after = (await (await app.request("/status")).json()).avatar;
-    expect(after.state).toBe("focused");
-    expect(after.bubble).toBeUndefined();
+    // 30s later, no new event — bubble still there because it's sticky.
+    nowMs += 30000;
+    expect((await (await app.request("/status")).json()).avatar.bubble).toBe("Working…");
+
+    // New event with new bubble replaces it.
+    await app.request("/avatar/state", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...event, state: "happy", bubble: "Done!", sentAt: new Date(nowMs).toISOString() }),
+    });
+    expect((await (await app.request("/status")).json()).avatar.bubble).toBe("Done!");
   });
 
   it("rotates the auth token via /admin/rotate-token", async () => {
