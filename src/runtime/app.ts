@@ -205,6 +205,8 @@ export function createRuntimeApp(options: CreateRuntimeAppOptions = {}) {
     return c.json({ ok: true, token: newToken });
   });
 
+  app.get("/auth/check", (c) => c.json({ ok: true, authenticated: true }));
+
   app.post("/admin/pair-mode/start", async (c) => {
     let durationMs = PAIR_MODE_DEFAULT_MS;
     try {

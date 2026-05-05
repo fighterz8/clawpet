@@ -16,6 +16,8 @@ h2 { margin-bottom: 6px; font-size: 18px; }
 .ob-primary, .ob-copy { border: 0; border-radius: 999px; padding: 10px 14px; font-weight: 800; cursor: pointer; color: #150d22; background: #f3dcff; }
 .ob-primary:disabled { opacity: .5; cursor: not-allowed; }
 .ob-warn { margin-top: 14px; border: 1px solid rgba(255,205,100,.25); background: rgba(255,205,100,.09); color: #ffe0a6; border-radius: 14px; padding: 12px; line-height: 1.45; }
+.ob-ok { margin-top: 14px; border: 1px solid rgba(72,255,176,.25); background: rgba(72,255,176,.09); color: #a7ffd1; border-radius: 14px; padding: 12px; line-height: 1.45; }
+.ob-complete { display: flex; align-items: center; justify-content: space-between; gap: 16px; border-color: rgba(72,255,176,.28); background: rgba(72,255,176,.08); }
 .ob-error { margin: 12px 0 0; color: #ffb0b0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
 .ob-codebox { margin: 16px 0 12px; display: grid; place-items: center; border-radius: 18px; padding: 18px; background: rgba(0,0,0,.28); border: 1px solid rgba(255,255,255,.10); }
 .ob-codebox span { color: #cfc8db; font-size: 12px; text-transform: uppercase; letter-spacing: .12em; }

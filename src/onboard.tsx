@@ -12,6 +12,7 @@ type RuntimeStatus = {
 };
 
 type PairMode = { active: boolean; code?: string; expiresAt?: number; runtimeUrl?: string };
+type ClawpetStatus = { connected?: boolean; lastEventAt?: string | null; avatar?: { state?: string; bubble?: string } };
 
 async function fetchJson(url: string, init?: RequestInit) {
   const res = await fetch(url, init);
@@ -31,6 +32,7 @@ function OnboardApp() {
   const [health, setHealth] = useState<RuntimeStatus | null>(null);
   const [runtimeError, setRuntimeError] = useState<string | null>(null);
   const [pair, setPair] = useState<PairMode>({ active: false });
+  const [status, setStatus] = useState<ClawpetStatus | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function refresh() {
@@ -42,8 +44,13 @@ function OnboardApp() {
         const p = await fetchJson(`${RUNTIME_URL}/pair-mode`) as PairMode;
         setPair((prev) => ({ ...p, code: p.code ?? (p.active ? prev.code : undefined) }));
       } catch { /* ignore */ }
+      try {
+        const s = await fetchJson(`${RUNTIME_URL}/status`) as ClawpetStatus;
+        setStatus(s);
+      } catch { /* ignore */ }
     } catch (e) {
       setHealth(null);
+      setStatus(null);
       setRuntimeError(e instanceof Error ? e.message : String(e));
     }
   }
@@ -73,6 +80,7 @@ function OnboardApp() {
   const groupedCode = pair.code ? `${pair.code.slice(0, 3)} · ${pair.code.slice(3)}` : "—";
   const openClawCommand = pair.code ? `clawpet wizard openclaw --code ${pair.code} --host <this-display-machine>:8737` : "clawpet wizard openclaw --code <code> --host <display-host>:8737";
   const runtimeOnline = Boolean(health?.ok);
+  const openClawReady = Boolean(status?.lastEventAt);
   const expiresIn = useMemo(() => pair.expiresAt ? Math.max(0, Math.round((pair.expiresAt - Date.now()) / 1000)) : null, [pair.expiresAt, pair.active]);
 
   return (
@@ -95,8 +103,19 @@ function OnboardApp() {
           <span className={`ob-pill ${runtimeOnline ? "ob-pill--ok" : "ob-pill--bad"}`}>{runtimeOnline ? "online" : "offline"}</span>
         </div>
         {!runtimeOnline && <div className="ob-warn">Runtime is not reachable yet. In dev builds the app tries to start it automatically; if this stays offline, run <code>npm run runtime:tailscale</code> as a fallback.</div>}
+        {runtimeOnline && <div className={openClawReady ? "ob-ok" : "ob-warn"}>{openClawReady ? "OpenClaw has authenticated with this runtime. You can close setup and leave the pet running." : "Runtime is online, but OpenClaw has not authenticated yet. Show a pair code if the pet is not responding."}</div>}
         {runtimeError && <p className="ob-error">{runtimeError}</p>}
       </section>
+
+      {openClawReady && (
+        <section className="ob-card ob-complete">
+          <div>
+            <h2>Connected — setup complete</h2>
+            <p className="ob-muted">The pet is ready. Closing this setup window will keep Clawpet running in the tray.</p>
+          </div>
+          <button className="ob-primary" onClick={() => window.close()}>Close setup</button>
+        </section>
+      )}
 
       <section className="ob-card">
         <div className="ob-row">

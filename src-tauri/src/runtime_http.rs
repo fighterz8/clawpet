@@ -242,6 +242,10 @@ fn route(method: &str, path: &str, headers: &HashMap<String, String>, body: &str
 
   if !authorized(headers, &state) { return response(401, json!({"ok":false,"errors":["authentication required"]})); }
 
+  if method == "GET" && path == "/auth/check" {
+    return response(200, json!({ "ok": true, "authenticated": true }));
+  }
+
   if method == "POST" && path == "/admin/rotate-token" {
     let mut s = state.lock().unwrap();
     s.token = random_string(64);

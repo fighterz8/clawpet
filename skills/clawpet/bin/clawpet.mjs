@@ -233,7 +233,16 @@ async function cmdStatus() {
   const url = resolveRuntimeUrl();
   try {
     const r = await http("GET", `${url}/status`);
-    console.log(JSON.stringify(r.body, null, 2));
+    const body = r.body && typeof r.body === "object" ? { ...r.body } : r.body;
+    if (r.ok && body && typeof body === "object" && resolveRuntimeToken()) {
+      try {
+        const auth = await http("GET", `${url}/auth/check`);
+        body.openClawAuth = auth.ok ? "ready" : "invalid-token";
+      } catch {
+        body.openClawAuth = "unknown";
+      }
+    }
+    console.log(JSON.stringify(body, null, 2));
     process.exit(r.ok ? 0 : 2);
   } catch (e) { fail(`runtime unreachable at ${url}: ${e.message}`, 2); }
 }
