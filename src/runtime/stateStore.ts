@@ -116,12 +116,16 @@ export class RuntimeStateStore {
   }
 
   /**
-   * Bubble caption is sticky: once set, it stays under the avatar until a new
-   * event sets a new bubble. It does not auto-clear on TTL or on idle.
-   * The caption represents the latest meaningful thing OpenClaw was doing,
-   * which is still useful even when the avatar has gone idle.
+   * Bubble caption stays aligned with the avatar's effective state.
+   *
+   * Active/terminal states keep the latest meaningful caption until another
+   * event replaces it. Once the avatar decays back to idle/sleepy, the old
+   * work caption is no longer useful, so it becomes the simple state label
+   * "idle" instead of disappearing.
    */
   private effectiveBubble(): string | undefined {
+    const eff = this.effectiveState();
+    if (eff === "idle" || eff === "sleepy") return "idle";
     return this.lastBubble || undefined;
   }
 

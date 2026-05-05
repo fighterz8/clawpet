@@ -142,7 +142,7 @@ describe("runtime API", () => {
     expect((await (await app.request("/status")).json()).avatar.state).toBe("sleepy");
   });
 
-  it("keeps the bubble sticky across state changes until replaced", async () => {
+  it("keeps active bubbles sticky, then replaces terminal bubbles with idle", async () => {
     let nowMs = Date.parse("2026-05-04T19:30:01.000Z");
     const store = new RuntimeStateStore({
       now: () => new Date(nowMs),
@@ -157,16 +157,22 @@ describe("runtime API", () => {
     });
     expect((await (await app.request("/status")).json()).avatar.bubble).toBe("Working…");
 
-    // 30s later, no new event — bubble still there because it's sticky.
+    // Active focused state persists, so bubble persists too.
     nowMs += 30000;
     expect((await (await app.request("/status")).json()).avatar.bubble).toBe("Working…");
 
-    // New event with new bubble replaces it.
+    // Terminal happy keeps its useful completion bubble during the 8s linger.
     await app.request("/avatar/state", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...event, state: "happy", bubble: "Done!", sentAt: new Date(nowMs).toISOString() }),
     });
     expect((await (await app.request("/status")).json()).avatar.bubble).toBe("Done!");
+
+    // Once happy decays back to idle, replace the stale work caption with "idle".
+    nowMs += 9000;
+    const afterIdle = (await (await app.request("/status")).json()).avatar;
+    expect(afterIdle.state).toBe("idle");
+    expect(afterIdle.bubble).toBe("idle");
   });
 
   it("rotates the auth token via /admin/rotate-token", async () => {

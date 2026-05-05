@@ -2,7 +2,7 @@
 
 A pixel-art desktop companion for [OpenClaw](https://openclaw.ai). Your AI assistant gets a face: a small dragon (Dawn), slime (Pip), or any Clawpet you generate. Reacts to what OpenClaw is doing — thinking, working, alert, done — and quietly idles the rest of the time.
 
-> **Status:** v0.3, working end-to-end on Windows + macOS + Linux over local network or Tailscale. Bring your own OpenClaw.
+> **Status:** v0.4, working end-to-end on Windows + macOS + Linux over **Tailscale**. Bring your own OpenClaw.
 
 ![Dawn — six states](docs/screenshots/dawn-pip-comparison.png)
 
@@ -12,9 +12,13 @@ Three pieces working together:
 
 1. **A tiny local HTTP runtime** (`Hono` on Node, default `127.0.0.1:8737`) that holds the avatar's state.
 2. **A transparent always-on-top desktop overlay** (Tauri 2 + React + Vite) that polls the runtime and animates a pixel-art sprite for each state.
-3. **An OpenClaw skill** (`clawpet`) that lets the assistant emit semantic events (`react user-message`, `react done`, `react blocker`…) to the runtime over loopback or Tailscale, with bearer-token auth and user-controlled activity levels.
+3. **An OpenClaw skill + daemon** (`clawpet`) that tails OpenClaw's real session stream and sends state updates to the runtime.
 
 The avatar lives on **your desktop**. OpenClaw can run on the same machine, on your home server, or anywhere on your tailnet — whichever is convenient.
+
+### Why Tailscale matters right now
+
+The current cross-machine path is **Tailscale-first**. That's deliberate: most OpenClaw users run OpenClaw on a Linux box/server but want the pet on their daily-driver laptop or desktop. Tailscale gives Clawpet a private, encrypted, stable hostname like `gladriel.tailnet-name.ts.net` without exposing a public port or building a cloud relay. Localhost works for same-machine setups; Tailscale is the recommended path for everything else.
 
 ## Quickstart (≈3 minutes)
 
@@ -42,13 +46,19 @@ cd ~/clawpet && npm run runtime:dev
 npm run desktop:dev
 ```
 
-Cross-machine? Bind to your network interface and let Tailscale do the transport:
+Cross-machine? **Use Tailscale.** On the machine displaying the avatar, bind the runtime to the Tailscale-reachable interface:
 
 ```bash
 CLAWPET_RUNTIME_HOST=0.0.0.0 CLAWPET_RUNTIME_PORT=8737 npm run runtime:dev
 ```
 
-> Loopback (`127.0.0.1`) is trusted; non-loopback requires a bearer token. The token is auto-generated on first boot at `~/.openclaw/clawpet/runtime-token` (mode `0600`).
+Then pair from the OpenClaw host using the target's Tailscale hostname, for example:
+
+```bash
+clawpet pair --code 472091 --host gladriel.tailnet-name.ts.net:8737
+```
+
+> Loopback (`127.0.0.1`) is trusted; non-loopback/Tailscale requires a bearer token. The token is auto-generated on first boot at `~/.openclaw/clawpet/runtime-token` (mode `0600`) and is normally transferred via the 6-digit pair flow below.
 
 ### 2. On the OpenClaw side
 
@@ -161,7 +171,7 @@ The runtime computes effective state lazily on every read. No timers, no LLM cos
 - **Active states (`thinking`, `focused`, `alert`) persist forever** until a new event arrives. The avatar reflects what OpenClaw is *currently* doing, not what it did 8 seconds ago.
 - **`happy` is terminal** — it lingers 8s after being set, then reverts to `idle`. (Configurable via `terminalLingerMs`.)
 - **`idle` drifts to `sleepy` after 5 minutes** of no events. (Configurable via `sleepyAfterMs`.)
-- **Bubble captions are sticky.** The caption under the avatar stays put until a new event sets a new caption — even if the avatar goes idle, the last meaningful thing OpenClaw was doing is still readable. The only thing that replaces a bubble is another bubble.
+- **Bubbles track the current effective state.** Active/terminal states keep their useful caption (`Thinking…`, `Working on tests…`, `Done!`) until another event replaces it. When terminal `happy` decays back to `idle`, the stale work caption is replaced with the simple bubble text `idle` after 8s.
 
 ## Multi-avatar
 
@@ -191,7 +201,9 @@ VITE_CLAWPET_AVATAR_BUNDLE=pip-v0 npm run desktop:dev
 
 ### Generating a new Clawpet
 
-Every new sprite must follow [`docs/clawpet-style-guide.md`](docs/clawpet-style-guide.md) v1: pixel-art, 128×128 logical / 512×512 export, transparent background, limited palette, hard 1-px outline, cel shading, six required states (idle / thinking / focused / happy / alert / sleepy). The locked image-gen prompt template is in §7 of the style guide and **must** be used verbatim — only the subject, palette, and state get filled in. Pip's bundle was generated this way as a reference.
+Every new sprite must follow [`docs/clawpet-style-guide.md`](docs/clawpet-style-guide.md) v1: pixel-art, 128×128 logical / 512×512 export, transparent background, limited palette, hard 1-px outline, cel shading, six required states (idle / thinking / focused / happy / alert / sleepy).
+
+The exciting part: the pet can be generated from **your OpenClaw's identity** — its name, `SOUL.md`, persona notes, and preferred creature/vibe. Dawn is Nick's baby-AGI dragon familiar because that matches this OpenClaw's name and soul. Pip is a second generated bundle proving the pipeline isn't hardcoded to one mascot. The locked prompt template in §7 keeps those personalized pets visually coherent instead of becoming random one-off art.
 
 ## Architecture
 

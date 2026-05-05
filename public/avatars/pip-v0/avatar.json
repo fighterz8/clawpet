@@ -1,10 +1,9 @@
 {
-  "schemaVersion": "1.0.0",
-  "avatarId": "pip-v0",
-  "displayName": "Pip",
+  "schemaVersion": "0.1.0",
+  "name": "Pip",
   "version": "0.1.0",
   "description": "Cyan slime familiar — second test avatar to validate the multi-avatar pipeline.",
-  "license": "CC-BY-NC-4.0",
+  "defaultState": "idle",
   "states": {
     "idle":     { "asset": "assets/idle.png",     "animation": "breathe" },
     "thinking": { "asset": "assets/thinking.png", "animation": "bob" },
@@ -12,6 +11,5 @@
     "happy":    { "asset": "assets/happy.png",    "animation": "bounce" },
     "alert":    { "asset": "assets/alert.png",    "animation": "shake" },
     "sleepy":   { "asset": "assets/sleepy.png",   "animation": "slowBlink" }
-  },
-  "fallbackState": "idle"
+  }
 }

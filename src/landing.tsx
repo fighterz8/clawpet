@@ -113,14 +113,14 @@ function Landing() {
             <span className="lp-headline__accent">a tiny living face.</span>
           </h1>
           <p className="lp-lede">
-            A pixel-art desktop pet that reflects what OpenClaw is doing — thinking, working, blocked, done.
-            Floats over your desktop. Reacts in real time. Costs you almost nothing.
+            A pixel-art desktop pet generated from your OpenClaw's name, soul, and personality — then animated by what it's actually doing:
+            thinking, working, blocked, done. Floats over your desktop. Reacts in real time over Tailscale. Costs you almost nothing.
           </p>
           <div className="lp-cta">
             <a className="lp-btn lp-btn--primary" href="#install">Try it in 3 minutes</a>
             <a className="lp-btn lp-btn--ghost" href="https://github.com/fighterz8/clawpet" target="_blank" rel="noreferrer">View on GitHub</a>
           </div>
-          <p className="lp-foot-hint">Local-first · Tailscale-ready · MIT</p>
+          <p className="lp-foot-hint">Local-first · Tailscale-first for cross-machine setups · MIT</p>
         </Reveal>
 
         <Reveal delay={200}>
@@ -131,7 +131,7 @@ function Landing() {
       <section className="lp-section" id="how">
         <Reveal>
           <p className="lp-eyebrow">How it works</p>
-          <h2 className="lp-h2">Three small pieces. One little dragon.</h2>
+          <h2 className="lp-h2">Three small pieces. One personalized little familiar.</h2>
         </Reveal>
 
         <div className="lp-cards">
@@ -147,8 +147,8 @@ function Landing() {
           </article></Reveal>
           <Reveal delay={240}><article className="lp-card">
             <div className="lp-card__num">03</div>
-            <h3>OpenClaw skill</h3>
-            <p>Your assistant emits semantic reactions (<code>react user-message</code>, <code>react done</code>) — gated by <em>your</em> activity setting, not the LLM's mood.</p>
+            <h3>OpenClaw skill + daemon</h3>
+            <p>A sidecar tails OpenClaw's live session stream and mirrors real activity over Tailscale. Semantic reactions add optional flavor, gated by <em>your</em> activity setting.</p>
           </article></Reveal>
         </div>
       </section>
@@ -185,7 +185,7 @@ clawpet activity balanced`}</pre>
           <h2 className="lp-h2">Bring your own pixel familiar.</h2>
           <p className="lp-body">
             Each avatar is a folder of six PNGs (<code>idle</code>, <code>thinking</code>, <code>focused</code>, <code>happy</code>, <code>alert</code>, <code>sleepy</code>) plus an
-            <code> avatar.json</code> manifest. A locked style guide and prompt template keep new Clawpets visually coherent — Pip the slime below was generated with the same template as Dawn.
+            <code> avatar.json</code> manifest. The fun part is personalization: generate a familiar from your OpenClaw's <code>SOUL.md</code>, name, creature, and vibe. Dawn is a baby-AGI dragon because that's her soul; Pip proves the same pipeline can produce a totally different companion.
           </p>
         </Reveal>
         <div className="lp-stages">
@@ -229,8 +229,9 @@ clawpet activity balanced`}</pre>
           </Reveal>
           <Reveal delay={240}>
             <div className="lp-install-card">
-              <h3>3. Pair OpenClaw and say hi</h3>
-              <CopyButton label="OpenClaw" text="clawpet pair --url http://<host>:8737 --token <token>" />
+              <h3>3. Pair OpenClaw over Tailscale and say hi</h3>
+              <CopyButton label="target" text="clawpet pair-mode" />
+              <CopyButton label="OpenClaw" text="clawpet pair --code 472091 --host <tailscale-host>:8737" />
               <CopyButton label="OpenClaw" text='clawpet send happy "It works" --bubble "Hello! 🐲"' />
             </div>
           </Reveal>
@@ -242,8 +243,8 @@ clawpet activity balanced`}</pre>
           <p className="lp-eyebrow">Honest cost</p>
           <h2 className="lp-h2">Designed not to drain your token budget.</h2>
           <p className="lp-body">
-            The runtime auto-decays state on its own — active → idle after 8s, idle → sleepy after 5min — without involving the LLM. That entire animation loop is free.
-            Only emits cost tokens, and only when your activity level allows them.
+            The daemon reads OpenClaw's local session log and updates the pet with zero model calls. Runtime decay is also local: active states persist, terminal <code>happy</code> falls back to <code>idle</code> after 8s, and idle drifts sleepy after 5min.
+            Only optional semantic emits cost tokens, and only when your activity level allows them.
           </p>
         </Reveal>
         <Reveal delay={120}>
