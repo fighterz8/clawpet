@@ -1,9 +1,12 @@
 mod runtime_http;
 
 use std::{
-  process::{Child, Command, Stdio},
+  process::Child,
   sync::Mutex,
 };
+
+#[cfg(debug_assertions)]
+use std::process::{Command, Stdio};
 
 use tauri::{
   menu::{Menu, MenuItem},
