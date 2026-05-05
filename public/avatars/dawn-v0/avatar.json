@@ -1,15 +1,15 @@
 {
   "schemaVersion": "0.1.0",
-  "name": "Dawn (placeholder)",
-  "version": "0.1.0",
-  "description": "Placeholder Dawn avatar bundle. Real Dawn art lands in the generated asset pack.",
+  "name": "Dawn",
+  "version": "0.2.0",
+  "description": "Pixel-art Dawn (baby AGI dragon familiar). Generated with the locked Clawpet style guide v1.",
   "defaultState": "idle",
   "states": {
-    "idle":     { "asset": "assets/idle.svg",     "animation": "breathe",   "messageStyle": "quiet" },
-    "thinking": { "asset": "assets/thinking.svg", "animation": "pulse",     "messageStyle": "status" },
-    "focused":  { "asset": "assets/focused.svg",  "animation": "pulse",     "messageStyle": "status" },
-    "happy":    { "asset": "assets/happy.svg",    "animation": "bounce",    "messageStyle": "celebrate" },
-    "alert":    { "asset": "assets/alert.svg",    "animation": "shake",     "messageStyle": "attention" },
-    "sleepy":   { "asset": "assets/sleepy.svg",   "animation": "slowBlink", "messageStyle": "quiet" }
+    "idle":     { "asset": "assets/idle.png",     "animation": "breathe",   "messageStyle": "quiet" },
+    "thinking": { "asset": "assets/thinking.png", "animation": "pulse",     "messageStyle": "status" },
+    "focused":  { "asset": "assets/focused.png",  "animation": "pulse",     "messageStyle": "status" },
+    "happy":    { "asset": "assets/happy.png",    "animation": "bounce",    "messageStyle": "celebrate" },
+    "alert":    { "asset": "assets/alert.png",    "animation": "shake",     "messageStyle": "attention" },
+    "sleepy":   { "asset": "assets/sleepy.png",   "animation": "slowBlink", "messageStyle": "quiet" }
   }
 }
