@@ -1,3 +1,5 @@
+mod runtime_http;
+
 use std::{
   process::{Child, Command, Stdio},
   sync::Mutex,
@@ -53,12 +55,16 @@ pub fn run() {
         )?;
       }
 
+      runtime_http::start_runtime_server();
+
+      if std::env::var("CLAWPET_USE_NODE_RUNTIME").ok().as_deref() == Some("1") {
       if let Some(child) = spawn_dev_runtime() {
         if let Some(state) = app.try_state::<RuntimeChild>() {
           if let Ok(mut slot) = state.0.lock() {
             *slot = Some(child);
           }
         }
+      }
       }
 
       let show_hide = MenuItem::with_id(app, "show_hide", "Show / Hide", true, None::<&str>)?;
