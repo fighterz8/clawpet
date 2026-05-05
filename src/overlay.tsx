@@ -17,6 +17,7 @@ function OverlayApp() {
   const [state, setState] = useState<AvatarState>("idle");
   const [message, setMessage] = useState<string>("");
   const [online, setOnline] = useState(false);
+  const [lastEventAt, setLastEventAt] = useState<string | null>(null);
   const [bundle, setBundle] = useState<ResolvedAvatarBundle | null>(null);
 
   // Resolve avatar id: build-time env wins, else fetch from /status, else dawn-v0.
@@ -58,9 +59,11 @@ function OverlayApp() {
         const status = await s.json();
         setState(status.avatar.state);
         setMessage(status.avatar.bubble ?? "");
+        setLastEventAt(status.lastEventAt ?? null);
         setOnline(true);
       } catch {
         setOnline(false);
+        setLastEventAt(null);
       }
     }
     void refresh();
@@ -68,9 +71,17 @@ function OverlayApp() {
     return () => window.clearInterval(id);
   }, []);
 
+  const linkState = !online ? "offline" : lastEventAt ? "ready" : "waiting";
+  const linkLabel = linkState === "ready"
+    ? "OpenClaw connected — ready to receive commands"
+    : linkState === "waiting"
+      ? "Runtime online — waiting for an authenticated OpenClaw event"
+      : "Runtime offline";
+
   return (
     <main className="overlay-shell" data-tauri-drag-region>
-      <div className={`overlay-floating ${online ? "overlay-floating--online" : "overlay-floating--offline"}`} data-tauri-drag-region>
+      <div className={`overlay-floating overlay-floating--${linkState}`} data-tauri-drag-region>
+        <div className={`overlay-link-dot overlay-link-dot--${linkState}`} title={linkLabel} aria-label={linkLabel} />
         <BundleAvatar state={state} bundle={bundle} />
         {online && message && <div className="overlay-floating__bubble">{message}</div>}
         {!online && <div className="overlay-floating__bubble overlay-floating__bubble--warn">Start runtime: npm run runtime:dev</div>}
