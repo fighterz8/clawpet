@@ -5,6 +5,7 @@ import { loadAvatarBundle, type ResolvedAvatarBundle } from "./avatars/bundle";
 import "./styles.css";
 
 const BUILD_TIME_AVATAR = (import.meta as { env?: Record<string, string> }).env?.VITE_CLAWPET_AVATAR_BUNDLE;
+const DEV_DEFAULT_AVATAR = (import.meta as { env?: Record<string, string>; hot?: unknown }).env?.DEV ? "dawn-v2-preview" : undefined;
 const RUNTIME_URL = "http://127.0.0.1:8737";
 
 function BundleAvatar({ state, bundle }: { state: AvatarState; bundle: ResolvedAvatarBundle | null }) {
@@ -45,9 +46,18 @@ function OverlayApp() {
 
   async function refreshBundle(avatarId?: string, bundleVersion?: string) {
     const cacheKey = encodeURIComponent(bundleVersion || avatarId || String(Date.now()));
+    const fallbackAvatar = BUILD_TIME_AVATAR || DEV_DEFAULT_AVATAR || avatarId || "dawn-v0";
+
+    if (BUILD_TIME_AVATAR || DEV_DEFAULT_AVATAR) {
+      try {
+        const resolved = await loadAvatarBundle(`/avatars/${fallbackAvatar}`);
+        setBundle(resolved);
+        return;
+      } catch { /* if local preview bundle is unavailable, try runtime-served bundle below */ }
+    }
+
     try {
-      // Prefer the runtime-served bundle. This lets OpenClaw own avatar
-      // appearance/assets and push them to the target runtime over Tailscale.
+      // Prefer the runtime-served bundle unless a build-time avatar override is explicitly set.
       const resolved = await loadAvatarBundle(`${RUNTIME_URL}/avatar-bundle/current`);
       const withCacheBust: ResolvedAvatarBundle = {
         ...resolved,
@@ -62,7 +72,7 @@ function OverlayApp() {
       setBundle(withCacheBust);
       return;
     } catch { /* fall back to bundled static assets below */ }
-    const fallbackAvatar = BUILD_TIME_AVATAR || avatarId || "dawn-v0";
+
     try {
       const resolved = await loadAvatarBundle(`/avatars/${fallbackAvatar}`);
       setBundle(resolved);
