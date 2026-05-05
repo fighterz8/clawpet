@@ -1,3 +1,4 @@
+use base64::{engine::general_purpose::STANDARD, Engine as _};
 use rand::{distributions::Alphanumeric, Rng};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -47,6 +48,8 @@ struct RuntimeState {
   status: Status,
   token: String,
   pair_mode: Option<PairMode>,
+  bundle_manifest: Option<serde_json::Value>,
+  bundle_assets: HashMap<String, Vec<u8>>,
 }
 
 #[derive(Deserialize)]
@@ -55,6 +58,8 @@ struct PairStartBody { seconds: Option<u64> }
 struct PairClaimBody { code: String }
 #[derive(Deserialize)]
 struct AvatarEvent { state: String, bubble: Option<String>, message: Option<String> }
+#[derive(Deserialize)]
+struct AvatarBundleUpload { manifest: serde_json::Value, assets: HashMap<String, String> }
 
 fn now_ms() -> u128 { SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() }
 fn now_iso() -> String { format!("{}", now_ms()) }
@@ -76,6 +81,8 @@ pub fn start_runtime_server() {
       },
       token: random_string(64),
       pair_mode: None,
+      bundle_manifest: None,
+      bundle_assets: HashMap::new(),
     }));
 
     let listener = match TcpListener::bind("0.0.0.0:8737") {
@@ -108,10 +115,10 @@ fn handle_client(mut stream: TcpStream, state: Arc<Mutex<RuntimeState>>) {
   }).collect();
 
   let result = route(method, path, &headers, body, state);
-  let _ = stream.write_all(result.as_bytes());
+  let _ = stream.write_all(&result);
 }
 
-fn route(method: &str, path: &str, headers: &HashMap<String, String>, body: &str, state: Arc<Mutex<RuntimeState>>) -> String {
+fn route(method: &str, path: &str, headers: &HashMap<String, String>, body: &str, state: Arc<Mutex<RuntimeState>>) -> Vec<u8> {
   if method == "OPTIONS" { return response(204, json!({})); }
   if method == "GET" && path == "/health" {
     return response(200, json!({ "ok": true, "service": "clawpet-runtime", "version": "0.1.0", "authRequired": true, "runtime": "tauri-internal" }));
@@ -152,7 +159,55 @@ fn route(method: &str, path: &str, headers: &HashMap<String, String>, body: &str
     return response(200, serde_json::to_value(&s.status).unwrap());
   }
 
+  if method == "GET" && path == "/avatar-bundle/current/avatar.json" {
+    let s = state.lock().unwrap();
+    if let Some(m) = &s.bundle_manifest { return response(200, m.clone()); }
+    return response(404, json!({"ok":false,"errors":["no runtime avatar bundle has been uploaded"]}));
+  }
+
+  if method == "GET" && path.starts_with("/avatar-bundle/current/assets/") {
+    let name = path.trim_start_matches("/avatar-bundle/current/assets/");
+    if name.contains("..") || name.contains('/') || name.contains('\\') {
+      return response(400, json!({"ok":false,"errors":["invalid asset path"]}));
+    }
+    let key = format!("assets/{name}");
+    let s = state.lock().unwrap();
+    if let Some(bytes) = s.bundle_assets.get(&key) { return binary_response(200, "image/png", bytes); }
+    return response(404, json!({"ok":false,"errors":["asset not found"]}));
+  }
+
   if !authorized(headers, &state) { return response(401, json!({"ok":false,"errors":["authentication required"]})); }
+
+  if method == "POST" && path == "/admin/avatar-bundle" {
+    let upload = match serde_json::from_str::<AvatarBundleUpload>(body) {
+      Ok(u) => u,
+      Err(_) => return response(400, json!({"ok":false,"errors":["invalid avatar bundle upload"]})),
+    };
+    let mut decoded = HashMap::new();
+    for (asset_path, b64) in upload.assets.iter() {
+      if !asset_path.starts_with("assets/") || asset_path.contains("..") || !asset_path.ends_with(".png") {
+        return response(400, json!({"ok":false,"errors":[format!("invalid asset path: {asset_path}")]}));
+      }
+      let bytes = match STANDARD.decode(b64) {
+        Ok(b) => b,
+        Err(_) => return response(400, json!({"ok":false,"errors":[format!("invalid base64 asset: {asset_path}")]})),
+      };
+      if bytes.len() < 8 || &bytes[0..4] != b"\x89PNG" {
+        return response(400, json!({"ok":false,"errors":[format!("asset is not PNG: {asset_path}")]}));
+      }
+      decoded.insert(asset_path.clone(), bytes);
+    }
+    let avatar_id = upload.manifest.get("name").and_then(|v| v.as_str()).unwrap_or("uploaded").to_string();
+    let version = upload.manifest.get("version").and_then(|v| v.as_str()).unwrap_or("uploaded").to_string();
+    let mut s = state.lock().unwrap();
+    s.bundle_manifest = Some(upload.manifest);
+    s.bundle_assets = decoded;
+    s.status.avatar.avatar_id = avatar_id.clone();
+    s.status.avatar.bundle_version = version.clone();
+    s.status.last_event_at = Some(now_iso());
+    return response(200, json!({"ok":true,"avatarId":avatar_id,"bundleVersion":version,"assetCount":s.bundle_assets.len(),"status":s.status}));
+  }
+
   if method == "POST" && path == "/avatar/state" {
     let ev = match serde_json::from_str::<AvatarEvent>(body) { Ok(e) => e, Err(_) => return response(400, json!({"ok":false,"errors":["invalid avatar event"]})) };
     let mut s = state.lock().unwrap();
@@ -165,17 +220,27 @@ fn route(method: &str, path: &str, headers: &HashMap<String, String>, body: &str
   response(404, json!({"ok":false,"errors":["not found"]}))
 }
 
+fn binary_response(status: u16, content_type: &str, bytes: &[u8]) -> Vec<u8> {
+  let status_text = match status { 200 => "OK", _ => "Error" };
+  let mut head = format!(
+    "HTTP/1.1 {status} {status_text}\r\ncontent-type: {content_type}\r\naccess-control-allow-origin: *\r\ncache-control: no-store\r\ncontent-length: {}\r\nconnection: close\r\n\r\n",
+    bytes.len()
+  ).into_bytes();
+  head.extend_from_slice(bytes);
+  head
+}
+
 fn authorized(headers: &HashMap<String, String>, state: &Arc<Mutex<RuntimeState>>) -> bool {
   let Some(auth) = headers.get("authorization") else { return false; };
   let token = state.lock().unwrap().token.clone();
   auth.trim() == format!("Bearer {token}")
 }
 
-fn response(status: u16, body: serde_json::Value) -> String {
+fn response(status: u16, body: serde_json::Value) -> Vec<u8> {
   let status_text = match status { 200 => "OK", 204 => "No Content", 400 => "Bad Request", 401 => "Unauthorized", 403 => "Forbidden", 404 => "Not Found", _ => "Error" };
   let body = if status == 204 { String::new() } else { body.to_string() };
   format!(
     "HTTP/1.1 {status} {status_text}\r\ncontent-type: application/json\r\naccess-control-allow-origin: *\r\naccess-control-allow-methods: GET,POST,OPTIONS\r\naccess-control-allow-headers: content-type,authorization\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{}",
     body.len(), body
-  )
+  ).into_bytes()
 }

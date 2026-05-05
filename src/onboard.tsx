@@ -40,7 +40,7 @@ function OnboardApp() {
       setRuntimeError(null);
       try {
         const p = await fetchJson(`${RUNTIME_URL}/pair-mode`) as PairMode;
-        setPair(p);
+        setPair((prev) => ({ ...p, code: p.code ?? (p.active ? prev.code : undefined) }));
       } catch { /* ignore */ }
     } catch (e) {
       setHealth(null);
