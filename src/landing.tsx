@@ -23,19 +23,19 @@ const PRESET_SHOWCASE = [
 
 const DOWNLOADS = {
   windows: {
-    href: "https://github.com/fighterz8/clawpet/actions/workflows/desktop-build.yml",
-    label: "Download Windows (.exe/.msi)",
-    artifact: "artifact: clawpet-windows",
+    href: "https://github.com/fighterz8/clawpet/releases/latest",
+    label: "Download Windows (.msi preferred)",
+    artifact: "latest GitHub Release · prefer .msi, use .exe if needed",
   },
   macos: {
-    href: "https://github.com/fighterz8/clawpet/actions/workflows/desktop-build.yml",
+    href: "https://github.com/fighterz8/clawpet/releases/latest",
     label: "Download macOS (.dmg)",
-    artifact: "artifact: clawpet-macos",
+    artifact: "latest GitHub Release",
   },
   linux: {
-    href: "https://github.com/fighterz8/clawpet/actions/workflows/desktop-build.yml",
+    href: "https://github.com/fighterz8/clawpet/releases/latest",
     label: "Download Linux (.AppImage/.deb/.rpm)",
-    artifact: "artifact: clawpet-linux",
+    artifact: "latest GitHub Release",
   },
 } as const;
 
@@ -251,7 +251,7 @@ clawpet activity balanced`}</pre>
               <p className="lp-install-os">Linux</p>
               <a className="lp-btn lp-btn--ghost" href={DOWNLOADS.linux.href} target="_blank" rel="noreferrer">{DOWNLOADS.linux.label}</a>
               <p className="lp-install-artifact">{DOWNLOADS.linux.artifact}</p>
-              <p className="lp-install-note">Download the native Clawpet desktop app for your OS. This is the local app that creates the tray icon, starts the runtime on your display machine, shows the pair code, and gives OpenClaw something real to connect to and control.</p>
+              <p className="lp-install-note">Download the native Clawpet desktop app for your OS from the latest GitHub Release. On Windows, start with the <strong>.msi</strong> installer first; use the <strong>.exe</strong> only if you specifically want the NSIS build. This is the local app that creates the tray icon, starts the runtime on your display machine, shows the pair code, and gives OpenClaw something real to connect to and control.</p>
             </div>
           </Reveal>
           <Reveal delay={160}>

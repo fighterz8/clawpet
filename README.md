@@ -142,21 +142,30 @@ That app is needed because it:
 
 Without the desktop app running on the display machine, OpenClaw has nothing to connect to.
 
-### Current package source
+### Stable package source
 
-GitHub Actions workflow:
-- `desktop-build.yml`
-- <https://github.com/fighterz8/clawpet/actions/workflows/desktop-build.yml>
+GitHub Releases:
+- latest release page:
+  - <https://github.com/fighterz8/clawpet/releases/latest>
 
-### Current artifact names
+Tagged builds (`v*`) publish native desktop installers/packages to the GitHub Release automatically.
 
-- **Windows:** `clawpet-windows` → `.exe` and `.msi`
-- **macOS:** `clawpet-macos` → `.dmg` and `.app`
-- **Linux:** `clawpet-linux` → `.AppImage`, `.deb`, and `.rpm`
+### Release assets
 
-Until stable release-package URLs are wired in, the landing page download buttons point to the current desktop-build workflow instead of dead placeholder routes.
+- **Windows:** `.msi` and `.exe`
+- **macOS:** `.dmg` and `.app`
+- **Linux:** `.AppImage`, `.deb`, and `.rpm`
+
+For Windows users, prefer the **`.msi` installer first** and use the `.exe` build only if you specifically want that package format.
+
+### CI artifact names (for development / debugging)
+
+- **Windows:** `clawpet-windows`
+- **macOS:** `clawpet-macos`
+- **Linux:** `clawpet-linux`
 
 For normal users, the desired path is:
+- open the latest GitHub Release
 - download the packaged desktop build for your OS
 - open the app once
 - let OpenClaw handle pairing and ongoing control
