@@ -50,6 +50,9 @@ struct RuntimeState {
   pair_mode: Option<PairMode>,
   bundle_manifest: Option<serde_json::Value>,
   bundle_assets: HashMap<String, Vec<u8>>,
+  raw_state: String,
+  raw_bubble: String,
+  last_event_at_ms: Option<u128>,
 }
 
 #[derive(Deserialize)]
@@ -65,6 +68,30 @@ fn now_ms() -> u128 { SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_m
 fn now_iso() -> String { format!("{}", now_ms()) }
 fn random_string(n: usize) -> String { rand::thread_rng().sample_iter(&Alphanumeric).take(n).map(char::from).collect() }
 fn random_code() -> String { format!("{:06}", rand::thread_rng().gen_range(0..1_000_000)) }
+
+const TERMINAL_LINGER_MS: u128 = 8_000;
+const ACTIVE_LINGER_MS: u128 = 45_000;
+const SLEEPY_AFTER_MS: u128 = 5 * 60 * 1000;
+
+fn effective_avatar(raw_state: &str, raw_bubble: &str, last_event_at_ms: Option<u128>) -> AvatarStatus {
+  let mut state = raw_state.to_string();
+  if let Some(last) = last_event_at_ms {
+    let elapsed = now_ms().saturating_sub(last);
+    state = match raw_state {
+      "sleepy" => "sleepy".into(),
+      "idle" if elapsed >= SLEEPY_AFTER_MS => "sleepy".into(),
+      "idle" => "idle".into(),
+      "happy" if elapsed >= TERMINAL_LINGER_MS + SLEEPY_AFTER_MS => "sleepy".into(),
+      "happy" if elapsed >= TERMINAL_LINGER_MS => "idle".into(),
+      "happy" => "happy".into(),
+      "thinking" | "focused" | "alert" if elapsed >= ACTIVE_LINGER_MS + SLEEPY_AFTER_MS => "sleepy".into(),
+      "thinking" | "focused" | "alert" if elapsed >= ACTIVE_LINGER_MS => "idle".into(),
+      _ => raw_state.to_string(),
+    };
+  }
+  let bubble = if state == "idle" || state == "sleepy" { "idle".into() } else { raw_bubble.to_string() };
+  AvatarStatus { avatar_id: "dawn-v0".into(), state, bundle_version: "0.1.0".into(), bubble }
+}
 
 pub fn start_runtime_server() {
   thread::spawn(|| {
@@ -83,6 +110,9 @@ pub fn start_runtime_server() {
       pair_mode: None,
       bundle_manifest: None,
       bundle_assets: HashMap::new(),
+      raw_state: "idle".into(),
+      raw_bubble: "idle".into(),
+      last_event_at_ms: None,
     }));
 
     let listener = match TcpListener::bind("0.0.0.0:8737") {
@@ -155,7 +185,11 @@ fn route(method: &str, path: &str, headers: &HashMap<String, String>, body: &str
   }
 
   if method == "GET" && path == "/status" {
-    let s = state.lock().unwrap();
+    let mut s = state.lock().unwrap();
+    let mut avatar = effective_avatar(&s.raw_state, &s.raw_bubble, s.last_event_at_ms);
+    avatar.avatar_id = s.status.avatar.avatar_id.clone();
+    avatar.bundle_version = s.status.avatar.bundle_version.clone();
+    s.status.avatar = avatar;
     return response(200, serde_json::to_value(&s.status).unwrap());
   }
 
@@ -205,15 +239,19 @@ fn route(method: &str, path: &str, headers: &HashMap<String, String>, body: &str
     s.status.avatar.avatar_id = avatar_id.clone();
     s.status.avatar.bundle_version = version.clone();
     s.status.last_event_at = Some(now_iso());
+    s.last_event_at_ms = Some(now_ms());
     return response(200, json!({"ok":true,"avatarId":avatar_id,"bundleVersion":version,"assetCount":s.bundle_assets.len(),"status":s.status}));
   }
 
   if method == "POST" && path == "/avatar/state" {
     let ev = match serde_json::from_str::<AvatarEvent>(body) { Ok(e) => e, Err(_) => return response(400, json!({"ok":false,"errors":["invalid avatar event"]})) };
     let mut s = state.lock().unwrap();
-    s.status.avatar.state = ev.state;
-    s.status.avatar.bubble = ev.bubble.or(ev.message).unwrap_or_else(|| s.status.avatar.state.clone());
+    s.raw_state = ev.state;
+    s.raw_bubble = ev.bubble.or(ev.message).unwrap_or_else(|| s.raw_state.clone());
+    s.status.avatar.state = s.raw_state.clone();
+    s.status.avatar.bubble = s.raw_bubble.clone();
     s.status.last_event_at = Some(now_iso());
+    s.last_event_at_ms = Some(now_ms());
     return response(200, json!({ "ok": true, "status": s.status }));
   }
 

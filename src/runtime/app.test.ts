@@ -103,11 +103,12 @@ describe("runtime API", () => {
     expect(status.status).toBe(200);
   });
 
-  it("persists active states (thinking/focused/alert) until a new event arrives", async () => {
+  it("safety-decays active states (thinking/focused/alert) back to idle after quiet time", async () => {
     let nowMs = Date.parse("2026-05-04T19:30:01.000Z");
     const store = new RuntimeStateStore({
       now: () => new Date(nowMs),
       terminalLingerMs: 8000,
+      activeLingerMs: 45000,
       sleepyAfterMs: 60000,
       bubbleTtlMs: 12000,
     });
@@ -119,8 +120,11 @@ describe("runtime API", () => {
     });
     expect((await (await app.request("/status")).json()).avatar.state).toBe("focused");
 
-    nowMs += 60000; // a minute later, no new event
+    nowMs += 30000; // still active inside the safety window
     expect((await (await app.request("/status")).json()).avatar.state).toBe("focused");
+
+    nowMs += 20000; // quiet long enough to safety-decay
+    expect((await (await app.request("/status")).json()).avatar.state).toBe("idle");
   });
 
   it("decays terminal happy state through idle then sleepy", async () => {
@@ -161,7 +165,7 @@ describe("runtime API", () => {
     });
     expect((await (await app.request("/status")).json()).avatar.bubble).toBe("Working…");
 
-    // Active focused state persists, so bubble persists too.
+    // Active focused state persists inside the safety window, so bubble persists too.
     nowMs += 30000;
     expect((await (await app.request("/status")).json()).avatar.bubble).toBe("Working…");
 

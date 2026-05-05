@@ -18,10 +18,16 @@ export type RuntimeStateStoreOptions = {
   now?: () => Date;
   /**
    * ms a terminal `happy` state lingers before reverting to idle.
-   * Active states (thinking/focused/alert) NEVER auto-decay — they persist
-   * until a new event arrives. Default 8s for happy. 0 disables.
+   * Default 8s for happy. 0 disables.
    */
   terminalLingerMs?: number;
+  /**
+   * ms an active state (`thinking`, `focused`, `alert`) may sit without a new
+   * event before reverting to idle. This is a safety decay for missed/delayed
+   * done events; new user/tool events always refresh the timer. Default 45s.
+   * 0 disables.
+   */
+  activeLingerMs?: number;
   /** ms after going idle before transitioning to sleepy. Default 5min. 0 disables. */
   sleepyAfterMs?: number;
   /**
@@ -48,6 +54,7 @@ export class RuntimeStateStore {
   private pairedOpenClaw?: ClawpetStatus["pairedOpenClaw"];
   private events: RuntimeEventLogEntry[] = [];
   private readonly terminalLingerMs: number;
+  private readonly activeLingerMs: number;
   private readonly sleepyAfterMs: number;
   private lastBubble?: string;
 
@@ -60,6 +67,7 @@ export class RuntimeStateStore {
     this.maxEvents = options.maxEvents ?? 50;
     this.now = options.now ?? (() => new Date());
     this.terminalLingerMs = options.terminalLingerMs ?? 8000;
+    this.activeLingerMs = options.activeLingerMs ?? 45 * 1000;
     this.sleepyAfterMs = options.sleepyAfterMs ?? 5 * 60 * 1000;
   }
 
@@ -88,9 +96,8 @@ export class RuntimeStateStore {
   /**
    * Decay rules (pure compute, zero timers, zero LLM cost):
    *
-   * - Active states (`thinking`, `focused`, `alert`) PERSIST until a new event
-   *   arrives. They never fall back to idle on their own. The avatar reflects
-   *   what OpenClaw is currently doing.
+   * - Active states (`thinking`, `focused`, `alert`) persist while OpenClaw is
+   *   actively emitting events, then safety-decay to idle after `activeLingerMs`.
    * - Terminal state (`happy`) lingers `terminalLingerMs` then reverts to idle.
    * - `idle` drifts to `sleepy` after `sleepyAfterMs`.
    * - `sleepy` stays.
@@ -111,7 +118,12 @@ export class RuntimeStateStore {
       }
       return "happy";
     }
-    // thinking | focused | alert — persist forever until next event.
+    if (this.activeLingerMs > 0 && elapsed >= this.activeLingerMs) {
+      const idleElapsed = elapsed - this.activeLingerMs;
+      if (this.sleepyAfterMs > 0 && idleElapsed >= this.sleepyAfterMs) return "sleepy";
+      return "idle";
+    }
+    // thinking | focused | alert — persist until next event or safety decay.
     return this.state;
   }
 
