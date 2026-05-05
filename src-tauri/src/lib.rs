@@ -1,12 +1,49 @@
+use std::{
+  process::{Child, Command, Stdio},
+  sync::Mutex,
+};
+
 use tauri::{
   menu::{Menu, MenuItem},
   tray::{MouseButton, MouseButtonState, TrayIconEvent},
   Manager,
 };
 
+struct RuntimeChild(Mutex<Option<Child>>);
+
+#[cfg(debug_assertions)]
+fn spawn_dev_runtime() -> Option<Child> {
+  let repo_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
+  let mut cmd = if cfg!(target_os = "windows") {
+    let mut c = Command::new("cmd");
+    c.args(["/C", "npm", "run", "runtime:tailscale"]);
+    c
+  } else {
+    let mut c = Command::new("npm");
+    c.args(["run", "runtime:tailscale"]);
+    c
+  };
+
+  cmd
+    .current_dir(repo_root)
+    .stdin(Stdio::null())
+    .stdout(Stdio::inherit())
+    .stderr(Stdio::inherit())
+    .spawn()
+    .ok()
+}
+
+#[cfg(not(debug_assertions))]
+fn spawn_dev_runtime() -> Option<Child> {
+  // Packaged builds should use a bundled runtime sidecar or native runtime.
+  // That is the next v0.5 step; do not shell out to npm in production.
+  None
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
+    .manage(RuntimeChild(Mutex::new(None)))
     .setup(|app| {
       if cfg!(debug_assertions) {
         app.handle().plugin(
@@ -14,6 +51,14 @@ pub fn run() {
             .level(log::LevelFilter::Info)
             .build(),
         )?;
+      }
+
+      if let Some(child) = spawn_dev_runtime() {
+        if let Some(state) = app.try_state::<RuntimeChild>() {
+          if let Ok(mut slot) = state.0.lock() {
+            *slot = Some(child);
+          }
+        }
       }
 
       let show_hide = MenuItem::with_id(app, "show_hide", "Show / Hide", true, None::<&str>)?;
@@ -40,6 +85,18 @@ pub fn run() {
       }
 
       Ok(())
+    })
+    .on_window_event(|window, event| {
+      if matches!(event, tauri::WindowEvent::CloseRequested { .. }) {
+        if let Some(state) = window.app_handle().try_state::<RuntimeChild>() {
+          if let Ok(mut slot) = state.0.lock() {
+            if let Some(mut child) = slot.take() {
+              let _ = child.kill();
+              let _ = child.wait();
+            }
+          }
+        }
+      }
     })
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

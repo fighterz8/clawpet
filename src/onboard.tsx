@@ -82,7 +82,7 @@ function OnboardApp() {
         <div>
           <p className="ob-eyebrow">Clawpet setup</p>
           <h1>A tiny desktop pet for OpenClaw.</h1>
-          <p className="ob-muted">This app should eventually install, run the local runtime, show a demo, and give OpenClaw a pair code. This screen is the v0.5 onboarding surface.</p>
+          <p className="ob-muted">The app is becoming the installer: it starts the local runtime, shows connection status, gives OpenClaw a pair code, and keeps the command-line pieces out of the normal user path.</p>
         </div>
       </section>
 
@@ -94,7 +94,7 @@ function OnboardApp() {
           </div>
           <span className={`ob-pill ${runtimeOnline ? "ob-pill--ok" : "ob-pill--bad"}`}>{runtimeOnline ? "online" : "offline"}</span>
         </div>
-        {!runtimeOnline && <div className="ob-warn">Runtime is not running yet. Dev fallback: run <code>npm run runtime:tailscale</code>. Next v0.5 step is making the app start this automatically.</div>}
+        {!runtimeOnline && <div className="ob-warn">Runtime is not reachable yet. In dev builds the app tries to start it automatically; if this stays offline, run <code>npm run runtime:tailscale</code> as a fallback.</div>}
         {runtimeError && <p className="ob-error">{runtimeError}</p>}
       </section>
 
