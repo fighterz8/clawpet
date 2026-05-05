@@ -17,9 +17,9 @@ const DAWN_DEMO: ScriptedBeat[] = [
 ];
 
 const PRESET_SHOWCASE = [
-  { avatarId: "dawn-v2-ember", title: "Dawn Ember", accent: "#ff8a5b" },
+  { avatarId: "dawn-v2-ember", title: "Dawn Amber", accent: "#ff8a5b" },
   { avatarId: "lantern-moth-v0", title: "Lantern Moth", accent: "#5fc8b5" },
-  { avatarId: "dawn-v2-jade", title: "Dawn Jade", accent: "#67d6a3" },
+  { avatarId: "dawn-v2-ember", title: "Dawn Ember", accent: "#ff8a5b" },
   { avatarId: "dawn-v2-amethyst", title: "Dawn Amethyst", accent: "#b884ff" },
 ];
 
@@ -80,7 +80,7 @@ function DemoStage({ avatarId, beats, accent }: { avatarId: string; beats: Scrip
         if (next < frames.length) return next;
         return frame.loop ? 0 : current;
       });
-    }, 1000 / frame.fps);
+    }, (1000 / frame.fps) * 1.5);
     return () => window.clearTimeout(id);
   }, [frameIndex, frames]);
 
@@ -88,7 +88,7 @@ function DemoStage({ avatarId, beats, accent }: { avatarId: string; beats: Scrip
     <div className="lp-stage" style={{ ["--accent" as never]: accent }}>
       <div className="lp-stage__glow" />
       <div className="lp-stage__floor" />
-      {activeFrame && <img key={`${avatarId}-${beat.state}-${frameIndex}`} src={activeFrame.src} alt={beat.state} className={`lp-stage__sprite lp-stage__sprite--${beat.state}`} />}
+      {activeFrame && <img src={activeFrame.src} alt={beat.state} className={`lp-stage__sprite lp-stage__sprite--${beat.state}`} />}
       <div className={`lp-stage__bubble ${beat.bubble ? "lp-stage__bubble--show" : ""}`}>{beat.bubble || "·"}</div>
       <div className="lp-stage__chip">{beat.state}</div>
     </div>

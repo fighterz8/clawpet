@@ -13,7 +13,7 @@ Today the core experience is:
 
 > **Status:** active v0.5-era development. The desktop app/runtime path, pairing flow, animated Dawn bundles, and secondary showcase character are working.
 
-![Clawpet demo](docs/demo/clawpet-demo.gif)
+![Clawpet animated Dawn demo](public/previews/dawn-v2-preview.gif)
 
 ---
 
@@ -297,8 +297,7 @@ Standard Dawn (`dawn-v0`) is the original default avatar. The current showcase/d
 
 ### Built-in animated showcase bundles
 
-- `dawn-v2-ember`
-- `dawn-v2-jade`
+- `dawn-v2-ember` (shown as Dawn Amber / Dawn Ember in the showcase)
 - `dawn-v2-amethyst`
 - `dawn-v2-ashgold`
 - `lantern-moth-v0`
@@ -314,7 +313,7 @@ They are useful for:
 
 ### Current showcase intent
 
-- **Dawn Ember / Jade / Amethyst / Ashgold** show variation within one established character family
+- **Dawn Amber / Ember / Amethyst / Ashgold** show variation within one established character family
 - **Lantern Moth** shows a fully different companion silhouette and mood
 
 ### Animated bundle note
