@@ -15,7 +15,7 @@ type RuntimeStatus = {
 };
 
 type PairMode = { active: boolean; code?: string; expiresAt?: number; runtimeUrl?: string };
-type ClawpetStatus = { connected?: boolean; lastEventAt?: string | null; avatar?: { state?: string; bubble?: string } };
+type ClawpetStatus = { connected?: boolean; lastEventAt?: string | null; avatar?: { state?: string; bubble?: string; avatarId?: string; bundleVersion?: string } };
 
 async function fetchJson(url: string, init?: RequestInit) {
   const res = await fetch(url, init);
@@ -96,6 +96,17 @@ function OnboardApp() {
   const runtimeOwnerLabel = health?.runtime === "tauri-internal" ? "desktop app runtime" : health?.runtime === "node-dev" ? "external dev runtime" : health?.runtime ?? "unknown runtime";
   const openClawReady = Boolean(status?.lastEventAt);
   const expiresIn = useMemo(() => pair.expiresAt ? Math.max(0, Math.round((pair.expiresAt - Date.now()) / 1000)) : null, [pair.expiresAt, pair.active]);
+  const lastEventAge = useMemo(() => {
+    if (!status?.lastEventAt) return null;
+    const n = Number(status.lastEventAt);
+    const ms = Number.isFinite(n) ? Date.now() - n : Date.now() - Date.parse(status.lastEventAt);
+    if (!Number.isFinite(ms) || ms < 0) return null;
+    if (ms < 60_000) return `${Math.max(1, Math.round(ms / 1000))}s ago`;
+    if (ms < 60 * 60_000) return `${Math.round(ms / 60_000)}m ago`;
+    return `${Math.round(ms / (60 * 60_000))}h ago`;
+  }, [status?.lastEventAt]);
+  const avatarState = status?.avatar?.state ?? "unknown";
+  const avatarBubble = status?.avatar?.bubble ?? "—";
 
   return (
     <main className="ob-shell">
@@ -120,6 +131,13 @@ function OnboardApp() {
         {!runtimeOnline && <div className="ob-warn">Runtime is not reachable yet. In dev builds the app tries to start it automatically; if this stays offline, run <code>npm run runtime:tailscale</code> as a fallback.</div>}
         {runtimeOnline && !appOwnedRuntime && <div className="ob-warn">A runtime is already using port 8737, but it is not the packaged desktop-app runtime. This is okay for development, but packaged installs should show <strong>desktop app runtime</strong>. Quit stale dev runtimes if setup behaves strangely.</div>}
         {runtimeOnline && <div className={openClawReady ? "ob-ok" : "ob-warn"}>{openClawReady ? "OpenClaw has authenticated with this runtime. You can close setup and leave the pet running." : "Runtime is online, but OpenClaw has not authenticated yet. Show a pair code if the pet is not responding."}</div>}
+        {runtimeOnline && (
+          <div className="ob-diagnostics" aria-label="Current avatar diagnostics">
+            <div><span>Avatar</span><strong>{avatarState}</strong></div>
+            <div><span>Bubble</span><strong>{avatarBubble}</strong></div>
+            <div><span>Last event</span><strong>{lastEventAge ?? "none yet"}</strong></div>
+          </div>
+        )}
         {runtimeError && <p className="ob-error">{runtimeError}</p>}
       </section>
 
@@ -149,6 +167,15 @@ function OnboardApp() {
         <div className="ob-command">
           <code>{openClawCommand}</code>
           <CopyButton text={openClawCommand} />
+        </div>
+        <div className="ob-help">
+          <strong>When should I do this?</strong>
+          <ul>
+            <li>First-time setup on this desktop.</li>
+            <li>The indicator is yellow and chat does not move the avatar.</li>
+            <li>You rotated/cleared tokens or rebuilt app data.</li>
+          </ul>
+          <p>If the indicator is green and Last event is recent, do not re-pair — just close setup and chat.</p>
         </div>
       </section>
 

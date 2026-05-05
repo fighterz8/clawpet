@@ -28,3 +28,11 @@ h2 { margin-bottom: 6px; font-size: 18px; }
 .ob-command code, .ob-warn code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .ob-command code { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #d8f8ff; background: rgba(0,0,0,.3); border-radius: 12px; padding: 11px; }
 .ob-list { margin: 8px 0 0; padding-left: 20px; color: #e8e0f3; line-height: 1.6; }
+.ob-diagnostics { margin-top: 14px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.ob-diagnostics div { min-width: 0; border: 1px solid rgba(255,255,255,.10); background: rgba(0,0,0,.20); border-radius: 14px; padding: 10px; }
+.ob-diagnostics span { display: block; color: #cfc8db; font-size: 11px; text-transform: uppercase; letter-spacing: .10em; margin-bottom: 4px; }
+.ob-diagnostics strong { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #f7f2ff; font-size: 13px; }
+.ob-help { margin-top: 14px; border: 1px solid rgba(255,255,255,.10); background: rgba(0,0,0,.18); border-radius: 14px; padding: 12px; color: #e8e0f3; line-height: 1.45; }
+.ob-help strong { color: #f7f2ff; }
+.ob-help ul { margin: 8px 0; padding-left: 18px; }
+.ob-help p { margin: 0; color: #cfc8db; }
