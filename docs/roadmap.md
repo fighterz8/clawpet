@@ -15,6 +15,16 @@ Where we are after v0.3 and where this is heading. Items are grouped by horizon.
 
 These are the next obvious wins; mostly incremental on what we have.
 
+### Automatic turn/tool reactions via OpenClaw hook (highest priority)
+Make reactions reflexive at the runtime layer instead of the model's discretion. OpenClaw exposes `TurnStartEvent`, `ToolExecutionStartEvent`, `ToolExecutionEndEvent`, `TurnEndEvent`, and `AgentApprovalEventData` (with `requested`/`resolved` phases) through its extension API. A small Clawpet hook subscribes to these and fires the matching `clawpet react` event automatically:
+- `TurnStartEvent` → `react user-message`
+- `ToolExecutionStartEvent` (long-running tools only, e.g. exec/edit/build) → `react long-task`
+- `ToolExecutionEndEvent` with error → `react tool-error`
+- `AgentApprovalEventData` phase=requested → `react blocker`
+- `TurnEndEvent` with notable completion → `react done`
+
+Value: Dawn becomes a real-time tracker of OpenClaw activity without the assistant having to remember anything. Until this lands, the SKILL.md "turn protocol" section is the soft-rule fallback.
+
 ### Multi-avatar selection
 - Runtime accepts `CLAWPET_AVATAR_BUNDLE` (default `dawn-v0`) and reports it in `/status`.
 - Desktop overlay reads that and loads the matching bundle automatically.
