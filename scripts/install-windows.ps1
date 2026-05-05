@@ -56,7 +56,11 @@ try {
 Write-Host ""
 Write-Host "==> Clawpet installed." -ForegroundColor Green
 Write-Host ""
-Write-Host "Try demo mode first (no OpenClaw pairing required):" -ForegroundColor Cyan
+Write-Host "Start the guided display-machine setup:" -ForegroundColor Cyan
+Write-Host "  cd $repoDir"
+Write-Host "  clawpet wizard display"
+Write-Host ""
+Write-Host "Or try demo mode first (no OpenClaw pairing required):" -ForegroundColor Cyan
 Write-Host "  cd $repoDir"
 Write-Host "  Start-Process powershell -ArgumentList '-NoExit','-Command','npm run runtime:demo'"
 Write-Host "  npm run desktop:dev"

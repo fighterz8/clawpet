@@ -41,7 +41,13 @@ curl -fsSL https://raw.githubusercontent.com/fighterz8/clawpet/main/scripts/inst
 irm https://raw.githubusercontent.com/fighterz8/clawpet/main/scripts/install-windows.ps1 | iex
 ```
 
-Try the pet before connecting OpenClaw:
+The guided path is:
+
+```bash
+clawpet wizard display
+```
+
+Or run the steps manually. Try the pet before connecting OpenClaw:
 
 ```bash
 # terminal 1 — runtime demo mode
@@ -66,7 +72,16 @@ npm run runtime:tailscale
 Then pair from the OpenClaw host using the display machine's Tailscale hostname:
 
 ```bash
+clawpet wizard openclaw --code 472091 --host <desktop-host>.<tailnet>.ts.net:8737
+```
+
+Manual equivalent:
+
+```bash
 clawpet pair --code 472091 --host <desktop-host>.<tailnet>.ts.net:8737
+clawpet activity balanced
+clawpet heartbeat-reactions off
+clawpet daemon start
 ```
 
 > Loopback (`127.0.0.1`) is trusted; non-loopback/Tailscale requires a bearer token. The token is auto-generated on first boot at `~/.openclaw/clawpet/runtime-token` (mode `0600`) and is normally transferred via the 6-digit pair flow below.

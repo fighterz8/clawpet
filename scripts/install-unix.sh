@@ -51,7 +51,11 @@ fi
 
 green "==> Clawpet installed."
 echo
-cyan "Try demo mode first (no OpenClaw pairing required):"
+cyan "Start the guided display-machine setup:"
+echo "  cd $REPO_DIR"
+echo "  clawpet wizard display"
+echo
+cyan "Or try demo mode first (no OpenClaw pairing required):"
 echo "  cd $REPO_DIR"
 echo "  npm run runtime:demo"
 echo "  # in a second terminal:"

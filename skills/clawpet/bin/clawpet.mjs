@@ -112,6 +112,7 @@ function usage() {
   console.log(`clawpet v${VERSION}
 
 Usage:
+  clawpet wizard [display|openclaw] [--code 123456 --host host:8737]
   clawpet doctor
   clawpet ping
   clawpet status
@@ -131,6 +132,68 @@ Usage:
 States: ${STATES.join(" | ")}
 Runtime URL: ${resolveRuntimeUrl()}  (override with CLAWPET_RUNTIME_URL or 'clawpet pair')
 Auth token: ${resolveRuntimeToken() ? "set" : "not set"}`);
+}
+
+async function detectDisplayHost() {
+  try {
+    const { execFileSync } = await import("node:child_process");
+    const out = execFileSync("tailscale", ["status", "--json"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+    const j = JSON.parse(out);
+    const dns = j?.Self?.DNSName;
+    if (dns) return String(dns).replace(/\.$/, "");
+  } catch {}
+  try {
+    const { hostname } = await import("node:os");
+    return hostname();
+  } catch {
+    return "<display-host>";
+  }
+}
+
+async function cmdWizard(positional, flags) {
+  const mode = positional[0] || "display";
+  if (!["display", "openclaw", "host"].includes(mode)) {
+    fail("wizard: mode must be 'display' or 'openclaw'");
+  }
+
+  if (mode === "display") {
+    const host = await detectDisplayHost();
+    console.log("Clawpet display-machine wizard\n");
+    console.log("Run this on the machine where the avatar window should appear. Keep terminals open while testing.\n");
+    console.log("1) Try the standalone demo:");
+    console.log("   npm run runtime:demo");
+    console.log("   # second terminal:");
+    console.log("   npm run desktop:dev");
+    console.log("\n2) When the demo works, stop the demo runtime and start pairable runtime:");
+    console.log("   npm run runtime:tailscale");
+    console.log("\n3) In another terminal, open pair mode:");
+    console.log("   clawpet pair-mode");
+    console.log("\n4) Send the 6-digit code to your OpenClaw assistant. Suggested host:");
+    console.log(`   ${host}:8737`);
+    console.log("\nIf something fails, run:");
+    console.log("   clawpet doctor");
+    return;
+  }
+
+  const code = flags.code;
+  const host = flags.host || positional[1];
+  if (!code || !host) {
+    console.log("Clawpet OpenClaw-host wizard\n");
+    console.log("Run this on the OpenClaw machine after the display machine shows a pair code.\n");
+    console.log("Usage:");
+    console.log("  clawpet wizard openclaw --code <6-digit-code> --host <display-host>:8737");
+    console.log("\nThis will pair, set balanced activity, disable heartbeat flashes, start the daemon, and send a test bubble.");
+    return;
+  }
+
+  console.log("Clawpet OpenClaw-host wizard\n");
+  await cmdPair({ code, host });
+  cmdActivity(["balanced"], {});
+  cmdHeartbeats(["off"], {});
+  await cmdDaemon(["stop"], {});
+  await cmdDaemon(["start"], {});
+  await cmdSend(["happy", "Clawpet paired from OpenClaw"], { bubble: "Connected" });
+  console.log("\n✓ Paired and live. Ask the user to confirm the pet changed to Connected/Happy.");
 }
 
 async function cmdDoctor() {
@@ -533,6 +596,7 @@ const [, , cmd, ...rest] = process.argv;
 const { positional, flags } = parseFlags(rest);
 
 switch (cmd) {
+  case "wizard": await cmdWizard(positional, flags); break;
   case "doctor": await cmdDoctor(); break;
   case "ping": await cmdPing(); break;
   case "status": await cmdStatus(); break;
