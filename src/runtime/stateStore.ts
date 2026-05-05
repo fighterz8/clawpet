@@ -16,10 +16,16 @@ export type RuntimeStateStoreOptions = {
   bundleVersion?: string;
   maxEvents?: number;
   now?: () => Date;
-  /** ms after last active event before reverting to idle. Default 8s. 0 disables. */
-  idleAfterMs?: number;
+  /**
+   * ms a terminal `happy` state lingers before reverting to idle.
+   * Active states (thinking/focused/alert) NEVER auto-decay — they persist
+   * until a new event arrives. Default 8s for happy. 0 disables.
+   */
+  terminalLingerMs?: number;
   /** ms after going idle before transitioning to sleepy. Default 5min. 0 disables. */
   sleepyAfterMs?: number;
+  /** ms after last event before bubble caption clears. Default 12s. 0 disables (bubble persists with state). */
+  bubbleTtlMs?: number;
 };
 
 export class RuntimeStateStore {
@@ -37,8 +43,10 @@ export class RuntimeStateStore {
   private lastLatencyMs?: number;
   private pairedOpenClaw?: ClawpetStatus["pairedOpenClaw"];
   private events: RuntimeEventLogEntry[] = [];
-  private readonly idleAfterMs: number;
+  private readonly terminalLingerMs: number;
   private readonly sleepyAfterMs: number;
+  private readonly bubbleTtlMs: number;
+  private lastBubble?: string;
 
   constructor(options: RuntimeStateStoreOptions = {}) {
     this.runtimeId = options.runtimeId ?? "clawpet-local-runtime";
@@ -48,8 +56,9 @@ export class RuntimeStateStore {
     this.bundleVersion = options.bundleVersion ?? "0.1.0";
     this.maxEvents = options.maxEvents ?? 50;
     this.now = options.now ?? (() => new Date());
-    this.idleAfterMs = options.idleAfterMs ?? 8000;
+    this.terminalLingerMs = options.terminalLingerMs ?? 8000;
     this.sleepyAfterMs = options.sleepyAfterMs ?? 5 * 60 * 1000;
+    this.bubbleTtlMs = options.bubbleTtlMs ?? 12000;
   }
 
   applyEvent(event: AvatarStateEvent): RuntimeEventLogEntry {
@@ -59,6 +68,7 @@ export class RuntimeStateStore {
     const latencyMs = Number.isFinite(sentAtMs) ? Math.max(0, receivedAtDate.getTime() - sentAtMs) : null;
 
     this.state = event.state;
+    this.lastBubble = event.bubble || event.message;
     this.lastEventAt = receivedAt;
     this.lastEventAtMs = receivedAtDate.getTime();
     this.lastLatencyMs = latencyMs ?? undefined;
@@ -74,9 +84,14 @@ export class RuntimeStateStore {
   }
 
   /**
-   * Decay the applied state on read. Active states fall back to `idle` after
-   * `idleAfterMs`; idle then drifts to `sleepy` after `sleepyAfterMs`.
-   * Pure compute on read — no timers, no LLM involvement, no token cost.
+   * Decay rules (pure compute, zero timers, zero LLM cost):
+   *
+   * - Active states (`thinking`, `focused`, `alert`) PERSIST until a new event
+   *   arrives. They never fall back to idle on their own. The avatar reflects
+   *   what OpenClaw is currently doing.
+   * - Terminal state (`happy`) lingers `terminalLingerMs` then reverts to idle.
+   * - `idle` drifts to `sleepy` after `sleepyAfterMs`.
+   * - `sleepy` stays.
    */
   private effectiveState(): AvatarState {
     if (this.lastEventAtMs == null) return this.state;
@@ -86,11 +101,30 @@ export class RuntimeStateStore {
       if (this.sleepyAfterMs > 0 && elapsed >= this.sleepyAfterMs) return "sleepy";
       return "idle";
     }
-    if (this.idleAfterMs > 0 && elapsed >= this.idleAfterMs) {
-      if (this.sleepyAfterMs > 0 && elapsed >= this.idleAfterMs + this.sleepyAfterMs) return "sleepy";
-      return "idle";
+    if (this.state === "happy") {
+      if (this.terminalLingerMs > 0 && elapsed >= this.terminalLingerMs) {
+        const idleElapsed = elapsed - this.terminalLingerMs;
+        if (this.sleepyAfterMs > 0 && idleElapsed >= this.sleepyAfterMs) return "sleepy";
+        return "idle";
+      }
+      return "happy";
     }
+    // thinking | focused | alert — persist forever until next event.
     return this.state;
+  }
+
+  /**
+   * Bubble caption with TTL. Empty when:
+   * - bubble TTL elapsed since last event, OR
+   * - effective state has decayed to idle/sleepy (caption no longer relevant).
+   */
+  private effectiveBubble(): string | undefined {
+    if (this.lastEventAtMs == null || !this.lastBubble) return undefined;
+    const eff = this.effectiveState();
+    if (eff === "idle" || eff === "sleepy") return undefined;
+    const elapsed = this.now().getTime() - this.lastEventAtMs;
+    if (this.bubbleTtlMs > 0 && elapsed >= this.bubbleTtlMs) return undefined;
+    return this.lastBubble;
   }
 
   getStatus(): ClawpetStatus {
@@ -106,6 +140,7 @@ export class RuntimeStateStore {
         avatarId: this.avatarId,
         state: this.effectiveState(),
         bundleVersion: this.bundleVersion,
+        bubble: this.effectiveBubble(),
       },
       lastEventAt: this.lastEventAt,
       latencyMs: this.lastLatencyMs,

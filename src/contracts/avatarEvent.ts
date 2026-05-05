@@ -46,6 +46,7 @@ export type ClawpetStatus = {
     avatarId: string;
     state: AvatarState;
     bundleVersion?: string;
+    bubble?: string;
   };
   lastEventAt?: string;
   latencyMs?: number;

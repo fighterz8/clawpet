@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { type AvatarState, resolveBubbleText } from "./contracts/avatarEvent";
+import { type AvatarState } from "./contracts/avatarEvent";
 import { loadAvatarBundle, type ResolvedAvatarBundle } from "./avatars/bundle";
 import "./styles.css";
 
@@ -46,17 +46,11 @@ function OverlayApp() {
   useEffect(() => {
     async function refresh() {
       try {
-        const [s, e] = await Promise.all([
-          fetch(`${RUNTIME_URL}/status`),
-          fetch(`${RUNTIME_URL}/events`),
-        ]);
+        const s = await fetch(`${RUNTIME_URL}/status`);
         if (!s.ok) throw new Error(String(s.status));
         const status = await s.json();
-        const evbody = await e.json().catch(() => ({ events: [] }));
-        const latest = evbody.events?.[0]?.event;
-        const bubble = latest ? resolveBubbleText(latest) : "";
         setState(status.avatar.state);
-        setMessage(bubble);
+        setMessage(status.avatar.bubble ?? "");
         setOnline(true);
       } catch {
         setOnline(false);

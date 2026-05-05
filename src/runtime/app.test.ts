@@ -99,12 +99,33 @@ describe("runtime API", () => {
     expect(status.status).toBe(200);
   });
 
-  it("decays active state to idle then sleepy on its own", async () => {
+  it("persists active states (thinking/focused/alert) until a new event arrives", async () => {
     let nowMs = Date.parse("2026-05-04T19:30:01.000Z");
     const store = new RuntimeStateStore({
       now: () => new Date(nowMs),
-      idleAfterMs: 8000,
+      terminalLingerMs: 8000,
       sleepyAfterMs: 60000,
+      bubbleTtlMs: 12000,
+    });
+    const app = createRuntimeApp({ store });
+
+    await app.request("/avatar/state", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...event, state: "focused", sentAt: new Date(nowMs).toISOString() }),
+    });
+    expect((await (await app.request("/status")).json()).avatar.state).toBe("focused");
+
+    nowMs += 60000; // a minute later, no new event
+    expect((await (await app.request("/status")).json()).avatar.state).toBe("focused");
+  });
+
+  it("decays terminal happy state through idle then sleepy", async () => {
+    let nowMs = Date.parse("2026-05-04T19:30:01.000Z");
+    const store = new RuntimeStateStore({
+      now: () => new Date(nowMs),
+      terminalLingerMs: 8000,
+      sleepyAfterMs: 60000,
+      bubbleTtlMs: 12000,
     });
     const app = createRuntimeApp({ store });
 
@@ -114,11 +135,33 @@ describe("runtime API", () => {
     });
     expect((await (await app.request("/status")).json()).avatar.state).toBe("happy");
 
-    nowMs += 9000; // past idleAfterMs
+    nowMs += 9000; // past terminalLingerMs
     expect((await (await app.request("/status")).json()).avatar.state).toBe("idle");
 
-    nowMs += 70000; // well past sleepyAfterMs after going idle
+    nowMs += 70000; // past sleepyAfterMs
     expect((await (await app.request("/status")).json()).avatar.state).toBe("sleepy");
+  });
+
+  it("clears bubble after bubbleTtlMs even if state persists", async () => {
+    let nowMs = Date.parse("2026-05-04T19:30:01.000Z");
+    const store = new RuntimeStateStore({
+      now: () => new Date(nowMs),
+      terminalLingerMs: 8000,
+      sleepyAfterMs: 60000,
+      bubbleTtlMs: 5000,
+    });
+    const app = createRuntimeApp({ store });
+
+    await app.request("/avatar/state", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...event, state: "focused", bubble: "Working…", sentAt: new Date(nowMs).toISOString() }),
+    });
+    expect((await (await app.request("/status")).json()).avatar.bubble).toBe("Working…");
+
+    nowMs += 6000; // past bubbleTtlMs but state still focused
+    const after = (await (await app.request("/status")).json()).avatar;
+    expect(after.state).toBe("focused");
+    expect(after.bubble).toBeUndefined();
   });
 
   it("rotates the auth token via /admin/rotate-token", async () => {
@@ -143,6 +186,96 @@ describe("runtime API", () => {
     // New token accepted.
     const newAccepted = await app.request("/status", { headers: { Authorization: `Bearer ${body.token}` } });
     expect(newAccepted.status).toBe(200);
+  });
+
+  it("opens pair mode and accepts a valid 6-digit code, rotating the token", async () => {
+    let nowMs = 1_000_000;
+    let persisted: string | undefined;
+    const app = createRuntimeApp({
+      authToken: "old-token",
+      onTokenRotated: (t) => { persisted = t; },
+      now: () => nowMs,
+      generatePairCode: () => "472091",
+    });
+
+    // Pair mode initially closed.
+    let pm = await (await app.request("/pair-mode")).json();
+    expect(pm.active).toBe(false);
+
+    // Cannot start without auth (unless loopback; in tests req has no socket so loopback bypass doesn't apply).
+    const denied = await app.request("/admin/pair-mode/start", { method: "POST" });
+    expect(denied.status).toBe(401);
+
+    const opened = await app.request("/admin/pair-mode/start", {
+      method: "POST", headers: { Authorization: "Bearer old-token", "Content-Type": "application/json" },
+      body: JSON.stringify({ seconds: 60 }),
+    });
+    expect(opened.status).toBe(200);
+    const openBody = await opened.json();
+    expect(openBody.code).toBe("472091");
+
+    pm = await (await app.request("/pair-mode")).json();
+    expect(pm.active).toBe(true);
+    expect(typeof pm.expiresAt).toBe("number");
+    expect(pm.code).toBeUndefined(); // public endpoint never reveals code
+
+    // Wrong code → 401, attempt counted.
+    nowMs += 1100;
+    const wrong = await app.request("/pair/claim", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: "000000" }),
+    });
+    expect(wrong.status).toBe(401);
+
+    // Right code → 200 with new token.
+    nowMs += 1100;
+    const claim = await app.request("/pair/claim", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: "472091" }),
+    });
+    expect(claim.status).toBe(200);
+    const claimBody = await claim.json();
+    expect(claimBody.token).toHaveLength(64);
+    expect(persisted).toBe(claimBody.token);
+
+    // Pair mode auto-closes on success.
+    pm = await (await app.request("/pair-mode")).json();
+    expect(pm.active).toBe(false);
+
+    // Old token rejected, new token accepted.
+    const oldRejected = await app.request("/status", { headers: { Authorization: "Bearer old-token" } });
+    expect(oldRejected.status).toBe(401);
+    const newAccepted = await app.request("/status", { headers: { Authorization: `Bearer ${claimBody.token}` } });
+    expect(newAccepted.status).toBe(200);
+  });
+
+  it("closes pair mode after 3 wrong attempts", async () => {
+    let nowMs = 1_000_000;
+    const app = createRuntimeApp({
+      authToken: "tok",
+      now: () => nowMs,
+      generatePairCode: () => "111111",
+    });
+    await app.request("/admin/pair-mode/start", {
+      method: "POST", headers: { Authorization: "Bearer tok", "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+    for (let i = 0; i < 3; i++) {
+      nowMs += 1100;
+      await app.request("/pair/claim", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: "000000" }),
+      });
+    }
+    const pm = await (await app.request("/pair-mode")).json();
+    expect(pm.active).toBe(false);
+    // Right code now too late.
+    nowMs += 1100;
+    const tooLate = await app.request("/pair/claim", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: "111111" }),
+    });
+    expect(tooLate.status).toBe(404);
   });
 
   it("rejects malformed or unsafe events", async () => {
