@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Cross-platform runtime launcher for npm scripts.
 import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -15,13 +16,30 @@ if (args.has("--tailscale") || args.has("--host-all")) {
   env.CLAWPET_RUNTIME_PORT = env.CLAWPET_RUNTIME_PORT || "8737";
 }
 
-const child = spawn(process.platform === "win32" ? "npx.cmd" : "npx", ["tsx", "src/runtime/server.ts"], {
+const tsxBin = process.platform === "win32"
+  ? join(root, "node_modules", ".bin", "tsx.cmd")
+  : join(root, "node_modules", ".bin", "tsx");
+const command = existsSync(tsxBin) ? tsxBin : "npx";
+const commandArgs = existsSync(tsxBin) ? ["src/runtime/server.ts"] : ["tsx", "src/runtime/server.ts"];
+
+const child = spawn(command, commandArgs, {
   cwd: root,
   env,
   stdio: "inherit",
+  // Windows Node 24 can throw spawn EINVAL for .cmd shims without a shell.
+  shell: process.platform === "win32",
+  windowsHide: false,
+});
+
+child.on("error", (error) => {
+  console.error("Failed to start Clawpet runtime child process.");
+  console.error(`command: ${command} ${commandArgs.join(" ")}`);
+  console.error(`cwd: ${root}`);
+  console.error(error);
+  process.exit(1);
 });
 
 child.on("exit", (code, signal) => {
-  if (signal) process.kill(process.pid, signal);
+  if (signal) process.exit(1);
   process.exit(code ?? 0);
 });
