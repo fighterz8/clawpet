@@ -5,7 +5,6 @@ import { loadAvatarBundle, type ResolvedAvatarBundle } from "./avatars/bundle";
 import "./styles.css";
 
 const BUILD_TIME_AVATAR = (import.meta as { env?: Record<string, string> }).env?.VITE_CLAWPET_AVATAR_BUNDLE;
-const DEV_DEFAULT_AVATAR = (import.meta as { env?: Record<string, string>; hot?: unknown }).env?.DEV ? "dawn-v2-preview" : undefined;
 const RUNTIME_URL = "http://127.0.0.1:8737";
 
 function BundleAvatar({ state, bundle }: { state: AvatarState; bundle: ResolvedAvatarBundle | null }) {
@@ -46,9 +45,9 @@ function OverlayApp() {
 
   async function refreshBundle(avatarId?: string, bundleVersion?: string) {
     const cacheKey = encodeURIComponent(bundleVersion || avatarId || String(Date.now()));
-    const fallbackAvatar = BUILD_TIME_AVATAR || DEV_DEFAULT_AVATAR || avatarId || "dawn-v0";
+    const fallbackAvatar = BUILD_TIME_AVATAR || avatarId || "dawn-v0";
 
-    if (BUILD_TIME_AVATAR || DEV_DEFAULT_AVATAR) {
+    if (BUILD_TIME_AVATAR) {
       try {
         const resolved = await loadAvatarBundle(`/avatars/${fallbackAvatar}`);
         setBundle(resolved);
