@@ -24,6 +24,8 @@ export type CreateRuntimeAppOptions = {
   generatePairCode?: () => string;
   /** Optional persisted avatar bundle store for OpenClaw-pushed assets. */
   avatarBundleStore?: AvatarBundleStore;
+  /** Best-effort hostname users can pass to OpenClaw when pairing. */
+  displayHost?: string;
 };
 
 type PairMode =
@@ -79,6 +81,7 @@ export function createRuntimeApp(options: CreateRuntimeAppOptions = {}) {
       authRequired: Boolean(authToken),
       runtime: "node-dev",
       owner: "external-node-process",
+      displayHost: options.displayHost,
     }),
   );
 

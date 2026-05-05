@@ -71,6 +71,13 @@ fn now_iso() -> String { format!("{}", now_ms()) }
 fn random_string(n: usize) -> String { rand::thread_rng().sample_iter(&Alphanumeric).take(n).map(char::from).collect() }
 fn random_code() -> String { format!("{:06}", rand::thread_rng().gen_range(0..1_000_000)) }
 
+fn display_host() -> String {
+  std::env::var("CLAWPET_DISPLAY_HOST")
+    .or_else(|_| std::env::var("COMPUTERNAME"))
+    .or_else(|_| std::env::var("HOSTNAME"))
+    .unwrap_or_else(|_| "<display-host>".into())
+}
+
 fn token_path() -> Option<PathBuf> {
   let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"))?;
   Some(PathBuf::from(home).join(".openclaw").join("clawpet").join("runtime-token"))
@@ -186,7 +193,8 @@ fn route(method: &str, path: &str, headers: &HashMap<String, String>, body: &str
       "version": "0.1.0",
       "authRequired": true,
       "runtime": "tauri-internal",
-      "owner": "clawpet-desktop-app"
+      "owner": "clawpet-desktop-app",
+      "displayHost": display_host()
     }));
   }
   if method == "GET" && path == "/pair-mode" {

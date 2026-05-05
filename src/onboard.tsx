@@ -12,6 +12,7 @@ type RuntimeStatus = {
   authRequired?: boolean;
   runtime?: string;
   owner?: string;
+  displayHost?: string;
 };
 
 type PairMode = { active: boolean; code?: string; expiresAt?: number; runtimeUrl?: string };
@@ -90,7 +91,9 @@ function OnboardApp() {
   }
 
   const groupedCode = pair.code ? `${pair.code.slice(0, 3)} · ${pair.code.slice(3)}` : "—";
-  const openClawCommand = pair.code ? `clawpet wizard openclaw --code ${pair.code} --host <this-display-machine>:8737` : "clawpet wizard openclaw --code <code> --host <display-host>:8737";
+  const displayHost = health?.displayHost || "<display-host>";
+  const hostArg = displayHost.includes(":") ? displayHost : `${displayHost}:8737`;
+  const openClawCommand = pair.code ? `clawpet wizard openclaw --code ${pair.code} --host ${hostArg}` : `clawpet wizard openclaw --code <code> --host ${hostArg}`;
   const runtimeOnline = Boolean(health?.ok);
   const appOwnedRuntime = health?.runtime === "tauri-internal" || health?.owner === "clawpet-desktop-app";
   const runtimeOwnerLabel = health?.runtime === "tauri-internal" ? "desktop app runtime" : health?.runtime === "node-dev" ? "external dev runtime" : health?.runtime ?? "unknown runtime";
@@ -157,8 +160,9 @@ function OnboardApp() {
             <h2>2. Pair with OpenClaw</h2>
             <p className="ob-muted">Only use this if the pet is yellow/not responding or this is the first connection. If you have paired before, start chatting first — OpenClaw should reconnect automatically.</p>
           </div>
-          <button className="ob-primary" disabled={!runtimeOnline || busy} onClick={() => void startPairMode()}>{busy ? "Opening…" : "Show pair code"}</button>
+          <button className="ob-primary" disabled={!runtimeOnline || busy} onClick={() => void startPairMode()}>{busy ? "Opening…" : openClawReady ? "Re-pair / repair" : "Show pair code"}</button>
         </div>
+        {openClawReady && !pair.active && !pair.code && <div className="ob-ok">Already connected — no pair code needed. Use this section only to repair a stale/yellow connection or after clearing tokens.</div>}
         <div className="ob-codebox">
           <span>Pair code</span>
           <strong>{groupedCode}</strong>

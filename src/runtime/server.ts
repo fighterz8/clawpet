@@ -1,7 +1,7 @@
 import { serve } from "@hono/node-server";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { homedir } from "node:os";
+import { homedir, hostname as osHostname } from "node:os";
 import { randomBytes } from "node:crypto";
 import { createRuntimeApp } from "./app";
 import { RuntimeStateStore } from "./stateStore";
@@ -74,6 +74,7 @@ serve({
     authToken,
     allowCorsOrigin,
     avatarBundleStore,
+    displayHost: process.env.CLAWPET_DISPLAY_HOST || osHostname(),
     onTokenRotated: (newToken) => {
       try {
         mkdirSync(dirname(tokenFile), { recursive: true });

@@ -113,6 +113,7 @@ Setup also labels the runtime owner and live avatar diagnostics:
 - `desktop app runtime` — expected packaged/native path.
 - `external dev runtime` — a Node dev runtime is occupying port 8737; okay for development, but quit stale dev processes if setup behaves strangely.
 - Avatar state, bubble, and last event age — useful for deciding whether to re-pair or just close setup and chat.
+- Best-effort detected display host in the OpenClaw command, so users do not have to replace `<this-display-machine>` when the app can infer it.
 
 `clawpet status` reports `openClawAuth` when possible:
 
