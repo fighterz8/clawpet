@@ -67,15 +67,17 @@ pub fn run() {
       }
       }
 
-      let show_hide = MenuItem::with_id(app, "show_hide", "Show / Hide", true, None::<&str>)?;
+      let show_hide = MenuItem::with_id(app, "show_hide", "Show / Hide Pet", true, None::<&str>)?;
+      let setup = MenuItem::with_id(app, "setup", "Show Setup", true, None::<&str>)?;
       let quit = MenuItem::with_id(app, "quit", "Quit Clawpet", true, None::<&str>)?;
-      let menu = Menu::with_items(app, &[&show_hide, &quit])?;
+      let menu = Menu::with_items(app, &[&show_hide, &setup, &quit])?;
 
       if let Some(tray) = app.tray_by_id("main") {
         tray.set_menu(Some(menu))?;
         tray.on_menu_event(|app, event| match event.id().as_ref() {
           "quit" => app.exit(0),
-          "show_hide" => toggle_windows(app),
+          "show_hide" => toggle_pet(app),
+          "setup" => show_setup(app),
           _ => {}
         });
         tray.on_tray_icon_event(|tray, event| {
@@ -85,7 +87,7 @@ pub fn run() {
             ..
           } = event
           {
-            toggle_windows(tray.app_handle());
+            toggle_pet(tray.app_handle());
           }
         });
       }
@@ -93,35 +95,37 @@ pub fn run() {
       Ok(())
     })
     .on_window_event(|window, event| {
-      if matches!(event, tauri::WindowEvent::CloseRequested { .. }) {
-        if let Some(state) = window.app_handle().try_state::<RuntimeChild>() {
-          if let Ok(mut slot) = state.0.lock() {
-            if let Some(mut child) = slot.take() {
-              let _ = child.kill();
-              let _ = child.wait();
-            }
-          }
-        }
+      if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+        // Closing setup should not strand an always-on-top pet with no control
+        // surface. Keep both windows/tray alive; Quit Clawpet performs the real
+        // app shutdown.
+        api.prevent_close();
+        let _ = window.hide();
       }
     })
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }
 
-fn toggle_windows<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
+fn toggle_pet<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
   let visible = app
-    .get_webview_window("main")
+    .get_webview_window("pet")
     .and_then(|w| w.is_visible().ok())
     .unwrap_or(false);
 
-  for label in ["main", "pet"] {
-    if let Some(window) = app.get_webview_window(label) {
-      if visible {
-        let _ = window.hide();
-      } else {
-        let _ = window.show();
-        if label == "main" { let _ = window.set_focus(); }
-      }
+  if let Some(window) = app.get_webview_window("pet") {
+    if visible {
+      let _ = window.hide();
+    } else {
+      let _ = window.show();
+      let _ = window.set_focus();
     }
+  }
+}
+
+fn show_setup<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
+  if let Some(window) = app.get_webview_window("main") {
+    let _ = window.show();
+    let _ = window.set_focus();
   }
 }
