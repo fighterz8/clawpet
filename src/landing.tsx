@@ -143,7 +143,7 @@ function Landing() {
         <Reveal>
           <p className="lp-eyebrow">An OpenClaw companion</p>
           <h1 className="lp-headline">
-            Bring your agent to life —<br/>
+            Bring your agent to life<br/>
             <span className="lp-headline__accent">and watch it work.</span>
           </h1>
           <p className="lp-lede">
