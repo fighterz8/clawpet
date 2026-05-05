@@ -75,7 +75,7 @@ pub fn run() {
         tray.set_menu(Some(menu))?;
         tray.on_menu_event(|app, event| match event.id().as_ref() {
           "quit" => app.exit(0),
-          "show_hide" => toggle_main_window(app),
+          "show_hide" => toggle_windows(app),
           _ => {}
         });
         tray.on_tray_icon_event(|tray, event| {
@@ -85,7 +85,7 @@ pub fn run() {
             ..
           } = event
           {
-            toggle_main_window(tray.app_handle());
+            toggle_windows(tray.app_handle());
           }
         });
       }
@@ -108,14 +108,20 @@ pub fn run() {
     .expect("error while running tauri application");
 }
 
-fn toggle_main_window<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
-  if let Some(window) = app.get_webview_window("main") {
-    let visible = window.is_visible().unwrap_or(false);
-    if visible {
-      let _ = window.hide();
-    } else {
-      let _ = window.show();
-      let _ = window.set_focus();
+fn toggle_windows<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
+  let visible = app
+    .get_webview_window("main")
+    .and_then(|w| w.is_visible().ok())
+    .unwrap_or(false);
+
+  for label in ["main", "pet"] {
+    if let Some(window) = app.get_webview_window(label) {
+      if visible {
+        let _ = window.hide();
+      } else {
+        let _ = window.show();
+        if label == "main" { let _ = window.set_focus(); }
+      }
     }
   }
 }
