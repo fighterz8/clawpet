@@ -44,34 +44,40 @@ main {
 .overlay-shell {
   width: 100vw;
   height: 100vh;
-  display: grid;
-  place-items: center;
-  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
   background: transparent;
   -webkit-app-region: drag;
   cursor: grab;
+  overflow: hidden;
 }
 
 .overlay-shell:active { cursor: grabbing; }
 
 .overlay-floating {
-  position: relative;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   background: transparent;
   -webkit-app-region: drag;
+  max-width: 100%;
 }
 
 .overlay-floating .avatar {
-  width: 220px;
-  height: 220px;
+  width: 200px;
+  height: 200px;
   filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.45));
 }
 
 .bundle-avatar {
-  width: 220px;
-  height: 220px;
+  width: 200px;
+  height: 200px;
   display: block;
+  flex: 0 0 auto;
   background: transparent;
   filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.35));
   user-select: none;
@@ -106,12 +112,10 @@ main {
 }
 
 .overlay-floating__bubble {
-  position: absolute;
-  bottom: 8px;
-  left: 50%;
-  transform: translate(-50%, 100%);
+  position: static;
+  display: inline-block;
   width: max-content;
-  max-width: 300px;
+  max-width: min(320px, calc(100vw - 24px));
   padding: 7px 12px;
   border-radius: 14px;
   background: rgba(8, 10, 18, 0.82);
