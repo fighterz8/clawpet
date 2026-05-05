@@ -12,22 +12,49 @@ const defaultAllowedOrigins = [
 export type CreateRuntimeAppOptions = {
   store?: RuntimeStateStore;
   allowCorsOrigin?: string | string[];
+  /** When set, all routes except /health require Authorization: Bearer <token>. */
+  authToken?: string;
 };
+
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let mismatch = 0;
+  for (let i = 0; i < a.length; i++) mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return mismatch === 0;
+}
 
 export function createRuntimeApp(options: CreateRuntimeAppOptions = {}) {
   const store = options.store ?? new RuntimeStateStore();
   const app = new Hono();
+  const authToken = options.authToken;
 
   app.use(
     "*",
     cors({
       origin: options.allowCorsOrigin ?? defaultAllowedOrigins,
       allowMethods: ["GET", "POST"],
-      allowHeaders: ["Content-Type"],
+      allowHeaders: ["Content-Type", "Authorization"],
     }),
   );
 
-  app.get("/health", (c) => c.json({ ok: true, service: "clawpet-runtime", version: "0.1.0" }));
+  // Health is always public so liveness probes work without a token.
+  app.get("/health", (c) =>
+    c.json({ ok: true, service: "clawpet-runtime", version: "0.1.0", authRequired: Boolean(authToken) }),
+  );
+
+  // Auth middleware for everything else.
+  if (authToken) {
+    app.use("*", async (c, next) => {
+      if (c.req.path === "/health") return next();
+      const header = c.req.header("authorization") ?? "";
+      const match = /^Bearer\s+(.+)$/i.exec(header.trim());
+      const provided = match?.[1] ?? "";
+      if (!provided || !timingSafeEqual(provided, authToken)) {
+        return c.json({ ok: false, errors: ["authentication required"] }, 401);
+      }
+      return next();
+    });
+  }
 
   app.get("/status", (c) => c.json(store.getStatus()));
 

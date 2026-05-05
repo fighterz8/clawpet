@@ -64,6 +64,41 @@ describe("runtime API", () => {
     expect(await events.json()).toMatchObject({ events: [{ event: { eventId: "evt_runtime_1", state: "happy" } }] });
   });
 
+  it("requires bearer token when authToken is set", async () => {
+    const app = createRuntimeApp({
+      store: new RuntimeStateStore({ now: () => new Date("2026-05-04T19:30:01.000Z") }),
+      authToken: "secret-token",
+    });
+
+    const health = await app.request("/health");
+    expect(health.status).toBe(200);
+    expect(await health.json()).toMatchObject({ authRequired: true });
+
+    const noAuth = await app.request("/avatar/state", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(event),
+    });
+    expect(noAuth.status).toBe(401);
+
+    const wrong = await app.request("/avatar/state", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer nope" },
+      body: JSON.stringify(event),
+    });
+    expect(wrong.status).toBe(401);
+
+    const ok = await app.request("/avatar/state", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer secret-token" },
+      body: JSON.stringify(event),
+    });
+    expect(ok.status).toBe(200);
+
+    const status = await app.request("/status", { headers: { Authorization: "Bearer secret-token" } });
+    expect(status.status).toBe(200);
+  });
+
   it("rejects malformed or unsafe events", async () => {
     const app = createRuntimeApp();
     const response = await app.request("/avatar/state", {
