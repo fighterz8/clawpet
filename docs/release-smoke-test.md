@@ -1,9 +1,10 @@
 # Release smoke test notes
 
-Current local packaging command:
+Current local packaging commands:
 
 ```bash
-npm exec tauri build
+npm run desktop:build   # release app binary, no bundle
+npm exec tauri build    # full Linux bundle build
 ```
 
 On Linux this produces:
@@ -12,11 +13,14 @@ On Linux this produces:
 - `src-tauri/target/release/bundle/rpm/Clawpet-0.1.0-1.x86_64.rpm`
 - `src-tauri/target/release/bundle/appimage/Clawpet_0.1.0_amd64.AppImage`
 
-Smoke check used on the OpenClaw Linux host:
+Smoke checks used on the OpenClaw Linux host:
 
 ```bash
+timeout 8s xvfb-run -a src-tauri/target/release/app
 timeout 8s xvfb-run -a src-tauri/target/release/bundle/appimage/Clawpet_0.1.0_amd64.AppImage
 ```
+
+Latest smoke after runtime-ownership/reconnect/status-dot work: 2026-05-05.
 
 Expected result in headless smoke mode:
 
@@ -24,6 +28,7 @@ Expected result in headless smoke mode:
 - internal runtime logs `Clawpet internal runtime listening on 0.0.0.0:8737`
 - timeout exits with code `124` because the app stays running
 - EGL/DRI warnings under Xvfb are acceptable for this smoke test
+- setup/overlay bundle includes the current reconnect diagnostics and green/yellow/red status-dot semantics
 
 Cross-platform notes:
 
