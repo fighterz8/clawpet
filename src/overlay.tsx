@@ -17,6 +17,7 @@ function OverlayApp() {
   const [state, setState] = useState<AvatarState>("idle");
   const [message, setMessage] = useState<string>("");
   const [online, setOnline] = useState(false);
+  const [runtimeConnected, setRuntimeConnected] = useState(false);
   const [lastEventAt, setLastEventAt] = useState<string | null>(null);
   const [bundle, setBundle] = useState<ResolvedAvatarBundle | null>(null);
 
@@ -59,10 +60,12 @@ function OverlayApp() {
         const status = await s.json();
         setState(status.avatar.state);
         setMessage(status.avatar.bubble ?? "");
+        setRuntimeConnected(Boolean(status.connected));
         setLastEventAt(status.lastEventAt ?? null);
         setOnline(true);
       } catch {
         setOnline(false);
+        setRuntimeConnected(false);
         setLastEventAt(null);
       }
     }
@@ -71,11 +74,13 @@ function OverlayApp() {
     return () => window.clearInterval(id);
   }, []);
 
-  const linkState = !online ? "offline" : lastEventAt ? "ready" : "waiting";
+  const linkState = !online ? "offline" : runtimeConnected ? "ready" : "waiting";
   const linkLabel = linkState === "ready"
-    ? "OpenClaw connected — ready to receive commands"
+    ? lastEventAt
+      ? "Runtime connected — OpenClaw activity received"
+      : "Runtime connected — waiting for first OpenClaw activity"
     : linkState === "waiting"
-      ? "Runtime online — waiting for an authenticated OpenClaw event"
+      ? "Runtime online — waiting for connection readiness"
       : "Runtime offline";
 
   return (
