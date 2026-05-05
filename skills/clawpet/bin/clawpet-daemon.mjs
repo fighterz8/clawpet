@@ -131,7 +131,7 @@ function readActivity() {
 function findActiveSessionFile() {
   try {
     const entries = readdirSync(SESSIONS_DIR)
-      .filter(n => n.endsWith(".jsonl") && !n.includes(".checkpoint."))
+      .filter(n => n.endsWith(".jsonl") && !n.includes(".checkpoint.") && !n.includes(".trajectory"))
       .map(n => {
         const p = join(SESSIONS_DIR, n);
         try { return { p, mtime: statSync(p).mtimeMs }; } catch { return null; }
