@@ -121,7 +121,7 @@ function OnboardApp() {
         <h2>3. What OpenClaw does</h2>
         <ul className="ob-list">
           <li>Claims the pair code from the OpenClaw host.</li>
-          <li>Saves the runtime token securely.</li>
+          <li>Saves the runtime token on both sides so reopening Clawpet reconnects automatically.</li>
           <li>Starts the zero-token daemon.</li>
           <li>Pushes avatar assets/config over the paired connection.</li>
         </ul>

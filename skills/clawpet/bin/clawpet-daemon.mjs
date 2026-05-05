@@ -32,16 +32,16 @@ const ROTATE_MS = 5000;    // how often to re-scan for newer session file
 // tell the user what OpenClaw is actually doing right now.
 
 const TOOL_REACTIONS = {
-  exec:            { state: "focused",  bubble: "Running command…",      minLevel: "balanced" },
-  process:         { state: "thinking", bubble: "Checking command…",     minLevel: "balanced" },
-  read:            { state: "thinking", bubble: "Reading files…",        minLevel: "balanced" },
-  edit:            { state: "focused",  bubble: "Editing files…",        minLevel: "balanced" },
-  write:           { state: "focused",  bubble: "Writing files…",        minLevel: "balanced" },
-  apply_patch:     { state: "focused",  bubble: "Patching files…",       minLevel: "balanced" },
-  web_fetch:       { state: "thinking", bubble: "Reading web page…",     minLevel: "balanced" },
-  web_search:      { state: "thinking", bubble: "Searching web…",        minLevel: "balanced" },
-  memory_search:   { state: "thinking", bubble: "Checking memory…",      minLevel: "balanced" },
-  memory_get:      { state: "thinking", bubble: "Reading memory…",       minLevel: "balanced" },
+  exec:            { state: "focused",  bubble: ["Running command…", "Checking the machine…", "Executing locally…"], minLevel: "balanced" },
+  process:         { state: "thinking", bubble: ["Checking command…", "Reading command output…"], minLevel: "balanced" },
+  read:            { state: "thinking", bubble: ["Reading files…", "Inspecting the repo…", "Looking at the code…"], minLevel: "balanced" },
+  edit:            { state: "focused",  bubble: ["Editing files…", "Making the change…"], minLevel: "balanced" },
+  write:           { state: "focused",  bubble: ["Writing files…", "Saving changes…"], minLevel: "balanced" },
+  apply_patch:     { state: "focused",  bubble: ["Patching files…", "Applying patch…"], minLevel: "balanced" },
+  web_fetch:       { state: "thinking", bubble: ["Reading web page…", "Fetching docs…"], minLevel: "balanced" },
+  web_search:      { state: "thinking", bubble: ["Searching web…", "Looking it up…"], minLevel: "balanced" },
+  memory_search:   { state: "thinking", bubble: ["Checking memory…", "Looking back…"], minLevel: "balanced" },
+  memory_get:      { state: "thinking", bubble: ["Reading memory…", "Pulling context…"], minLevel: "balanced" },
   image:           { state: "thinking", bubble: "Inspecting image…",     minLevel: "balanced" },
   image_generate:  { state: "focused",  bubble: "Generating image…",     minLevel: "balanced" },
   video_generate:  { state: "focused",  bubble: "Generating video…",     minLevel: "balanced" },
@@ -53,8 +53,13 @@ const TOOL_REACTIONS = {
   __default__:     { state: "thinking", bubble: "Working…",              minLevel: "expressive" },
 };
 
-const USER_MSG_BUBBLE = "Reading your prompt…";
-const DONE_BUBBLE = "Done";
+const USER_MSG_BUBBLES = ["Reading your prompt…", "Got it — reading…", "Prompt received…"];
+const DONE_BUBBLES = ["Done", "Finished", "Wrapped up"];
+
+function pickBubble(list, salt = "") {
+  const n = Math.abs([...`${Date.now()}${salt}`].reduce((a, c) => a + c.charCodeAt(0), 0));
+  return list[n % list.length];
+}
 
 function log(line) {
   const stamp = new Date().toISOString();
@@ -82,7 +87,7 @@ function dispatchToolReaction(toolName) {
   if (now - lastDispatchAt < DISPATCH_THROTTLE_MS) return;
   lastDispatchAt = now;
   const cfg = TOOL_REACTIONS[toolName] || TOOL_REACTIONS.__default__;
-  const bubble = cfg.bubble;
+  const bubble = Array.isArray(cfg.bubble) ? pickBubble(cfg.bubble, toolName) : cfg.bubble;
   // We use `send` directly with state because tool reactions are tool-name
   // specific and don't all map cleanly onto react event keys. Activity gating
   // is enforced by passing through `react thinking`/`react long-task`/`react user-message`
@@ -97,7 +102,7 @@ function dispatchUserMessage() {
   const now = Date.now();
   if (now - lastDispatchAt < DISPATCH_THROTTLE_MS) return;
   lastDispatchAt = now;
-  const bubble = USER_MSG_BUBBLE;
+  const bubble = pickBubble(USER_MSG_BUBBLES, "user");
   callClawpet(["react", "user-message", "--bubble", bubble, "--quiet"]);
   log(`user message -> ${bubble}`);
 }
@@ -106,7 +111,7 @@ function dispatchDone() {
   const now = Date.now();
   if (now - lastDispatchAt < DISPATCH_THROTTLE_MS) return;
   lastDispatchAt = now;
-  const bubble = DONE_BUBBLE;
+  const bubble = pickBubble(DONE_BUBBLES, "done");
   callClawpet(["react", "done", "--bubble", bubble, "--quiet"]);
   log(`assistant done -> ${bubble}`);
 }

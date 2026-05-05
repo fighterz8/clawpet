@@ -4,8 +4,10 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::{
   collections::HashMap,
+  fs,
   io::{Read, Write},
   net::{TcpListener, TcpStream},
+  path::PathBuf,
   sync::{Arc, Mutex},
   thread,
   time::{SystemTime, UNIX_EPOCH},
@@ -69,6 +71,32 @@ fn now_iso() -> String { format!("{}", now_ms()) }
 fn random_string(n: usize) -> String { rand::thread_rng().sample_iter(&Alphanumeric).take(n).map(char::from).collect() }
 fn random_code() -> String { format!("{:06}", rand::thread_rng().gen_range(0..1_000_000)) }
 
+fn token_path() -> Option<PathBuf> {
+  let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"))?;
+  Some(PathBuf::from(home).join(".openclaw").join("clawpet").join("runtime-token"))
+}
+
+fn load_or_create_token() -> String {
+  if let Some(path) = token_path() {
+    if let Ok(token) = fs::read_to_string(&path) {
+      let token = token.trim().to_string();
+      if token.len() >= 32 { return token; }
+    }
+    let token = random_string(64);
+    if let Some(parent) = path.parent() { let _ = fs::create_dir_all(parent); }
+    let _ = fs::write(&path, &token);
+    return token;
+  }
+  random_string(64)
+}
+
+fn persist_token(token: &str) {
+  if let Some(path) = token_path() {
+    if let Some(parent) = path.parent() { let _ = fs::create_dir_all(parent); }
+    let _ = fs::write(path, token);
+  }
+}
+
 const TERMINAL_LINGER_MS: u128 = 8_000;
 const ACTIVE_LINGER_MS: u128 = 45_000;
 const SLEEPY_AFTER_MS: u128 = 5 * 60 * 1000;
@@ -95,6 +123,7 @@ fn effective_avatar(raw_state: &str, raw_bubble: &str, last_event_at_ms: Option<
 
 pub fn start_runtime_server() {
   thread::spawn(|| {
+    let initial_token = load_or_create_token();
     let state = Arc::new(Mutex::new(RuntimeState {
       status: Status {
         kind: "clawpet.status".into(),
@@ -106,7 +135,7 @@ pub fn start_runtime_server() {
         avatar: AvatarStatus { avatar_id: "dawn-v0".into(), state: "idle".into(), bundle_version: "0.1.0".into(), bubble: "idle".into() },
         last_event_at: None,
       },
-      token: random_string(64),
+      token: initial_token,
       pair_mode: None,
       bundle_manifest: None,
       bundle_assets: HashMap::new(),
@@ -180,6 +209,7 @@ fn route(method: &str, path: &str, headers: &HashMap<String, String>, body: &str
       return response(401, json!({"ok":false,"errors":["invalid code"]}));
     }
     s.token = random_string(64);
+    persist_token(&s.token);
     s.pair_mode = None;
     return response(200, json!({ "ok": true, "token": s.token }));
   }
@@ -211,6 +241,13 @@ fn route(method: &str, path: &str, headers: &HashMap<String, String>, body: &str
   }
 
   if !authorized(headers, &state) { return response(401, json!({"ok":false,"errors":["authentication required"]})); }
+
+  if method == "POST" && path == "/admin/rotate-token" {
+    let mut s = state.lock().unwrap();
+    s.token = random_string(64);
+    persist_token(&s.token);
+    return response(200, json!({ "ok": true, "token": s.token }));
+  }
 
   if method == "POST" && path == "/admin/avatar-bundle" {
     let upload = match serde_json::from_str::<AvatarBundleUpload>(body) {
