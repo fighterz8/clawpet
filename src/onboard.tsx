@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import "./styles.css";
 import "./onboard.css";
 
@@ -31,15 +30,6 @@ async function fetchJson(url: string, init?: RequestInit) {
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
   return <button className="ob-copy" onClick={() => { void navigator.clipboard.writeText(text); setCopied(true); window.setTimeout(() => setCopied(false), 1200); }}>{copied ? "Copied" : "Copy"}</button>;
-}
-
-async function hideSetupWindow() {
-  try {
-    await getCurrentWindow().hide();
-  } catch {
-    // Browser/dev fallback: avoid window.close(), which can blank the webview.
-    document.body.classList.add("ob-hidden");
-  }
 }
 
 function OnboardApp() {
@@ -152,9 +142,9 @@ function OnboardApp() {
       <section className="ob-card ob-hero">
         <div className="ob-mark">🐲</div>
         <div>
-          <p className="ob-eyebrow">Clawpet setup</p>
+          <p className="ob-eyebrow">Clawpet helper</p>
           <h1>A tiny desktop pet for OpenClaw.</h1>
-          <p className="ob-muted">The app starts the local runtime, shows connection status, gives OpenClaw a pair code when needed, and then gets out of the way.</p>
+          <p className="ob-muted">This helper starts the local runtime, shows connection and avatar diagnostics, gives OpenClaw a pair code when needed, and stays available as a verification surface instead of disappearing after setup.</p>
         </div>
       </section>
 
@@ -192,10 +182,9 @@ function OnboardApp() {
       {openClawReady && (
         <section className="ob-card ob-complete">
           <div>
-            <h2>Connected — setup complete</h2>
-            <p className="ob-muted">The pet is ready. You do not need another pair code — just start chatting with OpenClaw. Closing setup keeps Clawpet running in the tray.</p>
+            <h2>Connected — helper ready</h2>
+            <p className="ob-muted">The pet is ready. You do not need another pair code — just start chatting with OpenClaw. Keep this helper around whenever you want to verify connection state, avatar bundle info, or live activity.</p>
           </div>
-          <button className="ob-primary" onClick={() => void hideSetupWindow()}>Close setup</button>
         </section>
       )}
 

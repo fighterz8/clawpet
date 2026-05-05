@@ -96,11 +96,15 @@ pub fn run() {
         })
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                // Closing setup should not strand an always-on-top pet with no control
-                // surface. Keep both windows/tray alive; Quit Clawpet performs the real
-                // app shutdown.
+                // Keep the helper/control surface available instead of letting users hide
+                // the only verification window by accident. Tray quit remains the real exit.
                 api.prevent_close();
-                let _ = window.hide();
+                if window.label() == "main" {
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                } else {
+                    let _ = window.hide();
+                }
             }
         })
         .run(tauri::generate_context!())

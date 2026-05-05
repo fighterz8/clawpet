@@ -19,7 +19,6 @@ const DAWN_DEMO: ScriptedBeat[] = [
 const PRESET_SHOWCASE = [
   { avatarId: "dawn-v2-ember", title: "Dawn Ember", accent: "#ff8a5b" },
   { avatarId: "lantern-moth-v0", title: "Lantern Moth", accent: "#5fc8b5" },
-  { avatarId: "dawn-v2-ashgold", title: "Dawn Ashgold", accent: "#d7b36a" },
 ];
 
 const DOWNLOADS = {

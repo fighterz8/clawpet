@@ -11,26 +11,29 @@ Today the core experience is:
 - animated avatar bundles with per-state frame loops
 - a sidecar daemon that mirrors real OpenClaw activity with near-zero token cost
 
-> **Status:** active v0.5-era development. The desktop app/runtime path, pairing flow, animated Dawn bundles, and secondary showcase character are working.
+> **Status:** active v0.5-era development. The desktop app/runtime path, pairing flow, animated Dawn bundles, and the second showcase character are working.
 
 ## Readme demo
 
-<table>
-  <tr>
-    <td align="center">
-      <img src="public/previews/dawn-v2-preview.gif" alt="Animated Dawn v2 preview" width="220" />
-      <div><strong>Dawn Ashgold</strong></div>
-      <div><sub>Reading your message…</sub></div>
-    </td>
-    <td align="center">
-      <img src="public/previews/lantern-moth-preview.gif" alt="Animated Lantern Moth preview" width="220" />
-      <div><strong>Lantern Moth</strong></div>
-      <div><sub>Focused on the task…</sub></div>
-    </td>
-  </tr>
-</table>
+<div align="center">
+  <table>
+    <tr>
+      <td align="center" valign="top">
+        <img src="public/previews/dawn-v2-preview.gif" alt="Animated Dawn Ashgold preview" width="220" />
+        <div><strong>Dawn Ashgold</strong></div>
+        <div><sub>Reading your message…</sub></div>
+      </td>
+      <td width="36"></td>
+      <td align="center" valign="top">
+        <img src="public/previews/lantern-moth-preview.gif" alt="Animated Lantern Moth preview" width="220" />
+        <div><strong>Lantern Moth</strong></div>
+        <div><sub>Focused on the current task…</sub></div>
+      </td>
+    </tr>
+  </table>
+</div>
 
-These captions are meant to mirror the real overlay style: short, informative, and ambient rather than chatty.
+These captions are intentionally short, like the real overlay: ambient status, not a wall of text.
 
 ---
 
@@ -81,8 +84,8 @@ So the intended story is:
 3. If first-time setup is needed, or reconnect looks broken, click **Show pair code**.
 4. Give that code + host to OpenClaw.
 5. OpenClaw pairs, verifies auth, starts the daemon if appropriate, and sends a test ping.
-6. Setup shows **Connected — setup complete**.
-7. Close setup. The pet stays available via the tray.
+6. The helper shows **Connected — helper ready**.
+7. Leave the helper available whenever you want a verification/diagnostics surface.
 
 ---
 
@@ -106,11 +109,9 @@ In practice:
 Usually you do **not** need a new pair code.
 
 The runtime persists its token locally at:
-
 - `~/.openclaw/clawpet/runtime-token`
 
 OpenClaw stores the matching token in:
-
 - `~/.openclaw/clawpet/config.json`
 
 So reopening Clawpet and chatting with OpenClaw should normally reconnect automatically.
@@ -136,6 +137,7 @@ That app is needed because it:
 - creates the tray icon and visible pet window on the display machine
 - starts the local runtime that serves pet state
 - shows the pair code during setup
+- provides the helper window for connection checks, avatar verification, and bundle diagnostics
 - gives OpenClaw a real local target to authenticate with and control
 
 Without the desktop app running on the display machine, OpenClaw has nothing to connect to.
@@ -235,11 +237,14 @@ clawpet send happy "It works" --bubble "Hello! 🐲"
 
 ### Runtime/setup diagnostics surfaced by the app
 
-Setup can show:
+The helper can show:
 - runtime owner
 - live avatar state
 - current bubble
 - last event age
+- avatar id
+- bundle version
+- bundle state count
 - best-effort display host in the suggested OpenClaw command
 
 Owner labels:
@@ -254,12 +259,14 @@ Owner labels:
 
 ## Tray controls
 
-Closing setup hides it; it does **not** quit Clawpet.
+The desktop app keeps running in the tray.
 
 Tray menu:
 - **Show / Hide Pet**
 - **Show Setup**
 - **Quit Clawpet**
+
+The helper window is now intended to remain a useful control/verification surface rather than something you immediately dismiss forever.
 
 ---
 
@@ -336,7 +343,7 @@ Standard Dawn (`dawn-v0`) is the original default avatar. The current showcase/d
 These are not just palette-swapped stills.
 
 They are useful for:
-1. showing animated bundle previews on the landing page and README/demo story
+1. showing animated bundle previews on the landing page and README demo story
 2. verifying real runtime avatar switching through OpenClaw
 3. proving Clawpet supports both palette variants **and** genuinely different character identities
 
@@ -376,11 +383,9 @@ Examples:
 ## Avatar bundle format
 
 Built-in defaults live under:
-
 - `public/avatars/<name>/`
 
 OpenClaw-managed custom designs live under:
-
 - `~/.openclaw/clawpet/bundles/<name>/`
 
 A bundle includes:
@@ -453,7 +458,7 @@ instead of hand-editing every folder by hand.
 OpenClaw host                         Display machine
 ─────────────                         ───────────────
 session JSONL ── daemon/CLI ──HTTP──▶ Tauri app/runtime
-                                      setup + overlay
+                                      helper + overlay
                                       tray + token store
 ```
 
@@ -478,7 +483,7 @@ Tokens persist on both sides after successful pair.
 
 ### Working
 
-- native setup surface
+- native helper/setup surface
 - native runtime
 - transparent overlay
 - visible edge-mounted connection light
@@ -500,6 +505,7 @@ Tokens persist on both sides after successful pair.
 - cleaner reset / rotate-token UX
 - better animated avatar schema/tooling over time
 - more polished bundle-generation automation
+- richer helper controls over time
 
 ### Will not
 
