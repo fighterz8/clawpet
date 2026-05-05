@@ -53,15 +53,20 @@ Use a new code only if this is first-time setup, the dot stays yellow and the pe
 
 ## Downloads
 
-Clawpet is moving to a simple download-first install flow from the Vercel app:
+Clawpet is moving to a simple download-first install flow from the Vercel app.
 
-- **Windows:** `.exe` setup installer
-- **macOS:** packaged macOS app/archive
-- **Linux:** packaged Linux build
+Current package source:
+- GitHub Actions workflow: `desktop-build.yml`
+- Workflow page: https://github.com/fighterz8/clawpet/actions/workflows/desktop-build.yml
 
-The current GitHub Actions build already produces Windows, macOS, and Linux artifacts. The Vercel app should surface those packages as the primary download path so users do not have to dig through GitHub Actions.
+Current artifact names:
+- **Windows:** `clawpet-windows` (`.exe` + `.msi`)
+- **macOS:** `clawpet-macos` (`.dmg` + `.app`)
+- **Linux:** `clawpet-linux` (`.AppImage` + `.deb` + `.rpm`)
 
-Source installs remain useful for development, but normal users should start with the downloadable package for their OS, open Clawpet once, then let OpenClaw handle pairing and ongoing control.
+Until dedicated release-package URLs are wired into the site, the landing page download buttons should point users to the latest desktop-build workflow/artifacts instead of dead placeholder routes.
+
+Source installs remain useful for development, but normal users should start with the packaged desktop build for their OS, open Clawpet once, then let OpenClaw handle pairing and ongoing control.
 
 ## Current dev quickstart
 
@@ -190,6 +195,11 @@ These presets are intentionally useful for two things:
 1. showing multiple looks on the landing page / README without waiting on live generation, and
 2. testing real avatar switching over the paired OpenClaw connection.
 
+Animated bundle note:
+- Dawn v2 preset bundles now use real per-state frame loops.
+- `lantern-moth-v0` is also now an animated showcase bundle, not just six static state cards.
+- The bundle build/import pipeline is documented in `docs/pipeline/avatar-generation-pipeline.md` and scripted via `scripts/build_avatar_bundle.py`.
+
 Bundles live under `public/avatars/<name>-v<n>/` for built-in defaults and under `~/.openclaw/clawpet/bundles/<name>/` for OpenClaw-managed custom designs:
 
 ```text
@@ -226,7 +236,7 @@ Auth summary:
 
 ## Status & next work
 
-**Working:** native setup surface, native runtime, transparent overlay, tray controls, green/yellow/red indicator, 6-digit pairing, persisted reconnect token, authenticated readiness checks, daemon reactions, Tailscale-first cross-machine setup, avatar bundle push/select.
+**Working:** native setup surface, native runtime, transparent overlay, tray controls, green/yellow/red indicator, 6-digit pairing, persisted reconnect token, authenticated readiness checks, daemon reactions, Tailscale-first cross-machine setup, avatar bundle push/select, animated Dawn bundles, animated secondary showcase character.
 
 **Next:** packaged `.exe` / `.dmg` artifacts, smoke tests on target OSes, cleaner reset/rotate-token UX, Dependabot vulnerability fix, better animated avatar schema, Dawn-v1 animated bundle.
 

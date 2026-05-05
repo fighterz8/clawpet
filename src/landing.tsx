@@ -23,6 +23,24 @@ const PRESET_SHOWCASE = [
   { avatarId: "dawn-v2-amethyst", title: "Dawn Amethyst", accent: "#b884ff" },
 ];
 
+const DOWNLOADS = {
+  windows: {
+    href: "https://github.com/fighterz8/clawpet/actions/workflows/desktop-build.yml",
+    label: "Download Windows (.exe/.msi)",
+    artifact: "artifact: clawpet-windows",
+  },
+  macos: {
+    href: "https://github.com/fighterz8/clawpet/actions/workflows/desktop-build.yml",
+    label: "Download macOS (.dmg)",
+    artifact: "artifact: clawpet-macos",
+  },
+  linux: {
+    href: "https://github.com/fighterz8/clawpet/actions/workflows/desktop-build.yml",
+    label: "Download Linux (.AppImage/.deb/.rpm)",
+    artifact: "artifact: clawpet-linux",
+  },
+} as const;
+
 function useScriptedDemo(beats: ScriptedBeat[]) {
   const [i, setI] = useState(0);
   useEffect(() => {
@@ -112,7 +130,7 @@ function Landing() {
           </h1>
           <p className="lp-lede">
             A pixel-art desktop pet generated from your OpenClaw's name, soul, and personality — then animated by what it's actually doing:
-            thinking, working, blocked, done. Floats over your desktop. Reacts in real time over Tailscale. Costs you almost nothing.
+            thinking, working, blocked, done. Floats over your desktop. Reacts in real time over Tailscale. Ships with animated Dawn presets plus a fully different lantern-moth showcase companion.
           </p>
           <div className="lp-cta">
             <a className="lp-btn lp-btn--primary" href="#install">Try it in 3 minutes</a>
@@ -182,8 +200,7 @@ clawpet activity balanced`}</pre>
           <p className="lp-eyebrow">Avatars</p>
           <h2 className="lp-h2">Ask OpenClaw to redesign your familiar.</h2>
           <p className="lp-body">
-            Each avatar is a folder of six PNGs (<code>idle</code>, <code>thinking</code>, <code>focused</code>, <code>happy</code>, <code>alert</code>, <code>sleepy</code>) plus an
-            <code> avatar.json</code> manifest. The fun part is personalization: OpenClaw can generate, store, push, and swap bundles conversationally. We now ship a Dawn v2 preset family plus a genuinely different lantern-moth showcase pet, so you can demo both palette variation and full character variation before testing live runtime switching.
+            Each avatar bundle includes normalized fallback assets, optional per-state frame loops, and an <code>avatar.json</code> manifest. The fun part is personalization: OpenClaw can generate, store, push, and swap bundles conversationally. We now ship animated Dawn v2 presets plus a genuinely different lantern-moth showcase pet, so you can demo both palette variation and full character variation before testing live runtime switching.
           </p>
         </Reveal>
         <div className="lp-stages lp-stages--presets">
@@ -208,12 +225,15 @@ clawpet activity balanced`}</pre>
             <div className="lp-install-card">
               <h3>1. Pick your package</h3>
               <p className="lp-install-os">Windows</p>
-              <a className="lp-btn lp-btn--primary" href="/downloads/clawpet-windows">Download .exe</a>
+              <a className="lp-btn lp-btn--primary" href={DOWNLOADS.windows.href} target="_blank" rel="noreferrer">{DOWNLOADS.windows.label}</a>
+              <p className="lp-install-artifact">{DOWNLOADS.windows.artifact}</p>
               <p className="lp-install-os">macOS</p>
-              <a className="lp-btn lp-btn--ghost" href="/downloads/clawpet-macos">Download macOS package</a>
+              <a className="lp-btn lp-btn--ghost" href={DOWNLOADS.macos.href} target="_blank" rel="noreferrer">{DOWNLOADS.macos.label}</a>
+              <p className="lp-install-artifact">{DOWNLOADS.macos.artifact}</p>
               <p className="lp-install-os">Linux</p>
-              <a className="lp-btn lp-btn--ghost" href="/downloads/clawpet-linux">Download Linux package</a>
-              <p className="lp-install-note">These links are intended to point at the latest packaged artifacts from the Vercel app.</p>
+              <a className="lp-btn lp-btn--ghost" href={DOWNLOADS.linux.href} target="_blank" rel="noreferrer">{DOWNLOADS.linux.label}</a>
+              <p className="lp-install-artifact">{DOWNLOADS.linux.artifact}</p>
+              <p className="lp-install-note">Current downloads come from the latest GitHub Actions desktop build until dedicated release-package URLs are wired into the site.</p>
             </div>
           </Reveal>
           <Reveal delay={160}>

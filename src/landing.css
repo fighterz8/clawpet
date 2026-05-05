@@ -197,6 +197,7 @@
 .lp-install-card h3 { margin: 0 0 8px; font-size: 17px; }
 .lp-install-os { margin: 6px 0 4px; font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--fg-dim); }
 .lp-install-note { color: var(--fg-dim); font-size: 13px; margin: 6px 0 0; }
+.lp-install-artifact { color: var(--accent); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; margin: -2px 0 6px; }
 
 .lp-copy {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
