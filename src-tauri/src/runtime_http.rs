@@ -180,7 +180,14 @@ fn handle_client(mut stream: TcpStream, state: Arc<Mutex<RuntimeState>>) {
 fn route(method: &str, path: &str, headers: &HashMap<String, String>, body: &str, state: Arc<Mutex<RuntimeState>>) -> Vec<u8> {
   if method == "OPTIONS" { return response(204, json!({})); }
   if method == "GET" && path == "/health" {
-    return response(200, json!({ "ok": true, "service": "clawpet-runtime", "version": "0.1.0", "authRequired": true, "runtime": "tauri-internal" }));
+    return response(200, json!({
+      "ok": true,
+      "service": "clawpet-runtime",
+      "version": "0.1.0",
+      "authRequired": true,
+      "runtime": "tauri-internal",
+      "owner": "clawpet-desktop-app"
+    }));
   }
   if method == "GET" && path == "/pair-mode" {
     let mut s = state.lock().unwrap();

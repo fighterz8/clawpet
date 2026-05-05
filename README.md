@@ -108,6 +108,11 @@ clawpet status
 clawpet send happy "It works" --bubble "Hello! 🐲"
 ```
 
+Setup also labels the runtime owner:
+
+- `desktop app runtime` — expected packaged/native path.
+- `external dev runtime` — a Node dev runtime is occupying port 8737; okay for development, but quit stale dev processes if setup behaves strangely.
+
 `clawpet status` reports `openClawAuth` when possible:
 
 - `ready` — stored token works.

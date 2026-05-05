@@ -72,7 +72,14 @@ export function createRuntimeApp(options: CreateRuntimeAppOptions = {}) {
 
   // Health is always public so liveness probes work without a token.
   app.get("/health", (c) =>
-    c.json({ ok: true, service: "clawpet-runtime", version: "0.1.0", authRequired: Boolean(authToken) }),
+    c.json({
+      ok: true,
+      service: "clawpet-runtime",
+      version: "0.1.0",
+      authRequired: Boolean(authToken),
+      runtime: "node-dev",
+      owner: "external-node-process",
+    }),
   );
 
   // Public, no-auth pair-mode discovery: tells callers whether pair mode is
