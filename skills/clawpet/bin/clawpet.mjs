@@ -1,0 +1,526 @@
+#!/usr/bin/env node
+// Clawpet skill CLI — drive a Clawpet desktop runtime from OpenClaw.
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { homedir } from "node:os";
+import { join, dirname } from "node:path";
+import { randomUUID } from "node:crypto";
+
+const VERSION = "0.4.0";
+const STATES = ["idle", "thinking", "focused", "happy", "alert", "sleepy"];
+const ACTIVITY_LEVELS = ["off", "minimal", "balanced", "expressive", "maximum"];
+const DEFAULT_ACTIVITY = "balanced";
+
+// Map semantic events -> avatar states. Used by `clawpet react <event>`.
+// Values: { state, defaultBubble, minLevel } where minLevel is the lowest activity
+// level at which this reaction fires. Anything below minLevel is a silent no-op.
+const REACTIONS = {
+  "user-message":  { state: "thinking", bubble: "Reading your prompt…", minLevel: "balanced" },
+  "tool-start":    { state: "focused",  bubble: "Working…",       minLevel: "expressive" },
+  "tool-error":    { state: "alert",    bubble: "Hit an error",   minLevel: "minimal"    },
+  "blocker":       { state: "alert",    bubble: "Need your input", minLevel: "minimal"    },
+  "done":          { state: "happy",    bubble: "Done",            minLevel: "minimal"    },
+  "long-task":     { state: "focused",  bubble: "Heads down",      minLevel: "balanced"   },
+  "thinking":      { state: "thinking", bubble: "Thinking…",       minLevel: "balanced"   },
+  // Heartbeat is gated on a SEPARATE config flag (reactToHeartbeats), not
+  // the activity level. Default disabled. Activity 'off' still fully suppresses.
+  "heartbeat":     { state: "thinking", bubble: "Heartbeat",        minLevel: "_heartbeat" },
+};
+
+function levelRank(level) { return ACTIVITY_LEVELS.indexOf(level); }
+function levelAllows(current, minRequired) {
+  return current !== "off" && levelRank(current) >= levelRank(minRequired);
+}
+const CONFIG_DIR = join(homedir(), ".openclaw", "clawpet");
+const CONFIG_PATH = join(CONFIG_DIR, "config.json");
+
+function loadConfig() {
+  try {
+    if (!existsSync(CONFIG_PATH)) return {};
+    return JSON.parse(readFileSync(CONFIG_PATH, "utf8"));
+  } catch {
+    return {};
+  }
+}
+
+function saveConfig(cfg) {
+  mkdirSync(dirname(CONFIG_PATH), { recursive: true });
+  writeFileSync(CONFIG_PATH, JSON.stringify(cfg, null, 2) + "\n", { mode: 0o600 });
+}
+
+function resolveRuntimeUrl() {
+  if (process.env.CLAWPET_RUNTIME_URL) return process.env.CLAWPET_RUNTIME_URL.replace(/\/$/, "");
+  const cfg = loadConfig();
+  if (cfg.runtimeUrl) return String(cfg.runtimeUrl).replace(/\/$/, "");
+  return "http://127.0.0.1:8737";
+}
+
+function resolveRuntimeToken() {
+  if (process.env.CLAWPET_RUNTIME_TOKEN) return process.env.CLAWPET_RUNTIME_TOKEN.trim();
+  const cfg = loadConfig();
+  return cfg.runtimeToken ? String(cfg.runtimeToken) : undefined;
+}
+
+function resolveActivity() {
+  const env = process.env.CLAWPET_ACTIVITY;
+  if (env && ACTIVITY_LEVELS.includes(env)) return env;
+  const cfg = loadConfig();
+  if (cfg.activity && ACTIVITY_LEVELS.includes(cfg.activity)) return cfg.activity;
+  return DEFAULT_ACTIVITY;
+}
+
+function resolveHeartbeatReactions() {
+  const env = process.env.CLAWPET_HEARTBEAT_REACTIONS;
+  if (env != null) return env === "1" || env.toLowerCase() === "true" || env.toLowerCase() === "on";
+  const cfg = loadConfig();
+  return Boolean(cfg.heartbeatReactions);
+}
+
+function parseFlags(argv) {
+  const positional = [];
+  const flags = {};
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a.startsWith("--")) {
+      const key = a.slice(2);
+      const next = argv[i + 1];
+      if (next !== undefined && !next.startsWith("--")) { flags[key] = next; i++; }
+      else flags[key] = true;
+    } else positional.push(a);
+  }
+  return { positional, flags };
+}
+
+async function http(method, url, body) {
+  const headers = {};
+  if (body) headers["content-type"] = "application/json";
+  const token = resolveRuntimeToken();
+  if (token) headers["authorization"] = `Bearer ${token}`;
+  const res = await fetch(url, {
+    method,
+    headers: Object.keys(headers).length ? headers : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const text = await res.text();
+  let json;
+  try { json = text ? JSON.parse(text) : null; } catch { json = text; }
+  return { status: res.status, ok: res.ok, body: json };
+}
+
+function fail(msg, code = 1) { console.error(`clawpet: ${msg}`); process.exit(code); }
+
+function usage() {
+  console.log(`clawpet v${VERSION}
+
+Usage:
+  clawpet ping
+  clawpet status
+  clawpet send <state> [message] [--bubble TEXT] [--quiet]
+  clawpet react <event> [--bubble TEXT] [--quiet]   # event: user-message|tool-start|tool-error|blocker|done|long-task|thinking
+  clawpet activity [off|minimal|balanced|expressive|maximum]
+  clawpet heartbeat-reactions [on|off]              # default off
+  clawpet pair --url <runtime-url> [--token <bearer-token>]
+  clawpet pair --code <6-digit> --host <host[:port]>     # magic-pair: claim a code on a remote runtime
+  clawpet pair-mode [--seconds 90]                       # open pair mode on the local runtime; prints code
+  clawpet rotate-token
+  clawpet avatar push <bundle-dir>                 # upload/select avatar bundle on paired runtime
+  clawpet install [--os windows|unix]
+  clawpet config
+  clawpet daemon <start|stop|status|run>           # auto-react sidecar (tails OpenClaw session log)
+
+States: ${STATES.join(" | ")}
+Runtime URL: ${resolveRuntimeUrl()}  (override with CLAWPET_RUNTIME_URL or 'clawpet pair')
+Auth token: ${resolveRuntimeToken() ? "set" : "not set"}`);
+}
+
+async function cmdPing() {
+  const url = resolveRuntimeUrl();
+  try {
+    const r = await http("GET", `${url}/health`);
+    console.log(JSON.stringify({ url, ...r }, null, 2));
+    process.exit(r.ok ? 0 : 2);
+  } catch (e) { fail(`runtime unreachable at ${url}: ${e.message}`, 2); }
+}
+
+async function cmdStatus() {
+  const url = resolveRuntimeUrl();
+  try {
+    const r = await http("GET", `${url}/status`);
+    console.log(JSON.stringify(r.body, null, 2));
+    process.exit(r.ok ? 0 : 2);
+  } catch (e) { fail(`runtime unreachable at ${url}: ${e.message}`, 2); }
+}
+
+async function cmdSend(positional, flags) {
+  const [state, ...rest] = positional;
+  if (!state) fail("send: <state> required");
+  if (!STATES.includes(state)) fail(`send: invalid state '${state}'. Use: ${STATES.join(", ")}`);
+  const message = rest.join(" ").trim() || undefined;
+  const bubble = typeof flags.bubble === "string" ? flags.bubble : undefined;
+  const quiet = Boolean(flags.quiet);
+  if (bubble && bubble.length > 64) fail("send: --bubble must be <= 64 chars");
+  if (message && message.length > 280) fail("send: message must be <= 280 chars");
+
+  // User-controlled activity gate. `send` is treated as a manual emit; it fires
+  // at minimal+ but is suppressed at 'off'.
+  const activity = resolveActivity();
+  if (activity === "off") {
+    if (!quiet) console.log(JSON.stringify({ ok: true, suppressed: true, reason: "activity is 'off'" }));
+    process.exit(0);
+  }
+
+  const event = {
+    type: "avatar.state",
+    version: "0.1.0",
+    eventId: randomUUID(),
+    sentAt: new Date().toISOString(),
+    source: { kind: "openclaw", displayName: "openclaw-clawpet-skill" },
+    state,
+    ...(message ? { message } : {}),
+    ...(bubble ? { bubble } : {}),
+  };
+
+  const url = resolveRuntimeUrl();
+  try {
+    const r = await http("POST", `${url}/avatar/state`, event);
+    if (!r.ok) {
+      console.error(`clawpet: send failed (HTTP ${r.status})`);
+      console.error(JSON.stringify(r.body, null, 2));
+      process.exit(2);
+    }
+    if (!quiet) {
+      console.log(JSON.stringify({ ok: true, sent: { state, bubble, message }, eventId: event.eventId }, null, 2));
+    }
+  } catch (e) { fail(`runtime unreachable at ${url}: ${e.message}`, 2); }
+}
+
+async function cmdReact(positional, flags) {
+  const [eventName] = positional;
+  if (!eventName) fail("react: <event> required (e.g. user-message, tool-start, tool-error, blocker, done)");
+  const def = REACTIONS[eventName];
+  if (!def) fail(`react: unknown event '${eventName}'. Known: ${Object.keys(REACTIONS).join(", ")}`);
+
+  const activity = resolveActivity();
+  // Activity 'off' kills everything, including heartbeats.
+  if (activity === "off") {
+    if (!flags.quiet) console.log(JSON.stringify({ ok: true, suppressed: true, reason: "activity is 'off'" }));
+    process.exit(0);
+  }
+  // Heartbeat reactions are gated on a separate flag (default off).
+  if (def.minLevel === "_heartbeat") {
+    if (!resolveHeartbeatReactions()) {
+      if (!flags.quiet) console.log(JSON.stringify({ ok: true, suppressed: true, reason: "heartbeat reactions disabled" }));
+      process.exit(0);
+    }
+  } else if (!levelAllows(activity, def.minLevel)) {
+    // User-controlled gate: silently no-op if current activity level forbids this reaction.
+    if (!flags.quiet) console.log(JSON.stringify({ ok: true, suppressed: true, reason: `activity '${activity}' < required '${def.minLevel}'` }));
+    process.exit(0);
+  }
+
+  const bubble = typeof flags.bubble === "string" ? flags.bubble : def.bubble;
+  // Reuse cmdSend by faking argv; but simpler: inline the POST.
+  const event = {
+    type: "avatar.state",
+    version: "0.1.0",
+    eventId: randomUUID(),
+    sentAt: new Date().toISOString(),
+    source: { kind: "openclaw", displayName: "openclaw-clawpet-skill" },
+    state: def.state,
+    bubble: bubble.slice(0, 64),
+  };
+  const url = resolveRuntimeUrl();
+  try {
+    const r = await http("POST", `${url}/avatar/state`, event);
+    if (!r.ok) {
+      console.error(`clawpet: react failed (HTTP ${r.status})`);
+      console.error(JSON.stringify(r.body, null, 2));
+      process.exit(2);
+    }
+    if (!flags.quiet) console.log(JSON.stringify({ ok: true, reacted: { event: eventName, state: def.state, bubble: event.bubble }, eventId: event.eventId }));
+  } catch (e) { fail(`runtime unreachable at ${url}: ${e.message}`, 2); }
+}
+
+function cmdHeartbeats(positional, _flags) {
+  const [arg] = positional;
+  if (!arg) {
+    console.log(JSON.stringify({ heartbeatReactions: resolveHeartbeatReactions(), configPath: CONFIG_PATH }, null, 2));
+    return;
+  }
+  const v = arg.toLowerCase();
+  if (!["on","off","true","false","1","0","enable","disable"].includes(v)) {
+    fail("heartbeat-reactions: argument must be 'on' or 'off'");
+  }
+  const enabled = ["on","true","1","enable"].includes(v);
+  const cfg = loadConfig();
+  cfg.heartbeatReactions = enabled;
+  saveConfig(cfg);
+  console.log(JSON.stringify({ ok: true, heartbeatReactions: enabled, configPath: CONFIG_PATH }, null, 2));
+}
+
+function cmdActivity(positional, _flags) {
+  const [level] = positional;
+  if (!level) {
+    console.log(JSON.stringify({ activity: resolveActivity(), levels: ACTIVITY_LEVELS, configPath: CONFIG_PATH }, null, 2));
+    return;
+  }
+  if (!ACTIVITY_LEVELS.includes(level)) fail(`activity: invalid level '${level}'. Must be one of: ${ACTIVITY_LEVELS.join(", ")}`);
+  const cfg = loadConfig();
+  const previous = cfg.activity || DEFAULT_ACTIVITY;
+  cfg.activity = level;
+  saveConfig(cfg);
+  console.log(JSON.stringify({ ok: true, previous, current: level, configPath: CONFIG_PATH }, null, 2));
+}
+
+async function cmdRotateToken() {
+  const url = resolveRuntimeUrl();
+  try {
+    const r = await http("POST", `${url}/admin/rotate-token`);
+    if (!r.ok || !r.body || typeof r.body.token !== "string") {
+      console.error(`clawpet: rotate-token failed (HTTP ${r.status})`);
+      console.error(JSON.stringify(r.body, null, 2));
+      process.exit(2);
+    }
+    const cfg = loadConfig();
+    cfg.runtimeUrl = cfg.runtimeUrl ?? url;
+    cfg.runtimeToken = r.body.token;
+    saveConfig(cfg);
+    console.log(JSON.stringify({ ok: true, runtimeUrl: cfg.runtimeUrl, tokenSet: true, tokenLength: r.body.token.length }, null, 2));
+  } catch (e) { fail(`runtime unreachable at ${url}: ${e.message}`, 2); }
+}
+
+async function cmdPair(flags) {
+  // Magic-pair flow: --code 472091 --host <desktop-host>.<tailnet>.ts.net:8737
+  // Calls POST /pair/claim on the remote runtime, saves the returned token.
+  if (typeof flags.code === "string" && flags.code) {
+    if (!/^\d{6}$/.test(flags.code)) fail("pair: --code must be a 6-digit string");
+    let host = flags.host || flags.url;
+    if (!host) fail("pair: --host <hostname[:port]> or --url required when using --code");
+    let url = host.includes("://") ? host : `http://${host}`;
+    if (!/:\d+$/.test(url) && !/^https?:\/\/[^/]+:\d+/.test(url)) {
+      // No port → default 8737
+      url = `${url.replace(/\/$/, "")}:8737`;
+    }
+    url = url.replace(/\/$/, "");
+    try { new URL(url); } catch { fail(`pair: invalid URL '${url}'`); }
+    try {
+      const r = await http("POST", `${url}/pair/claim`, { code: flags.code });
+      if (!r.ok || !r.body?.token) {
+        const err = r.body?.errors?.join(", ") || `HTTP ${r.status}`;
+        fail(`pair: claim failed (${err})`, 2);
+      }
+      const cfg = loadConfig();
+      cfg.runtimeUrl = url;
+      cfg.runtimeToken = r.body.token;
+      saveConfig(cfg);
+      console.log(JSON.stringify({
+        ok: true,
+        configPath: CONFIG_PATH,
+        runtimeUrl: url,
+        tokenSet: true,
+        tokenLength: r.body.token.length,
+        message: "Paired. Token saved.",
+      }, null, 2));
+      return;
+    } catch (e) {
+      fail(`pair: runtime unreachable at ${url}: ${e.message}`, 2);
+    }
+  }
+
+  // Legacy direct-token flow.
+  const url = flags.url;
+  if (!url || typeof url !== "string") fail("pair: provide --code <code> --host <host>, or --url <runtime-url>");
+  try { new URL(url); } catch { fail(`pair: invalid URL '${url}'`); }
+  const cfg = loadConfig();
+  cfg.runtimeUrl = url.replace(/\/$/, "");
+  if (typeof flags.token === "string" && flags.token) cfg.runtimeToken = flags.token;
+  if (flags["clear-token"]) delete cfg.runtimeToken;
+  saveConfig(cfg);
+  console.log(JSON.stringify({
+    ok: true,
+    configPath: CONFIG_PATH,
+    runtimeUrl: cfg.runtimeUrl,
+    tokenSet: Boolean(cfg.runtimeToken),
+  }, null, 2));
+}
+
+async function cmdPairMode(_positional, flags) {
+  // Daily-driver side: open pair mode on the local runtime, print the code,
+  // poll until pair mode closes (success or expiry).
+  const url = resolveRuntimeUrl();
+  const seconds = Number(flags.seconds) > 0 ? Number(flags.seconds) : 90;
+  const startRes = await http("POST", `${url}/admin/pair-mode/start`, { seconds });
+  if (!startRes.ok || !startRes.body?.code) {
+    fail(`pair-mode: failed to start (HTTP ${startRes.status})`, 2);
+  }
+  const code = startRes.body.code;
+  const expiresAt = startRes.body.expiresAt;
+  const groups = `${code.slice(0, 3)} · ${code.slice(3)}`;
+  const banner = [
+    "",
+    "  ┌──────────────────────────────────────────────┐",
+    `  │   Pair code:    ${groups.padEnd(28)}│`,
+    `  │   Runtime:      ${url.padEnd(28)}│`,
+    `  │   Expires in:   ${String(seconds).padEnd(28)}s│`,
+    "  └──────────────────────────────────────────────┘",
+    "",
+    "  On your OpenClaw machine, run:",
+    `    clawpet pair --code ${code} --host <this-machine-hostname>:8737`,
+    "",
+    "  Waiting for OpenClaw to claim the code… (Ctrl+C to cancel)",
+  ].join("\n");
+  console.log(banner);
+
+  // Poll /pair-mode every 2s. Closes when claimed or expired.
+  const start = Date.now();
+  while (Date.now() - start < seconds * 1000 + 5000) {
+    await new Promise(r => setTimeout(r, 2000));
+    try {
+      const pm = await http("GET", `${url}/pair-mode`);
+      if (pm.ok && pm.body?.active === false) {
+        console.log("\n  ✓ Pair mode closed. If a remote machine claimed the code, the token has been rotated.");
+        return;
+      }
+    } catch { /* keep polling */ }
+  }
+  // Best-effort cancel if we time out.
+  try { await http("POST", `${url}/admin/pair-mode/cancel`); } catch { /* ignore */ }
+  console.log("\n  ✗ Pair mode timed out without a claim.");
+}
+
+async function cmdAvatar(positional, _flags) {
+  const [subcmd, bundleDir] = positional;
+  if (subcmd !== "push") fail("avatar: only supported command is 'push <bundle-dir>'");
+  if (!bundleDir) fail("avatar push: <bundle-dir> required (folder containing avatar.json + assets/*.png)");
+  const manifestPath = join(bundleDir, "avatar.json");
+  if (!existsSync(manifestPath)) fail(`avatar push: missing ${manifestPath}`);
+  let manifest;
+  try { manifest = JSON.parse(readFileSync(manifestPath, "utf8")); }
+  catch (e) { fail(`avatar push: invalid avatar.json: ${e.message}`); }
+  if (!manifest.states || typeof manifest.states !== "object") fail("avatar push: avatar.json must contain states");
+  const assets = {};
+  for (const def of Object.values(manifest.states)) {
+    if (!def || typeof def.asset !== "string") continue;
+    if (def.asset.includes("..") || def.asset.startsWith("/") || !def.asset.startsWith("assets/")) {
+      fail(`avatar push: unsafe asset path ${def.asset}`);
+    }
+    const p = join(bundleDir, def.asset);
+    if (!existsSync(p)) fail(`avatar push: missing asset ${p}`);
+    assets[def.asset] = readFileSync(p).toString("base64");
+  }
+  const url = resolveRuntimeUrl();
+  try {
+    const r = await http("POST", `${url}/admin/avatar-bundle`, { manifest, assets });
+    if (!r.ok) {
+      console.error(`clawpet: avatar push failed (HTTP ${r.status})`);
+      console.error(JSON.stringify(r.body, null, 2));
+      process.exit(2);
+    }
+    console.log(JSON.stringify({
+      ok: true,
+      runtimeUrl: url,
+      avatarId: r.body.avatarId,
+      bundleVersion: r.body.bundleVersion,
+      assetCount: r.body.assetCount,
+      message: "Avatar bundle uploaded to runtime. Restart overlay if it does not refresh automatically.",
+    }, null, 2));
+  } catch (e) { fail(`runtime unreachable at ${url}: ${e.message}`, 2); }
+}
+
+function cmdInstall(flags) {
+  const os = (flags.os || "").toLowerCase();
+  const repo = "https://raw.githubusercontent.com/fighterz8/clawpet/main";
+  const win = `irm ${repo}/scripts/install-windows.ps1 | iex`;
+  const unix = `curl -fsSL ${repo}/scripts/install-unix.sh | bash`;
+  if (os === "windows") { console.log(win); return; }
+  if (os === "unix" || os === "linux" || os === "macos" || os === "mac") { console.log(unix); return; }
+  console.log("Run ONE of these on the target machine (the one that will display the avatar):\n");
+  console.log("Windows (PowerShell):\n  " + win + "\n");
+  console.log("macOS / Linux (bash):\n  " + unix + "\n");
+  console.log("After starting the runtime on the target, run 'clawpet pair-mode' there.");
+  console.log("Then run 'clawpet pair --code <6-digit> --host <target-tailnet-hostname>:8737' on the OpenClaw side.");
+  console.log("Tailscale is the recommended cross-machine transport for the current release.");
+}
+
+function cmdConfig() {
+  console.log(JSON.stringify({
+    runtimeUrl: resolveRuntimeUrl(),
+    runtimeTokenSet: Boolean(resolveRuntimeToken()),
+    activity: resolveActivity(),
+    heartbeatReactions: resolveHeartbeatReactions(),
+    configPath: CONFIG_PATH,
+    configExists: existsSync(CONFIG_PATH),
+    envUrlOverride: Boolean(process.env.CLAWPET_RUNTIME_URL),
+    envTokenOverride: Boolean(process.env.CLAWPET_RUNTIME_TOKEN),
+    envActivityOverride: Boolean(process.env.CLAWPET_ACTIVITY),
+    states: STATES,
+    activityLevels: ACTIVITY_LEVELS,
+  }, null, 2));
+}
+
+async function cmdDaemon(positional, _flags) {
+  const { spawn } = await import("node:child_process");
+  const { fileURLToPath } = await import("node:url");
+  const { dirname, join } = await import("node:path");
+  const here = dirname(fileURLToPath(import.meta.url));
+  const daemonScript = join(here, "clawpet-daemon.mjs");
+  const PID_FILE = join(CONFIG_DIR, "daemon.pid");
+  const LOG_FILE = join(CONFIG_DIR, "daemon.log");
+  const sub = positional[0] || "status";
+
+  function readPid() {
+    try { return parseInt(readFileSync(PID_FILE, "utf8").trim(), 10); } catch { return null; }
+  }
+  function pidAlive(pid) {
+    if (!pid) return false;
+    try { process.kill(pid, 0); return true; } catch { return false; }
+  }
+
+  if (sub === "start") {
+    const existing = readPid();
+    if (pidAlive(existing)) { console.log(`clawpet daemon already running (pid ${existing})`); return; }
+    const out = (await import("node:fs")).openSync(LOG_FILE, "a");
+    const child = spawn(process.execPath, [daemonScript], {
+      detached: true,
+      stdio: ["ignore", out, out],
+      env: process.env,
+    });
+    child.unref();
+    console.log(`clawpet daemon started (pid ${child.pid})`);
+    console.log(`log: ${LOG_FILE}`);
+  } else if (sub === "stop") {
+    const pid = readPid();
+    if (!pidAlive(pid)) { console.log("clawpet daemon not running"); return; }
+    try { process.kill(pid, "SIGTERM"); console.log(`clawpet daemon stopped (pid ${pid})`); } catch (e) { fail(`could not stop pid ${pid}: ${e.message}`); }
+  } else if (sub === "status") {
+    const pid = readPid();
+    if (pidAlive(pid)) console.log(`clawpet daemon running (pid ${pid}) — log: ${LOG_FILE}`);
+    else console.log("clawpet daemon not running");
+  } else if (sub === "run") {
+    // Foreground run for debugging
+    const child = spawn(process.execPath, [daemonScript], { stdio: "inherit", env: process.env });
+    child.on("exit", code => process.exit(code ?? 0));
+  } else {
+    fail(`unknown daemon subcommand: ${sub}. Try start|stop|status|run`);
+  }
+}
+
+const [, , cmd, ...rest] = process.argv;
+const { positional, flags } = parseFlags(rest);
+
+switch (cmd) {
+  case "ping": await cmdPing(); break;
+  case "status": await cmdStatus(); break;
+  case "send": await cmdSend(positional, flags); break;
+  case "react": await cmdReact(positional, flags); break;
+  case "activity": cmdActivity(positional, flags); break;
+  case "heartbeat-reactions": case "heartbeats": cmdHeartbeats(positional, flags); break;
+  case "pair": await cmdPair(flags); break;
+  case "pair-mode": await cmdPairMode(positional, flags); break;
+  case "rotate-token": case "rotate": await cmdRotateToken(); break;
+  case "avatar": await cmdAvatar(positional, flags); break;
+  case "install": cmdInstall(flags); break;
+  case "config": cmdConfig(); break;
+  case "daemon": await cmdDaemon(positional, flags); break;
+  case "-h": case "--help": case "help": case undefined: usage(); break;
+  default: fail(`unknown command '${cmd}'. Run 'clawpet help'.`);
+}

@@ -35,6 +35,13 @@ function OverlayApp() {
       }
       avatarId = avatarId || "dawn-v0";
       try {
+        // Prefer the runtime-served bundle. This lets OpenClaw own avatar
+        // appearance/assets and push them to the target runtime over Tailscale.
+        const resolved = await loadAvatarBundle(`${RUNTIME_URL}/avatar-bundle/current`);
+        if (!cancelled) setBundle(resolved);
+        return;
+      } catch { /* fall back to bundled static assets below */ }
+      try {
         const resolved = await loadAvatarBundle(`/avatars/${avatarId}`);
         if (!cancelled) setBundle(resolved);
       } catch { /* leave null, shows loading shell */ }

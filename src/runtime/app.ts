@@ -3,6 +3,7 @@ import { cors } from "hono/cors";
 import { randomBytes } from "node:crypto";
 import { validateAvatarStateEvent } from "../contracts/avatarEvent";
 import { RuntimeStateStore } from "./stateStore";
+import { AvatarBundleStore } from "./avatarBundleStore";
 
 const defaultAllowedOrigins = [
   "http://localhost:5173",
@@ -21,6 +22,8 @@ export type CreateRuntimeAppOptions = {
   now?: () => number;
   /** Override code generator for deterministic tests. */
   generatePairCode?: () => string;
+  /** Optional persisted avatar bundle store for OpenClaw-pushed assets. */
+  avatarBundleStore?: AvatarBundleStore;
 };
 
 type PairMode =
@@ -47,6 +50,7 @@ function timingSafeEqual(a: string, b: string): boolean {
 export function createRuntimeApp(options: CreateRuntimeAppOptions = {}) {
   const store = options.store ?? new RuntimeStateStore();
   const app = new Hono();
+  const bundleStore = options.avatarBundleStore;
   const now = options.now ?? (() => Date.now());
   const genCode = options.generatePairCode ?? defaultPairCode;
   // Held in a closure so /admin/rotate-token can swap it in-place without restart.
@@ -151,6 +155,22 @@ export function createRuntimeApp(options: CreateRuntimeAppOptions = {}) {
 
   app.get("/events", (c) => c.json({ events: store.getEvents() }));
 
+  // Avatar bundle currently selected by/pushed from the OpenClaw host. The
+  // desktop overlay prefers this runtime-served bundle so the user can ask
+  // OpenClaw to change appearance without editing target-machine files.
+  app.get("/avatar-bundle/current/avatar.json", (c) => {
+    const manifest = bundleStore?.getManifest();
+    if (!manifest) return c.json({ ok: false, errors: ["no runtime avatar bundle has been uploaded"] }, 404);
+    return c.json(manifest);
+  });
+
+  app.get("/avatar-bundle/current/assets/:file", (c) => {
+    const file = c.req.param("file");
+    const asset = bundleStore?.getAsset(`assets/${file}`);
+    if (!asset) return c.json({ ok: false, errors: ["asset not found"] }, 404);
+    return new Response(Buffer.from(asset.bytes), { headers: { "content-type": asset.contentType, "cache-control": "no-store" } });
+  });
+
   app.post("/avatar/state", async (c) => {
     let payload: unknown;
     try {
@@ -164,6 +184,18 @@ export function createRuntimeApp(options: CreateRuntimeAppOptions = {}) {
 
     const entry = store.applyEvent(result.value);
     return c.json({ ok: true, status: store.getStatus(), receivedAt: entry.receivedAt, latencyMs: entry.latencyMs });
+  });
+
+  app.post("/admin/avatar-bundle", async (c) => {
+    if (!bundleStore) return c.json({ ok: false, errors: ["avatar bundle store is not configured"] }, 501);
+    let payload: unknown;
+    try { payload = await c.req.json(); } catch {
+      return c.json({ ok: false, errors: ["body must be valid JSON"] }, 400);
+    }
+    const result = bundleStore.put(payload);
+    if (!result.ok) return c.json({ ok: false, errors: result.errors }, 400);
+    store.setAvatarBundle(result.manifest.name, result.manifest.version);
+    return c.json({ ok: true, avatarId: result.manifest.name, bundleVersion: result.manifest.version, assetCount: result.assetCount, status: store.getStatus() });
   });
 
   app.post("/admin/rotate-token", async (c) => {

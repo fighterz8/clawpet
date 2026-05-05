@@ -1,20 +1,7 @@
 # Clawpet target install (Windows / PowerShell)
 #
-# Usage (run on the machine that should host the desktop avatar):
+# Usage (run on the machine that should display the desktop avatar):
 #   irm https://raw.githubusercontent.com/fighterz8/clawpet/main/scripts/install-windows.ps1 | iex
-#
-# Or, if you already cloned the repo:
-#   pwsh -File scripts\install-windows.ps1
-#
-# What it does:
-#   1. Clones (or updates) the Clawpet repo into %USERPROFILE%\clawpet.
-#   2. Installs npm deps.
-#   3. Ensures Rustup + MSVC C++ Build Tools (for Tauri).
-#   4. Generates a runtime auth token if absent.
-#   5. Prints the exact `clawpet pair` command to run on the OpenClaw side.
-#
-# It does NOT auto-start the runtime/desktop; that should be a deliberate user action
-# (the desktop overlay needs an interactive session).
 
 $ErrorActionPreference = "Stop"
 
@@ -35,7 +22,6 @@ if (-not (Get-Command "rustc" -ErrorAction SilentlyContinue)) {
   winget install --id Rustlang.Rustup -e --accept-package-agreements --accept-source-agreements
 }
 
-# Verify MSVC linker
 if (-not (where.exe link.exe 2>$null)) {
   Write-Host "==> Installing MSVC C++ Build Tools (required for Tauri)..." -ForegroundColor Yellow
   winget install Microsoft.VisualStudio.2022.BuildTools --override "--quiet --wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
@@ -57,37 +43,31 @@ Write-Host "==> Installing npm deps..." -ForegroundColor Cyan
 npm install
 Pop-Location
 
-# Generate token if not already present
-$tokenDir = Join-Path $HOME ".openclaw\clawpet"
-$tokenFile = Join-Path $tokenDir "runtime-token"
-if (-not (Test-Path $tokenFile)) {
-  New-Item -ItemType Directory -Force -Path $tokenDir | Out-Null
-  $bytes = New-Object byte[] 32
-  [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
-  ($bytes | ForEach-Object ToString x2) -join "" | Set-Content -NoNewline $tokenFile
-}
-$token = Get-Content $tokenFile -Raw
-$token = $token.Trim()
+$stateDir = Join-Path $HOME ".openclaw\clawpet"
+New-Item -ItemType Directory -Force -Path $stateDir | Out-Null
 
-# Best-effort hostname for cross-machine pairing (Tailscale MagicDNS preferred).
-$tailnetHost = $null
+$displayHost = "<desktop-host>.<tailnet>.ts.net"
 try {
   $tailnetHost = (tailscale status --json 2>$null | ConvertFrom-Json).Self.DNSName
-  if ($tailnetHost) { $tailnetHost = $tailnetHost.TrimEnd(".") }
+  if ($tailnetHost) { $displayHost = $tailnetHost.TrimEnd(".") }
 } catch { }
-$displayHost = if ($tailnetHost) { $tailnetHost } else { $env:COMPUTERNAME }
 
 Write-Host ""
 Write-Host "==> Clawpet installed." -ForegroundColor Green
 Write-Host ""
-Write-Host "To start the desktop avatar (interactive session):" -ForegroundColor Cyan
+Write-Host "Try demo mode first (no OpenClaw pairing required):" -ForegroundColor Cyan
+Write-Host "  cd $repoDir"
+Write-Host "  `$env:CLAWPET_DEMO = '1'"
+Write-Host "  Start-Process powershell -ArgumentList '-NoExit','-Command','npm run runtime:dev'"
+Write-Host "  npm run desktop:dev"
+Write-Host ""
+Write-Host "Cross-machine pairing flow:" -ForegroundColor Cyan
+Write-Host "  # on this display machine, start the runtime:"
 Write-Host "  cd $repoDir"
 Write-Host "  `$env:CLAWPET_RUNTIME_HOST = '0.0.0.0'"
 Write-Host "  `$env:CLAWPET_RUNTIME_PORT = '8737'"
 Write-Host "  Start-Process powershell -ArgumentList '-NoExit','-Command','npm run runtime:dev'"
-Write-Host "  npm run desktop:dev"
-Write-Host ""
-Write-Host "On the OpenClaw side, pair with:" -ForegroundColor Cyan
-Write-Host "  clawpet pair --url http://${displayHost}:8737 --token $token" -ForegroundColor Yellow
-Write-Host ""
-Write-Host "Token file (keep secret): $tokenFile" -ForegroundColor DarkGray
+Write-Host "  # then open pair mode on this display machine:"
+Write-Host "  node skills/clawpet/bin/clawpet.mjs pair-mode"
+Write-Host "  # on the OpenClaw machine, claim the shown code:"
+Write-Host "  clawpet pair --code <6-digit-code> --host ${displayHost}:8737" -ForegroundColor Yellow

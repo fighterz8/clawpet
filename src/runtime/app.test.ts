@@ -1,6 +1,10 @@
+import { mkdtempSync, readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { createRuntimeApp } from "./app";
 import { RuntimeStateStore } from "./stateStore";
+import { AvatarBundleStore } from "./avatarBundleStore";
 import type { AvatarStateEvent } from "../contracts/avatarEvent";
 
 const event: AvatarStateEvent = {
@@ -287,6 +291,39 @@ describe("runtime API", () => {
       body: JSON.stringify({ code: "111111" }),
     });
     expect(tooLate.status).toBe(404);
+  });
+
+  it("accepts and serves OpenClaw-pushed avatar bundles", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "clawpet-bundle-test-"));
+    const bundleStore = new AvatarBundleStore(dir);
+    const app = createRuntimeApp({ avatarBundleStore: bundleStore });
+    const manifest = JSON.parse(readFileSync("public/avatars/dawn-v0/avatar.json", "utf8"));
+    const assets: Record<string, string> = {};
+    for (const def of Object.values(manifest.states) as Array<{ asset: string }>) {
+      assets[def.asset] = readFileSync(join("public/avatars/dawn-v0", def.asset)).toString("base64");
+    }
+
+    const pushed = await app.request("/admin/avatar-bundle", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ manifest, assets }),
+    });
+    expect(pushed.status).toBe(200);
+    expect(await pushed.json()).toMatchObject({ ok: true, avatarId: "Dawn", bundleVersion: "0.4.0", assetCount: 6 });
+
+    const status = await (await app.request("/status")).json();
+    expect(status.avatar.avatarId).toBe("Dawn");
+    expect(status.avatar.bundleVersion).toBe("0.4.0");
+
+    const servedManifest = await app.request("/avatar-bundle/current/avatar.json");
+    expect(servedManifest.status).toBe(200);
+    expect(await servedManifest.json()).toMatchObject({ name: "Dawn", version: "0.4.0" });
+
+    const asset = await app.request("/avatar-bundle/current/assets/idle.png");
+    expect(asset.status).toBe(200);
+    expect(asset.headers.get("content-type")).toContain("image/png");
+    const bytes = new Uint8Array(await asset.arrayBuffer());
+    expect(Array.from(bytes.slice(0, 4))).toEqual([0x89, 0x50, 0x4e, 0x47]);
   });
 
   it("rejects malformed or unsafe events", async () => {

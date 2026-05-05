@@ -5,14 +5,17 @@ import { homedir } from "node:os";
 import { randomBytes } from "node:crypto";
 import { createRuntimeApp } from "./app";
 import { RuntimeStateStore } from "./stateStore";
+import { AvatarBundleStore } from "./avatarBundleStore";
 
 const port = Number(process.env.CLAWPET_RUNTIME_PORT ?? 8737);
 const hostname = process.env.CLAWPET_RUNTIME_HOST ?? "127.0.0.1";
 const avatarId = process.env.CLAWPET_AVATAR_BUNDLE ?? "dawn-v0";
+const demoMode = process.env.CLAWPET_DEMO === "1" || process.env.CLAWPET_DEMO?.toLowerCase() === "true";
 
 const isLoopback = hostname === "127.0.0.1" || hostname === "::1" || hostname === "localhost";
 
 const tokenFile = join(homedir(), ".openclaw", "clawpet", "runtime-token");
+const bundleDir = join(homedir(), ".openclaw", "clawpet", "runtime-bundles");
 
 function loadOrCreateToken(): string {
   if (process.env.CLAWPET_RUNTIME_TOKEN) return process.env.CLAWPET_RUNTIME_TOKEN.trim();
@@ -37,13 +40,40 @@ const allowCorsOrigin = process.env.CLAWPET_RUNTIME_CORS
   ? process.env.CLAWPET_RUNTIME_CORS.split(",").map((s) => s.trim()).filter(Boolean)
   : undefined;
 
-const store = new RuntimeStateStore({ avatarId });
+const avatarBundleStore = new AvatarBundleStore(bundleDir);
+const uploadedManifest = avatarBundleStore.getManifest();
+const store = new RuntimeStateStore({ avatarId: uploadedManifest?.name ?? avatarId, bundleVersion: uploadedManifest?.version });
+
+if (demoMode) {
+  const demoStates = [
+    { state: "idle", bubble: "Idle" },
+    { state: "thinking", bubble: "Reading prompt…" },
+    { state: "focused", bubble: "Working…" },
+    { state: "happy", bubble: "Done" },
+    { state: "alert", bubble: "Needs input" },
+    { state: "sleepy", bubble: "Quiet" },
+  ] as const;
+  let i = 0;
+  setInterval(() => {
+    const next = demoStates[i++ % demoStates.length];
+    store.applyEvent({
+      type: "avatar.state",
+      version: "0.1.0",
+      eventId: `demo-${Date.now()}`,
+      sentAt: new Date().toISOString(),
+      source: { kind: "openclaw", displayName: "Clawpet demo" },
+      state: next.state,
+      bubble: next.bubble,
+    });
+  }, 6000);
+}
 
 serve({
   fetch: createRuntimeApp({
     store,
     authToken,
     allowCorsOrigin,
+    avatarBundleStore,
     onTokenRotated: (newToken) => {
       try {
         mkdirSync(dirname(tokenFile), { recursive: true });
@@ -59,7 +89,9 @@ serve({
 });
 
 console.log(`Clawpet runtime listening on http://${hostname}:${port}`);
-console.log(`Avatar: ${avatarId} (override with CLAWPET_AVATAR_BUNDLE)`);
+console.log(`Avatar: ${uploadedManifest ? `${uploadedManifest.name} ${uploadedManifest.version} (uploaded from OpenClaw)` : `${avatarId} (override with CLAWPET_AVATAR_BUNDLE)`}`);
+console.log(`Runtime bundle store: ${bundleDir}`);
+if (demoMode) console.log("Demo mode: cycling avatar states every 6s (CLAWPET_DEMO=1)");
 if (authToken) {
   console.log(`Auth: Bearer token required. Token file: ${tokenFile}`);
   console.log(`To pair from another machine, run on that machine:`);

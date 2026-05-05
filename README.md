@@ -18,13 +18,13 @@ The avatar lives on **your desktop**. OpenClaw can run on the same machine, on y
 
 ### Why Tailscale matters right now
 
-The current cross-machine path is **Tailscale-first**. That's deliberate: most OpenClaw users run OpenClaw on a Linux box/server but want the pet on their daily-driver laptop or desktop. Tailscale gives Clawpet a private, encrypted, stable hostname like `gladriel.tailnet-name.ts.net` without exposing a public port or building a cloud relay. Localhost works for same-machine setups; Tailscale is the recommended path for everything else.
+The current cross-machine path is **Tailscale-first**. That's deliberate: most OpenClaw users run OpenClaw on a Linux box/server but want the pet on their daily-driver laptop or desktop. Tailscale gives Clawpet a private, encrypted, stable hostname like `<desktop-host>.<tailnet>.ts.net` without exposing a public port or building a cloud relay. Localhost works for same-machine setups; Tailscale is the recommended path for everything else.
 
-## Quickstart (≈3 minutes)
+## Quickstart: try it locally first (≈60 seconds)
 
 You need: **Node.js ≥ 20**, **git**, and (for the desktop window) **Rust + a C++ build toolchain**.
 
-### 1. On the machine that should display the avatar (the "target")
+Install on the machine that should display the avatar:
 
 ```bash
 # macOS / Linux
@@ -36,31 +36,37 @@ curl -fsSL https://raw.githubusercontent.com/fighterz8/clawpet/main/scripts/inst
 irm https://raw.githubusercontent.com/fighterz8/clawpet/main/scripts/install-windows.ps1 | iex
 ```
 
-Then start the runtime and the overlay (two terminals):
+Try the pet before connecting OpenClaw:
 
 ```bash
-# terminal 1 — runtime
-cd ~/clawpet && npm run runtime:dev
+# terminal 1 — runtime demo mode
+cd ~/clawpet && CLAWPET_DEMO=1 npm run runtime:dev
 
 # terminal 2 — desktop overlay
 npm run desktop:dev
 ```
 
-Cross-machine? **Use Tailscale.** On the machine displaying the avatar, bind the runtime to the Tailscale-reachable interface:
+`CLAWPET_DEMO=1` cycles through idle → thinking → focused → happy → alert → sleepy every 6 seconds. No OpenClaw pairing required.
+
+## Cross-machine setup
+
+Use this when OpenClaw runs on one machine and the avatar displays on another. Tailscale is recommended.
+
+On the machine displaying the avatar, bind the runtime to the Tailscale-reachable interface:
 
 ```bash
 CLAWPET_RUNTIME_HOST=0.0.0.0 CLAWPET_RUNTIME_PORT=8737 npm run runtime:dev
 ```
 
-Then pair from the OpenClaw host using the target's Tailscale hostname, for example:
+Then pair from the OpenClaw host using the target's Tailscale hostname:
 
 ```bash
-clawpet pair --code 472091 --host gladriel.tailnet-name.ts.net:8737
+clawpet pair --code 472091 --host <desktop-host>.<tailnet>.ts.net:8737
 ```
 
 > Loopback (`127.0.0.1`) is trusted; non-loopback/Tailscale requires a bearer token. The token is auto-generated on first boot at `~/.openclaw/clawpet/runtime-token` (mode `0600`) and is normally transferred via the 6-digit pair flow below.
 
-### 2. On the OpenClaw side
+### 1. On the OpenClaw side
 
 Install the skill (one-time):
 
@@ -71,7 +77,7 @@ ln -sf ~/clawpet/skills/clawpet ~/.openclaw/skills/clawpet 2>/dev/null \
   || ln -sf ~/clawpet/skills/clawpet ~/.openclaw/workspace/skills/clawpet
 ```
 
-### 3. Pair the two machines (Plex/Spotify-style 6-digit code)
+### 2. Pair the two machines (Plex/Spotify-style 6-digit code)
 
 On the **target** (the machine running the avatar), open a pair window:
 
@@ -104,7 +110,7 @@ clawpet status   # authed — current state + paired source
 clawpet send happy "It works" --bubble "Hello! 🐲" --quiet
 ```
 
-### 4. Start the live tracker daemon (recommended)
+### 3. Start the live tracker daemon (recommended)
 
 This is what makes Dawn actually feel alive — a sidecar that tails OpenClaw's session log and mirrors what the assistant is currently doing in real time, with **zero LLM involvement and zero token cost**:
 
@@ -135,7 +141,7 @@ Reaction events:
 | ----- | ------- | ------------------- |
 | `tool-error` / `blocker` / `done` | `alert` / `alert` / `happy` | `minimal` |
 | `long-task` / `thinking`          | `focused` / `thinking`      | `balanced` |
-| `user-message` / `tool-start`     | `thinking` / `focused`      | `expressive` |
+| `user-message` / `tool-start`     | `thinking` / `focused`      | `balanced` / `expressive` |
 | `heartbeat`                       | `thinking`                  | separate flag |
 
 Activity is set by the **user**, not the LLM:
@@ -203,7 +209,7 @@ VITE_CLAWPET_AVATAR_BUNDLE=pip-v0 npm run desktop:dev
 
 Every new sprite must follow [`docs/clawpet-style-guide.md`](docs/clawpet-style-guide.md) v1: pixel-art, 128×128 logical / 512×512 export, transparent background, limited palette, hard 1-px outline, cel shading, six required states (idle / thinking / focused / happy / alert / sleepy).
 
-The exciting part: the pet can be generated from **your OpenClaw's identity** — its name, `SOUL.md`, persona notes, and preferred creature/vibe. Dawn is Nick's baby-AGI dragon familiar because that matches this OpenClaw's name and soul. Pip is a second generated bundle proving the pipeline isn't hardcoded to one mascot. The locked prompt template in §7 keeps those personalized pets visually coherent instead of becoming random one-off art.
+The exciting part: the pet can be generated from **your OpenClaw's identity** — its name, `SOUL.md`, persona notes, and preferred creature/vibe. Dawn is the reference baby-dragon assistant familiar used by this repo. Pip is a second generated bundle proving the pipeline isn't hardcoded to one mascot. The locked prompt template in §7 keeps those personalized pets visually coherent instead of becoming random one-off art.
 
 ## Architecture
 

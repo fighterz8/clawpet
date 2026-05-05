@@ -1,18 +1,8 @@
 #!/usr/bin/env bash
 # Clawpet target install (macOS / Linux)
 #
-# Usage (run on the machine that should host the desktop avatar):
+# Usage (run on the machine that should display the desktop avatar):
 #   curl -fsSL https://raw.githubusercontent.com/fighterz8/clawpet/main/scripts/install-unix.sh | bash
-#
-# What it does:
-#   1. Clones (or updates) the Clawpet repo into ~/clawpet.
-#   2. Installs npm deps.
-#   3. Ensures Rustup is available (Tauri needs cargo).
-#   4. Generates a runtime auth token if absent.
-#   5. Prints the exact `clawpet pair` command to run on the OpenClaw side.
-#
-# It does NOT auto-start the runtime/desktop; the desktop overlay needs an interactive session.
-# On Linux, system-level WebKitGTK packages may also be required (printed at the end).
 
 set -euo pipefail
 
@@ -46,18 +36,11 @@ fi
 cyan "==> Installing npm deps..."
 ( cd "$REPO_DIR" && npm install )
 
-TOKEN_DIR="$HOME/.openclaw/clawpet"
-TOKEN_FILE="$TOKEN_DIR/runtime-token"
-mkdir -p "$TOKEN_DIR"
-chmod 700 "$TOKEN_DIR"
-if [[ ! -s "$TOKEN_FILE" ]]; then
-  head -c 32 /dev/urandom | xxd -p -c 64 > "$TOKEN_FILE"
-  chmod 600 "$TOKEN_FILE"
-fi
-TOKEN="$(tr -d '[:space:]' < "$TOKEN_FILE")"
+# Ensure runtime state directory exists; the runtime owns token creation.
+mkdir -p "$HOME/.openclaw/clawpet"
+chmod 700 "$HOME/.openclaw/clawpet"
 
-# Best-effort hostname for cross-machine pairing.
-DISPLAY_HOST="$(hostname)"
+DISPLAY_HOST="<desktop-host>.<tailnet>.ts.net"
 if command -v tailscale >/dev/null; then
   TS="$(tailscale status --json 2>/dev/null || true)"
   if [[ -n "$TS" ]]; then
@@ -68,15 +51,19 @@ fi
 
 green "==> Clawpet installed."
 echo
-cyan "To start the desktop avatar (interactive session):"
+cyan "Try demo mode first (no OpenClaw pairing required):"
 echo "  cd $REPO_DIR"
-echo "  CLAWPET_RUNTIME_HOST=0.0.0.0 CLAWPET_RUNTIME_PORT=8737 npm run runtime:dev &"
-echo "  npm run desktop:dev"
+echo "  CLAWPET_DEMO=1 npm run runtime:dev"
+echo "  # in a second terminal:"
+echo "  cd $REPO_DIR && npm run desktop:dev"
 echo
-cyan "On the OpenClaw side, pair with:"
-yellow "  clawpet pair --url http://$DISPLAY_HOST:8737 --token $TOKEN"
-echo
-printf "\033[2mToken file (keep secret): %s\033[0m\n" "$TOKEN_FILE"
+cyan "Cross-machine pairing flow:"
+echo "  # on this display machine, start the runtime:"
+echo "  cd $REPO_DIR && CLAWPET_RUNTIME_HOST=0.0.0.0 CLAWPET_RUNTIME_PORT=8737 npm run runtime:dev"
+echo "  # in another terminal on this display machine:"
+echo "  cd $REPO_DIR && node skills/clawpet/bin/clawpet.mjs pair-mode"
+echo "  # on the OpenClaw machine, claim the shown code:"
+yellow "  clawpet pair --code <6-digit-code> --host $DISPLAY_HOST:8737"
 echo
 if [[ "$(uname -s)" == "Linux" ]]; then
   yellow "On Linux, you may also need:"

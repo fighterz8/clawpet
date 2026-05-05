@@ -36,8 +36,8 @@ export class RuntimeStateStore {
   private readonly runtimeId: string;
   private readonly deviceName: string;
   private readonly mode: RuntimeMode;
-  private readonly avatarId: string;
-  private readonly bundleVersion?: string;
+  private avatarId: string;
+  private bundleVersion?: string;
   private readonly maxEvents: number;
   private readonly now: () => Date;
   private state: AvatarState = "idle";
@@ -127,6 +127,11 @@ export class RuntimeStateStore {
     const eff = this.effectiveState();
     if (eff === "idle" || eff === "sleepy") return "idle";
     return this.lastBubble || undefined;
+  }
+
+  setAvatarBundle(avatarId: string, bundleVersion?: string) {
+    this.avatarId = avatarId;
+    this.bundleVersion = bundleVersion;
   }
 
   getStatus(): ClawpetStatus {
