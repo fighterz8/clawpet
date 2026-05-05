@@ -32,6 +32,7 @@ Expected result in headless smoke mode:
 
 Cross-platform notes:
 
-- Linux bundles can be produced on Linux.
-- Windows `.exe`/MSI and macOS `.dmg` should be built and smoke-tested on their target OS runners/machines unless a dedicated cross-build workflow is added.
+- Linux bundles can be produced and smoke-tested on Linux.
+- `.github/workflows/desktop-build.yml` builds Linux, Windows, and macOS desktop artifacts on native GitHub-hosted runners for pushes, PRs, tags, and manual dispatch.
+- Windows `.exe`/MSI and macOS `.dmg` should still be opened/smoke-tested on their target OSes before calling a release ready.
 - Signed releases are not configured yet.
