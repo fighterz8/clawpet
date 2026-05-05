@@ -12,8 +12,9 @@
     "preview": "vite preview --host 0.0.0.0",
     "check": "tsc --noEmit",
     "test": "vitest run",
-    "runtime:dev": "tsx src/runtime/server.ts",
-    "runtime:demo": "CLAWPET_DEMO=1 tsx src/runtime/server.ts",
+    "runtime:dev": "node scripts/run-runtime.mjs",
+    "runtime:demo": "node scripts/run-runtime.mjs --demo",
+    "runtime:tailscale": "node scripts/run-runtime.mjs --tailscale",
     "send-test": "tsx src/runtime/send-test.ts",
     "desktop:dev": "tauri dev",
     "desktop:build": "tauri build --no-bundle"

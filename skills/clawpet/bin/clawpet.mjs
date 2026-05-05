@@ -112,6 +112,7 @@ function usage() {
   console.log(`clawpet v${VERSION}
 
 Usage:
+  clawpet doctor
   clawpet ping
   clawpet status
   clawpet send <state> [message] [--bubble TEXT] [--quiet]
@@ -130,6 +131,30 @@ Usage:
 States: ${STATES.join(" | ")}
 Runtime URL: ${resolveRuntimeUrl()}  (override with CLAWPET_RUNTIME_URL or 'clawpet pair')
 Auth token: ${resolveRuntimeToken() ? "set" : "not set"}`);
+}
+
+async function cmdDoctor() {
+  const url = resolveRuntimeUrl();
+  const rows = [];
+  rows.push(["node", process.version]);
+  rows.push(["config", existsSync(CONFIG_PATH) ? CONFIG_PATH : "not created yet"]);
+  rows.push(["runtimeUrl", url]);
+  rows.push(["token", resolveRuntimeToken() ? "set" : "not set"]);
+  try {
+    const r = await http("GET", `${url}/health`);
+    rows.push(["runtime", r.ok ? "reachable" : `HTTP ${r.status}`]);
+  } catch (e) {
+    rows.push(["runtime", `unreachable (${e.message})`]);
+  }
+  console.log("Clawpet doctor\n");
+  for (const [k, v] of rows) console.log(`${k.padEnd(12)} ${v}`);
+  console.log("\nDisplay-machine quick test:");
+  console.log("  npm run runtime:demo");
+  console.log("  npm run desktop:dev");
+  console.log("\nCross-machine pairing:");
+  console.log("  Display machine: npm run runtime:tailscale");
+  console.log("  Display machine: clawpet pair-mode");
+  console.log("  OpenClaw host:    clawpet pair --code <code> --host <display-host>:8737");
 }
 
 async function cmdPing() {
@@ -508,6 +533,7 @@ const [, , cmd, ...rest] = process.argv;
 const { positional, flags } = parseFlags(rest);
 
 switch (cmd) {
+  case "doctor": await cmdDoctor(); break;
   case "ping": await cmdPing(); break;
   case "status": await cmdStatus(); break;
   case "send": await cmdSend(positional, flags); break;

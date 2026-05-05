@@ -20,9 +20,14 @@ The avatar lives on **your desktop**. OpenClaw can run on the same machine, on y
 
 The current cross-machine path is **Tailscale-first**. That's deliberate: most OpenClaw users run OpenClaw on a Linux box/server but want the pet on their daily-driver laptop or desktop. Tailscale gives Clawpet a private, encrypted, stable hostname like `<desktop-host>.<tailnet>.ts.net` without exposing a public port or building a cloud relay. Localhost works for same-machine setups; Tailscale is the recommended path for everything else.
 
-## Quickstart: try it locally first (≈60 seconds)
+## Quickstart: try it on the display machine first
 
-You need: **Node.js ≥ 20**, **git**, and (for the desktop window) **Rust + a C++ build toolchain**.
+Clawpet is a two-machine-friendly app:
+
+- **Display machine:** the laptop/desktop where you want to see the pet window. Install/run the runtime + overlay here.
+- **OpenClaw host:** the machine running OpenClaw. Pair from here after the display machine shows a code.
+
+You need on the display machine: **Node.js ≥ 20**, **git**, and (for the desktop window) **Rust + a C++ build toolchain**.
 
 Install on the machine that should display the avatar:
 
@@ -52,13 +57,13 @@ npm run desktop:dev
 
 Use this when OpenClaw runs on one machine and the avatar displays on another. Tailscale is recommended.
 
-On the machine displaying the avatar, bind the runtime to the Tailscale-reachable interface:
+On the display machine, bind the runtime to the Tailscale-reachable interface:
 
 ```bash
-CLAWPET_RUNTIME_HOST=0.0.0.0 CLAWPET_RUNTIME_PORT=8737 npm run runtime:dev
+npm run runtime:tailscale
 ```
 
-Then pair from the OpenClaw host using the target's Tailscale hostname:
+Then pair from the OpenClaw host using the display machine's Tailscale hostname:
 
 ```bash
 clawpet pair --code 472091 --host <desktop-host>.<tailnet>.ts.net:8737

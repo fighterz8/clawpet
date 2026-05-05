@@ -59,7 +59,7 @@ echo "  cd $REPO_DIR && npm run desktop:dev"
 echo
 cyan "Cross-machine pairing flow:"
 echo "  # on this display machine, start the runtime:"
-echo "  cd $REPO_DIR && CLAWPET_RUNTIME_HOST=0.0.0.0 CLAWPET_RUNTIME_PORT=8737 npm run runtime:dev"
+echo "  cd $REPO_DIR && npm run runtime:tailscale"
 echo "  # in another terminal on this display machine:"
 echo "  cd $REPO_DIR && clawpet pair-mode"
 echo "  # on the OpenClaw machine, claim the shown code:"
