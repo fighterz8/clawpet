@@ -8,7 +8,7 @@
 // Activity-level gating happens inside `clawpet react` itself, so this daemon
 // just fires events; the user's `clawpet activity <level>` decides what lands.
 
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { readFileSync, statSync, existsSync, openSync, readSync, closeSync, writeFileSync, mkdirSync, appendFileSync, unlinkSync, readdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { homedir } from "node:os";
@@ -25,6 +25,7 @@ const SESSIONS_DIR = process.env.CLAWPET_SESSIONS_DIR ||
 
 const POLL_MS = 400;       // how often to check for new bytes
 const ROTATE_MS = 5000;    // how often to re-scan for newer session file
+const AVATAR_RECONCILE_MS = 30_000; // re-assert OpenClaw's desired avatar after runtime restarts
 
 // ---------- Tool → reaction mapping ----------
 // state/bubble pairs; minLevel is the minimum activity level to fire.
@@ -82,6 +83,30 @@ function callClawpet(args) {
   proc.on("error", () => {}); // swallow
 }
 
+function readConfig() {
+  try { return JSON.parse(readFileSync(join(STATE_DIR, "config.json"), "utf8")); }
+  catch { return {}; }
+}
+
+let lastAvatarReconcileAt = 0;
+function reconcileDesiredAvatar(force = false) {
+  const now = Date.now();
+  if (!force && now - lastAvatarReconcileAt < AVATAR_RECONCILE_MS) return;
+  lastAvatarReconcileAt = now;
+  const cfg = readConfig();
+  const dir = cfg.lastAvatarBundleDir;
+  if (!dir || !existsSync(dir)) return;
+  const status = spawnSync(process.execPath, [CLI, "status"], { encoding: "utf8", timeout: 5000 });
+  if (status.status !== 0 || !status.stdout) return;
+  let body;
+  try { body = JSON.parse(status.stdout); } catch { return; }
+  const currentId = body?.avatar?.avatarId;
+  const currentVersion = body?.avatar?.bundleVersion;
+  if (currentId === cfg.lastAvatarId && currentVersion === cfg.lastBundleVersion) return;
+  log(`avatar reconcile: runtime has ${currentId || "unknown"} ${currentVersion || "unknown"}; pushing desired ${cfg.lastAvatarId || "unknown"} ${cfg.lastBundleVersion || "unknown"}`);
+  callClawpet(["avatar", "push", dir]);
+}
+
 function dispatchToolReaction(toolName) {
   const now = Date.now();
   if (now - lastDispatchAt < DISPATCH_THROTTLE_MS) return;
@@ -124,7 +149,7 @@ function levelAllows(current, minRequired) {
 }
 function readActivity() {
   try {
-    const cfg = JSON.parse(readFileSync(join(STATE_DIR, "config.json"), "utf8"));
+    const cfg = readConfig();
     const v = process.env.CLAWPET_ACTIVITY || cfg.activity || "balanced";
     return ACTIVITY_LEVELS.includes(v) ? v : "balanced";
   } catch {
@@ -254,8 +279,10 @@ async function main() {
   if (initial) openTail(initial);
   else log("no active session file yet; will retry");
 
+  reconcileDesiredAvatar(true);
   setInterval(readNew, POLL_MS);
   setInterval(maybeRotate, ROTATE_MS);
+  setInterval(() => reconcileDesiredAvatar(false), AVATAR_RECONCILE_MS);
 }
 
 main().catch(err => { log(`fatal: ${err.stack || err}`); clearPid(); process.exit(1); });

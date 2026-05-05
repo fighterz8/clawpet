@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // Clawpet skill CLI — drive a Clawpet desktop runtime from OpenClaw.
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
+import httpModule from "node:http";
+import httpsModule from "node:https";
 import { homedir } from "node:os";
 import { join, dirname } from "node:path";
 import { randomUUID } from "node:crypto";
@@ -92,18 +94,40 @@ function parseFlags(argv) {
 
 async function http(method, url, body) {
   const headers = {};
-  if (body) headers["content-type"] = "application/json";
+  const encodedBody = body ? JSON.stringify(body) : undefined;
+  if (encodedBody) {
+    headers["content-type"] = "application/json";
+    // The bundled Tauri runtime is a tiny HTTP server that expects a
+    // Content-Length body, not chunked transfer encoding.
+    headers["content-length"] = String(Buffer.byteLength(encodedBody));
+  }
   const token = resolveRuntimeToken();
   if (token) headers["authorization"] = `Bearer ${token}`;
-  const res = await fetch(url, {
-    method,
-    headers: Object.keys(headers).length ? headers : undefined,
-    body: body ? JSON.stringify(body) : undefined,
+
+  // Use Node's HTTP client instead of fetch. The Tauri desktop runtime is a
+  // tiny hand-rolled HTTP server and currently handles fixed Content-Length
+  // requests more reliably than fetch/undici's defaults.
+  const u = new URL(url);
+  const client = u.protocol === "https:" ? httpsModule : httpModule;
+  const { statusCode = 0, text } = await new Promise((resolve, reject) => {
+    const req = client.request({
+      method,
+      hostname: u.hostname,
+      port: u.port || (u.protocol === "https:" ? 443 : 80),
+      path: `${u.pathname}${u.search}`,
+      headers,
+    }, (res) => {
+      const chunks = [];
+      res.on("data", (chunk) => chunks.push(chunk));
+      res.on("end", () => resolve({ statusCode: res.statusCode, text: Buffer.concat(chunks).toString("utf8") }));
+    });
+    req.on("error", reject);
+    if (encodedBody) req.write(encodedBody);
+    req.end();
   });
-  const text = await res.text();
   let json;
   try { json = text ? JSON.parse(text) : null; } catch { json = text; }
-  return { status: res.status, ok: res.ok, body: json };
+  return { status: statusCode, ok: statusCode >= 200 && statusCode < 300, body: json };
 }
 
 function fail(msg, code = 1) { console.error(`clawpet: ${msg}`); process.exit(code); }
@@ -495,14 +519,20 @@ async function cmdAvatar(positional, _flags) {
   catch (e) { fail(`avatar push: invalid avatar.json: ${e.message}`); }
   if (!manifest.states || typeof manifest.states !== "object") fail("avatar push: avatar.json must contain states");
   const assets = {};
-  for (const def of Object.values(manifest.states)) {
-    if (!def || typeof def.asset !== "string") continue;
-    if (def.asset.includes("..") || def.asset.startsWith("/") || !def.asset.startsWith("assets/")) {
-      fail(`avatar push: unsafe asset path ${def.asset}`);
+  const addAsset = (rel) => {
+    if (typeof rel !== "string" || !rel) return;
+    if (rel.includes("..") || rel.startsWith("/") || !(rel.startsWith("assets/") || rel.startsWith("frames/"))) {
+      fail(`avatar push: unsafe asset/frame path ${rel}`);
     }
-    const p = join(bundleDir, def.asset);
-    if (!existsSync(p)) fail(`avatar push: missing asset ${p}`);
-    assets[def.asset] = readFileSync(p).toString("base64");
+    const p = join(bundleDir, rel);
+    if (!existsSync(p)) fail(`avatar push: missing asset/frame ${p}`);
+    assets[rel] = readFileSync(p).toString("base64");
+  };
+  for (const def of Object.values(manifest.states)) {
+    if (!def || typeof def !== "object") continue;
+    addAsset(def.asset);
+    addAsset(def.fallbackAsset);
+    if (Array.isArray(def.frames)) for (const frame of def.frames) addAsset(frame);
   }
   const url = resolveRuntimeUrl();
   try {
@@ -512,13 +542,20 @@ async function cmdAvatar(positional, _flags) {
       console.error(JSON.stringify(r.body, null, 2));
       process.exit(2);
     }
+    const cfg = loadConfig();
+    cfg.lastAvatarBundleDir = bundleDir;
+    cfg.lastAvatarId = r.body.avatarId;
+    cfg.lastBundleVersion = r.body.bundleVersion;
+    cfg.lastAvatarPushedAt = new Date().toISOString();
+    saveConfig(cfg);
     console.log(JSON.stringify({
       ok: true,
       runtimeUrl: url,
       avatarId: r.body.avatarId,
       bundleVersion: r.body.bundleVersion,
       assetCount: r.body.assetCount,
-      message: "Avatar bundle uploaded to runtime. Restart overlay if it does not refresh automatically.",
+      savedAsLastAvatar: true,
+      message: "Avatar bundle uploaded to runtime and saved as OpenClaw's desired avatar. Restart overlay if it does not refresh automatically.",
     }, null, 2));
   } catch (e) { fail(`runtime unreachable at ${url}: ${e.message}`, 2); }
 }

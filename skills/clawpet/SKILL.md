@@ -154,9 +154,20 @@ Bundle folder shape:
   assets/happy.png
   assets/alert.png
   assets/sleepy.png
+  frames/idle-0.png        # optional v0.5 animated frames
+  frames/idle-1.png
 ```
 
-`clawpet avatar push` sends `avatar.json` + PNG assets over the authenticated runtime connection (Tailscale for cross-machine setups). The runtime persists them under its local `~/.openclaw/clawpet/runtime-bundles/current/`, updates `/status`, and serves the selected bundle to the overlay from `/avatar-bundle/current/...`.
+`clawpet avatar push` sends `avatar.json` + PNG assets/frames over the authenticated runtime connection (Tailscale for cross-machine setups). The runtime persists them under its local `~/.openclaw/clawpet/runtime-bundles/current/`, updates `/status`, and serves the selected bundle to the overlay from `/avatar-bundle/current/...`.
+
+**Default-avatar rule:** when OpenClaw generates or approves a new avatar, do not stop at writing files into the repo. Push the generated bundle with `clawpet avatar push <bundle-dir>` so the desktop runtime records it as the current/default bundle. After pushing, verify both:
+
+```bash
+clawpet status                  # avatar.avatarId / bundleVersion should match the generated avatar
+curl -fsS "$RUNTIME_URL/avatar-bundle/current/avatar.json"  # should return the generated manifest
+```
+
+If the desktop app still starts with the old blue/default Dawn after restart, the runtime is probably an older build that does not persist uploaded bundles. Update/restart the desktop runtime from a build containing persisted runtime bundles before moving on to generated multi-frame work.
 
 The desktop machine is a display/runtime target, not the place the user has to manually edit files.
 

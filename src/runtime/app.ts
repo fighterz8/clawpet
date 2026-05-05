@@ -181,6 +181,13 @@ export function createRuntimeApp(options: CreateRuntimeAppOptions = {}) {
     return new Response(Buffer.from(asset.bytes), { headers: { "content-type": asset.contentType, "cache-control": "no-store" } });
   });
 
+  app.get("/avatar-bundle/current/frames/:file", (c) => {
+    const file = c.req.param("file");
+    const asset = bundleStore?.getAsset(`frames/${file}`);
+    if (!asset) return c.json({ ok: false, errors: ["frame not found"] }, 404);
+    return new Response(Buffer.from(asset.bytes), { headers: { "content-type": asset.contentType, "cache-control": "no-store" } });
+  });
+
   app.post("/avatar/state", async (c) => {
     let payload: unknown;
     try {
