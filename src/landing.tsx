@@ -63,12 +63,32 @@ function useBundle(avatarId: string) {
 function DemoStage({ avatarId, beats, accent }: { avatarId: string; beats: ScriptedBeat[]; accent: string }) {
   const bundle = useBundle(avatarId);
   const beat = useScriptedDemo(beats);
-  const asset = bundle?.resolveAsset(beat.state);
+  const [frameIndex, setFrameIndex] = useState(0);
+  const frames = bundle?.resolveFrames(beat.state) ?? [];
+  const activeFrame = frames[frameIndex] ?? frames[0] ?? bundle?.resolveAsset(beat.state);
+
+  useEffect(() => {
+    setFrameIndex(0);
+  }, [avatarId, beat.state]);
+
+  useEffect(() => {
+    const frame = frames[frameIndex];
+    if (!frame || frames.length <= 1) return;
+    const id = window.setTimeout(() => {
+      setFrameIndex((current) => {
+        const next = current + 1;
+        if (next < frames.length) return next;
+        return frame.loop ? 0 : current;
+      });
+    }, 1000 / frame.fps);
+    return () => window.clearTimeout(id);
+  }, [frameIndex, frames]);
+
   return (
     <div className="lp-stage" style={{ ["--accent" as never]: accent }}>
       <div className="lp-stage__glow" />
       <div className="lp-stage__floor" />
-      {asset && <img key={beat.state + beat.bubble} src={asset.src} alt={beat.state} className={`lp-stage__sprite lp-stage__sprite--${beat.state}`} />}
+      {activeFrame && <img key={`${avatarId}-${beat.state}-${frameIndex}`} src={activeFrame.src} alt={beat.state} className={`lp-stage__sprite lp-stage__sprite--${beat.state}`} />}
       <div className={`lp-stage__bubble ${beat.bubble ? "lp-stage__bubble--show" : ""}`}>{beat.bubble || "·"}</div>
       <div className="lp-stage__chip">{beat.state}</div>
     </div>
@@ -200,7 +220,7 @@ clawpet activity balanced`}</pre>
           <p className="lp-eyebrow">Avatars</p>
           <h2 className="lp-h2">Ask OpenClaw to redesign your familiar.</h2>
           <p className="lp-body">
-            Each avatar bundle includes normalized fallback assets, optional per-state frame loops, and an <code>avatar.json</code> manifest. The fun part is personalization: OpenClaw can generate, store, push, and swap bundles conversationally. We now ship animated Dawn v2 presets plus a genuinely different lantern-moth showcase pet, so you can demo both palette variation and full character variation before testing live runtime switching.
+            Each avatar bundle includes normalized fallback assets, real per-state frame loops, and an <code>avatar.json</code> manifest. The fun part is personalization: OpenClaw can generate, store, push, and swap bundles conversationally. The landing page previews below are using the animated bundle versions, not static placeholder stills, so you can demo both palette variation and full character variation before testing live runtime switching.
           </p>
         </Reveal>
         <div className="lp-stages lp-stages--presets">

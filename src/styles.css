@@ -51,7 +51,7 @@ main {
   background: transparent;
   -webkit-app-region: drag;
   cursor: grab;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .overlay-shell:active { cursor: grabbing; }
@@ -63,15 +63,17 @@ main {
   align-items: center;
   justify-content: center;
   gap: 6px;
+  padding: 14px;
   background: transparent;
   -webkit-app-region: drag;
   max-width: 100%;
+  overflow: visible;
 }
 
 .overlay-link-dot {
   position: absolute;
-  top: 20px;
-  right: 44px;
+  top: 6px;
+  right: 6px;
   width: 14px;
   height: 14px;
   border-radius: 999px;
@@ -79,6 +81,7 @@ main {
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.22), 0 6px 16px rgba(0, 0, 0, 0.35);
   pointer-events: auto;
   -webkit-app-region: no-drag;
+  z-index: 3;
 }
 
 .overlay-link-dot--ready {
