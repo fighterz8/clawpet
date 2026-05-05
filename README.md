@@ -51,9 +51,21 @@ The desktop runtime persists its token locally at `~/.openclaw/clawpet/runtime-t
 
 Use a new code only if this is first-time setup, the dot stays yellow and the pet does not respond, tokens were rotated, app data/config was cleared, or a dev rebuild reset the runtime.
 
+## Downloads
+
+Clawpet is moving to a simple download-first install flow from the Vercel app:
+
+- **Windows:** `.exe` setup installer
+- **macOS:** packaged macOS app/archive
+- **Linux:** packaged Linux build
+
+The current GitHub Actions build already produces Windows, macOS, and Linux artifacts. The Vercel app should surface those packages as the primary download path so users do not have to dig through GitHub Actions.
+
+Source installs remain useful for development, but normal users should start with the downloadable package for their OS, open Clawpet once, then let OpenClaw handle pairing and ongoing control.
+
 ## Current dev quickstart
 
-Signed `.exe` / `.dmg` installers are the target, but for now run from source on the display machine.
+Packaged downloads are the target/default user path. For development, run from source on the display machine.
 
 Requirements:
 
@@ -154,7 +166,19 @@ LLM-triggered flavor emits are still available via `clawpet react <event>` and `
 
 ## Avatar bundles
 
-Bundles live under `public/avatars/<name>-v<n>/`:
+Standard Dawn (`dawn-v0`) is the default avatar.
+
+Avatar redesigns are intentionally **OpenClaw-led**:
+
+- The user asks their OpenClaw assistant for a new look.
+- OpenClaw generates or selects a bundle on the **OpenClaw host**.
+- The bundle stays as source-of-truth on the OpenClaw machine.
+- OpenClaw pushes/selects that bundle on the paired desktop runtime.
+- The user can ask to swap back, try another design, or iterate without manually editing files on the display machine.
+
+This keeps personalization conversational and reversible: “make Dawn a cooler baby dragon,” “go back to standard Dawn,” or “try the folder-desk version” should be OpenClaw-side actions, not user filesystem chores.
+
+Bundles live under `public/avatars/<name>-v<n>/` for built-in defaults and under `~/.openclaw/clawpet/bundles/<name>/` for OpenClaw-managed custom designs:
 
 ```text
 public/avatars/
@@ -166,7 +190,11 @@ public/avatars/
     └── assets/{idle,thinking,focused,happy,alert,sleepy}.png
 ```
 
-OpenClaw is intended to be the source of truth for avatar assets/config. It can push bundles to the paired runtime over the authenticated connection.
+OpenClaw pushes bundles to the paired runtime over the authenticated connection:
+
+```bash
+clawpet avatar push ~/.openclaw/clawpet/bundles/dawn-v1
+```
 
 ## Architecture
 

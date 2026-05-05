@@ -166,10 +166,8 @@ pub fn start_runtime_server() {
 fn handle_client(mut stream: TcpStream, state: Arc<Mutex<RuntimeState>>) {
   let mut buf = vec![0u8; 128 * 1024];
   let n = match stream.read(&mut buf) { Ok(n) => n, Err(_) => return };
-  let req = String::from_utf8_lossy(&buf[..n]);
-  let mut parts = req.split("\r\n\r\n");
-  let head = parts.next().unwrap_or("");
-  let body = parts.next().unwrap_or("");
+  let header_end = buf[..n].windows(4).position(|w| w == b"\r\n\r\n").map(|p| p + 4).unwrap_or(n);
+  let head = String::from_utf8_lossy(&buf[..header_end.saturating_sub(4)]);
   let mut lines = head.lines();
   let request_line = lines.next().unwrap_or("");
   let mut request_parts = request_line.split_whitespace();
@@ -180,7 +178,17 @@ fn handle_client(mut stream: TcpStream, state: Arc<Mutex<RuntimeState>>) {
     Some((k.trim().to_ascii_lowercase(), v.trim().to_string()))
   }).collect();
 
-  let result = route(method, path, &headers, body, state);
+  let content_len = headers.get("content-length").and_then(|v| v.parse::<usize>().ok()).unwrap_or(0);
+  let mut body_bytes = buf[header_end..n].to_vec();
+  while body_bytes.len() < content_len {
+    let mut chunk = vec![0u8; (content_len - body_bytes.len()).min(128 * 1024)];
+    let read = match stream.read(&mut chunk) { Ok(n) => n, Err(_) => return };
+    if read == 0 { break; }
+    body_bytes.extend_from_slice(&chunk[..read]);
+  }
+  let body = String::from_utf8_lossy(&body_bytes);
+
+  let result = route(method, path, &headers, &body, state);
   let _ = stream.write_all(&result);
 }
 

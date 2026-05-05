@@ -182,10 +182,10 @@ clawpet activity balanced`}</pre>
       <section className="lp-section" id="avatars">
         <Reveal>
           <p className="lp-eyebrow">Avatars</p>
-          <h2 className="lp-h2">Bring your own pixel familiar.</h2>
+          <h2 className="lp-h2">Ask OpenClaw to redesign your familiar.</h2>
           <p className="lp-body">
             Each avatar is a folder of six PNGs (<code>idle</code>, <code>thinking</code>, <code>focused</code>, <code>happy</code>, <code>alert</code>, <code>sleepy</code>) plus an
-            <code> avatar.json</code> manifest. The fun part is personalization: generate a familiar from your OpenClaw's <code>SOUL.md</code>, name, creature, and vibe. Dawn is a baby-AGI dragon because that's her soul; Pip proves the same pipeline can produce a totally different companion.
+            <code> avatar.json</code> manifest. The fun part is personalization: ask your OpenClaw assistant for a new look, let it generate/store the bundle on the OpenClaw machine, then push it to the desktop runtime. Dawn's standard baby dragon bundle is the default; custom designs are easy to swap in or roll back.
           </p>
         </Reveal>
         <div className="lp-stages">
@@ -207,32 +207,33 @@ clawpet activity balanced`}</pre>
       <section className="lp-section lp-section--install" id="install">
         <Reveal>
           <p className="lp-eyebrow">Get started</p>
-          <h2 className="lp-h2">Three terminals. About three minutes.</h2>
+          <h2 className="lp-h2">Download Clawpet for your desktop.</h2>
         </Reveal>
         <div className="lp-install-grid">
           <Reveal delay={80}>
             <div className="lp-install-card">
-              <h3>1. Install on the machine that should display the avatar</h3>
-              <p className="lp-install-os">macOS / Linux</p>
-              <CopyButton label="copy" text="curl -fsSL https://raw.githubusercontent.com/fighterz8/clawpet/main/scripts/install-unix.sh | bash" />
-              <p className="lp-install-os">Windows (PowerShell)</p>
-              <CopyButton label="copy" text="irm https://raw.githubusercontent.com/fighterz8/clawpet/main/scripts/install-windows.ps1 | iex" />
+              <h3>1. Pick your package</h3>
+              <p className="lp-install-os">Windows</p>
+              <a className="lp-btn lp-btn--primary" href="/downloads/clawpet-windows">Download .exe</a>
+              <p className="lp-install-os">macOS</p>
+              <a className="lp-btn lp-btn--ghost" href="/downloads/clawpet-macos">Download macOS package</a>
+              <p className="lp-install-os">Linux</p>
+              <a className="lp-btn lp-btn--ghost" href="/downloads/clawpet-linux">Download Linux package</a>
+              <p className="lp-install-note">These links are intended to point at the latest packaged artifacts from the Vercel app.</p>
             </div>
           </Reveal>
           <Reveal delay={160}>
             <div className="lp-install-card">
-              <h3>2. Start the runtime + overlay</h3>
-              <CopyButton label="terminal 1" text="cd ~/clawpet && npm run runtime:dev" />
-              <CopyButton label="terminal 2" text="cd ~/clawpet && npm run desktop:dev" />
-              <p className="lp-install-note">The installer prints the exact pair command for the OpenClaw side.</p>
+              <h3>2. Open Clawpet</h3>
+              <p className="lp-install-note">Launch the desktop app on the machine where the avatar should appear. The app starts the local runtime, shows connection status, and gives you a pair code if needed.</p>
             </div>
           </Reveal>
           <Reveal delay={240}>
             <div className="lp-install-card">
-              <h3>3. Pair OpenClaw over Tailscale and say hi</h3>
-              <CopyButton label="target" text="clawpet pair-mode" />
+              <h3>3. Let OpenClaw take over</h3>
               <CopyButton label="OpenClaw" text="clawpet pair --code 472091 --host <tailscale-host>:8737" />
               <CopyButton label="OpenClaw" text='clawpet send happy "It works" --bubble "Hello! 🐲"' />
+              <p className="lp-install-note">After pairing, OpenClaw can reconnect, react, change activity level, and push avatar bundles.</p>
             </div>
           </Reveal>
         </div>
