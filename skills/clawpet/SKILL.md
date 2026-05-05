@@ -44,9 +44,11 @@ clawpet pair --code <6-digit-code> --host <target-tailnet-hostname>:8737
 3. Start automatic reactivity:
 
 ```bash
-clawpet daemon start
+clawpet daemon enable   # preferred on Linux/OpenClaw hosts
 clawpet daemon status
 ```
+
+If systemd user services are unavailable, use `clawpet daemon start` as a one-session fallback.
 
 4. Verify:
 
@@ -61,9 +63,11 @@ clawpet send happy "Clawpet is connected" --bubble "Connected" --quiet
 The daemon is the production path. It tails OpenClaw's structured session JSONL at `~/.openclaw/agents/main/sessions/*.jsonl` and mirrors real activity to the runtime with **zero LLM-token cost**.
 
 ```bash
-clawpet daemon start    # background sidecar
+clawpet daemon enable   # Linux/OpenClaw host: systemd user service + start now
+clawpet daemon start    # background sidecar for this login/session
 clawpet daemon status
 clawpet daemon stop
+clawpet daemon disable  # disable systemd user autostart
 clawpet daemon run      # foreground debugging
 ```
 

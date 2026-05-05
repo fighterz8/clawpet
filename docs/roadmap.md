@@ -19,16 +19,16 @@ These are the next obvious wins; mostly incremental on what we have.
 Dawn now reacts in real time to whatever OpenClaw is doing, with **zero LLM-token cost**, via a sidecar daemon that tails the active session JSONL at `~/.openclaw/agents/main/sessions/*.jsonl`. The daemon classifies events as they're appended and dispatches `clawpet react`/`clawpet send` accordingly. Activity-level dial-down (`off`/`minimal`/`balanced`/`expressive`/`maximum`) controls reaction density.
 
 ```
-clawpet daemon start | stop | status | run
+clawpet daemon enable | disable | start | stop | status | run
 ```
 
 This turned out to be much simpler than the OpenClaw extension/hook path because OpenClaw already writes a clean structured event stream to disk. The daemon is ~250 lines of Node, no extension API needed, works on any model.
 
 **Future polish on this path:**
-- Auto-start daemon on overlay launch (so users don't have to remember).
+- Linux OpenClaw hosts can now use `clawpet daemon enable` to install a restartable systemd user service, so reactions survive gateway/process restarts.
+- Add equivalent Windows service / launchd plist support.
 - Bubble-copy variation that pulls tool args (e.g., "Reading SKILL.md…" instead of just "Reading…").
 - Map approval events (`AgentApprovalEventData`) to `react blocker` once we wire those into the JSONL stream.
-- Optional Windows service / launchd plist for daemon auto-start.
 
 ### Multi-avatar selection
 - Runtime accepts `CLAWPET_AVATAR_BUNDLE` (default `dawn-v0`) and reports it in `/status`.

@@ -127,7 +127,7 @@ Usage:
   clawpet avatar push <bundle-dir>                 # upload/select avatar bundle on paired runtime
   clawpet install [--os windows|unix]
   clawpet config
-  clawpet daemon <start|stop|status|run>           # auto-react sidecar (tails OpenClaw session log)
+  clawpet daemon <start|stop|status|run|enable|disable> # auto-react sidecar (tails OpenClaw session log)
 
 States: ${STATES.join(" | ")}
 Runtime URL: ${resolveRuntimeUrl()}  (override with CLAWPET_RUNTIME_URL or 'clawpet pair')
@@ -555,14 +555,42 @@ function cmdConfig() {
 }
 
 async function cmdDaemon(positional, _flags) {
-  const { spawn } = await import("node:child_process");
+  const { spawn, execFileSync } = await import("node:child_process");
   const { fileURLToPath } = await import("node:url");
   const { dirname, join } = await import("node:path");
   const here = dirname(fileURLToPath(import.meta.url));
   const daemonScript = join(here, "clawpet-daemon.mjs");
   const PID_FILE = join(CONFIG_DIR, "daemon.pid");
   const LOG_FILE = join(CONFIG_DIR, "daemon.log");
+  const SERVICE_NAME = "openclaw-clawpet-daemon";
+  const SERVICE_FILE = join(homedir(), ".config", "systemd", "user", `${SERVICE_NAME}.service`);
   const sub = positional[0] || "status";
+
+
+  function systemdAvailable() {
+    if (process.platform !== "linux") return false;
+    try { execFileSync("systemctl", ["--user", "--version"], { stdio: "ignore" }); return true; } catch { return false; }
+  }
+  function writeSystemdService() {
+    mkdirSync(dirname(SERVICE_FILE), { recursive: true });
+    const node = process.execPath;
+    const content = `[Unit]
+Description=Clawpet OpenClaw activity daemon
+After=default.target
+
+[Service]
+Type=simple
+ExecStart=${node} ${daemonScript}
+Restart=always
+RestartSec=3
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=default.target
+`;
+    writeFileSync(SERVICE_FILE, content, { mode: 0o600 });
+    return SERVICE_FILE;
+  }
 
   function readPid() {
     try { return parseInt(readFileSync(PID_FILE, "utf8").trim(), 10); } catch { return null; }
@@ -596,8 +624,22 @@ async function cmdDaemon(positional, _flags) {
     // Foreground run for debugging
     const child = spawn(process.execPath, [daemonScript], { stdio: "inherit", env: process.env });
     child.on("exit", code => process.exit(code ?? 0));
+  } else if (sub === "enable") {
+    if (!systemdAvailable()) {
+      fail("daemon enable currently supports systemd user services on Linux. Use daemon start for this session.", 2);
+    }
+    const file = writeSystemdService();
+    execFileSync("systemctl", ["--user", "daemon-reload"], { stdio: "inherit" });
+    execFileSync("systemctl", ["--user", "enable", "--now", SERVICE_NAME], { stdio: "inherit" });
+    console.log(`clawpet daemon enabled as systemd user service: ${file}`);
+  } else if (sub === "disable") {
+    if (!systemdAvailable()) {
+      fail("daemon disable currently supports systemd user services on Linux.", 2);
+    }
+    try { execFileSync("systemctl", ["--user", "disable", "--now", SERVICE_NAME], { stdio: "inherit" }); } catch {}
+    console.log("clawpet daemon disabled");
   } else {
-    fail(`unknown daemon subcommand: ${sub}. Try start|stop|status|run`);
+    fail(`unknown daemon subcommand: ${sub}. Try start|stop|status|run|enable|disable`);
   }
 }
 

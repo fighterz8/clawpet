@@ -97,7 +97,8 @@ Manual equivalent on the OpenClaw host:
 clawpet pair --code 472091 --host <desktop-host>.<tailnet>.ts.net:8737
 clawpet activity balanced
 clawpet heartbeat-reactions off
-clawpet daemon start
+clawpet daemon enable   # Linux/OpenClaw host: install + start systemd user service
+# or: clawpet daemon start   # one-session fallback
 ```
 
 Verify from OpenClaw:
@@ -127,9 +128,10 @@ Tray menu:
 The daemon tails OpenClaw session JSONL and mirrors real activity with zero LLM/token cost:
 
 ```bash
-clawpet daemon start
+clawpet daemon enable   # survive OpenClaw/gateway restarts on Linux systemd hosts
 clawpet daemon status
-clawpet daemon stop
+clawpet daemon stop     # stop this run
+clawpet daemon disable  # remove autostart
 ```
 
 Examples:
