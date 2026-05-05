@@ -40,9 +40,55 @@ curl -fsS http://<runtime-host>:8737/avatar-bundle/current/avatar.json
 - If the visible avatar does not change but setup/status does, inspect overlay playback/runtime selection before regenerating more art.
 - Use 128x128 logical-pixel assumptions for motion prompts; export larger only for crisp display.
 
+## One-command wrapper (new)
+
+There is now a manifest-driven wrapper around the existing bundle builder:
+
+```bash
+python3 scripts/run_avatar_pipeline.py run jobs/pocket-golem-local.sample.json
+```
+
+Supported actions:
+
+```bash
+python3 scripts/run_avatar_pipeline.py scaffold <job.json>
+python3 scripts/run_avatar_pipeline.py validate <job.json>
+python3 scripts/run_avatar_pipeline.py build <job.json>
+python3 scripts/run_avatar_pipeline.py push <job.json>
+python3 scripts/run_avatar_pipeline.py verify <job.json>
+python3 scripts/run_avatar_pipeline.py run <job.json>
+```
+
+What the wrapper does:
+- validates that all 6 required states exist
+- checks that referenced frame files exist
+- emits a generated build spec under `.avatar-pipeline/<job-id>/`
+- calls `scripts/build_avatar_bundle.py`
+- optionally pushes the bundle through the existing Clawpet pairing
+- verifies runtime avatar id + bundle version after push
+
+Sample job manifest:
+- `jobs/pocket-golem-local.sample.json`
+
+Prompt-pack scaffold:
+- `docs/prompts/avatar-job-template.md`
+- `docs/prompts/clawpet-creative-prompt.md`
+- `docs/prompts/clawpet-frame-delta-prompt.md`
+
+## Current limitation
+
+This wrapper productizes **build/push/verify orchestration** and the manifest shape.
+It does **not** yet call the image-generation provider directly on its own.
+The current generation flow is still:
+1. generate source frames with the image tool / agent
+2. place those frame paths in the job manifest
+3. run the wrapper to validate/build/push/verify
+
+That means the remaining automation gap is specifically the provider-backed frame generation stage.
+
 ## Future improvement targets
 
-- one command that wraps generation + bundling + push
+- provider-backed frame generation inside the wrapper
 - bundle validation screenshots/contact sheets
-- agent prompt templates stored with per-character specs
+- richer prompt-pack storage with per-character locked specs
 - download/package link refresh as part of release prep

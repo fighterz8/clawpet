@@ -17,7 +17,8 @@
     "runtime:tailscale": "node scripts/run-runtime.mjs --tailscale",
     "send-test": "tsx src/runtime/send-test.ts",
     "desktop:dev": "tauri dev",
-    "desktop:build": "tauri build --no-bundle"
+    "desktop:build": "tauri build --no-bundle",
+    "avatar:pipeline": "python3 scripts/run_avatar_pipeline.py"
   },
   "dependencies": {
     "@hono/node-server": "^2.0.1",

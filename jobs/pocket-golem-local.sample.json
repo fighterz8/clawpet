@@ -1,0 +1,78 @@
+{
+  "id": "pocket-golem-v0",
+  "name": "Pocket Golem",
+  "version": "0.2.0-local-animated",
+  "description": "A local-only pipeline test avatar: a tiny slate-and-moss pocket golem companion with animated state loops.",
+  "mode": "local-only",
+  "targetRuntime": "gladriel",
+  "pushAfterBuild": true,
+  "outputRoot": "/home/nick/.openclaw/workspace/local_avatars/pocket-golem-v0/bundle",
+  "previewGif": "/home/nick/.openclaw/workspace/local_avatars/pocket-golem-v0/pocket-golem-preview.gif",
+  "promptPack": {
+    "jobTemplate": "docs/prompts/avatar-job-template.md",
+    "creative": "docs/prompts/clawpet-creative-prompt.md",
+    "frameDelta": "docs/prompts/clawpet-frame-delta-prompt.md"
+  },
+  "states": {
+    "idle": {
+      "fps": 4,
+      "motionRecipe": "blink + tiny bob + glow pulse",
+      "frames": [
+        "/home/nick/.openclaw/media/tool-image-generation/pocket-golem-idle-opaque---f971f050-3a1e-4c3d-838c-702df1cdca0d.png",
+        "/home/nick/.openclaw/media/tool-image-generation/pocket-golem-idle-a-opaque---bbb40a1b-3b30-4921-a73c-9f2611993c8e.png",
+        "/home/nick/.openclaw/media/tool-image-generation/pocket-golem-idle-opaque---f971f050-3a1e-4c3d-838c-702df1cdca0d.png",
+        "/home/nick/.openclaw/media/tool-image-generation/pocket-golem-idle-b-opaque---b1aedd66-bb04-4d42-839c-c0c53899f4d3.png"
+      ]
+    },
+    "thinking": {
+      "fps": 4,
+      "motionRecipe": "eye shift + core brighten + tiny top-stone tilt",
+      "frames": [
+        "/home/nick/.openclaw/media/tool-image-generation/pocket-golem-thinking-opaque---8de5bf9b-560d-49e2-a5c8-63f3156d4328.png",
+        "/home/nick/.openclaw/media/tool-image-generation/pocket-golem-thinking-a-opaque---6f69bd42-5332-4b29-9b59-b3db1757c25d.png",
+        "/home/nick/.openclaw/media/tool-image-generation/pocket-golem-thinking-b-opaque---0c617c49-2d40-497b-9d5c-cd64facd5702.png",
+        "/home/nick/.openclaw/media/tool-image-generation/pocket-golem-thinking-opaque---8de5bf9b-560d-49e2-a5c8-63f3156d4328.png"
+      ]
+    },
+    "focused": {
+      "fps": 4,
+      "motionRecipe": "contained lean + stronger core focus",
+      "frames": [
+        "/home/nick/.openclaw/media/tool-image-generation/pocket-golem-focused-opaque---81f8c596-e6a3-49b8-8ac8-63b417907d61.png",
+        "/home/nick/.openclaw/media/tool-image-generation/pocket-golem-focused-a-opaque---c5cc74be-327a-40b9-8e49-e74813749576.png",
+        "/home/nick/.openclaw/media/tool-image-generation/pocket-golem-focused-b-opaque---a455e3e4-a902-494a-b175-a241cc53330a.png",
+        "/home/nick/.openclaw/media/tool-image-generation/pocket-golem-focused-opaque---81f8c596-e6a3-49b8-8ac8-63b417907d61.png"
+      ]
+    },
+    "happy": {
+      "fps": 5,
+      "motionRecipe": "buoyant lift + brighter core glow",
+      "frames": [
+        "/home/nick/.openclaw/media/tool-image-generation/pocket-golem-happy-opaque---3f3ec76d-bcd4-4f96-866c-8c33a8d3f836.png",
+        "/home/nick/.openclaw/media/tool-image-generation/pocket-golem-happy-a-opaque---6ce27b3a-e0cd-4b0c-a775-5322ebf98e72.png",
+        "/home/nick/.openclaw/media/tool-image-generation/pocket-golem-happy-b-opaque---395de6f5-80dc-4f03-abcb-306c49ff9c76.png",
+        "/home/nick/.openclaw/media/tool-image-generation/pocket-golem-happy-opaque---3f3ec76d-bcd4-4f96-866c-8c33a8d3f836.png"
+      ]
+    },
+    "alert": {
+      "fps": 5,
+      "motionRecipe": "perk + alert core brighten + tiny stone shift",
+      "frames": [
+        "/home/nick/.openclaw/media/tool-image-generation/pocket-golem-alert-opaque---7526f5ee-fd45-4627-9467-7a0b682f53f5.png",
+        "/home/nick/.openclaw/media/tool-image-generation/pocket-golem-alert-a-opaque---9635138c-3df6-4843-9e7a-cc49940c8f04.png",
+        "/home/nick/.openclaw/media/tool-image-generation/pocket-golem-alert-b-opaque---f4eb0ca4-2d67-437d-987a-1eeab214d6dc.png",
+        "/home/nick/.openclaw/media/tool-image-generation/pocket-golem-alert-opaque---7526f5ee-fd45-4627-9467-7a0b682f53f5.png"
+      ]
+    },
+    "sleepy": {
+      "fps": 3,
+      "motionRecipe": "deeper droop + dimmer core",
+      "frames": [
+        "/home/nick/.openclaw/media/tool-image-generation/pocket-golem-sleepy-opaque---8377dbcd-1cde-4f26-a2d0-dbf394b68dea.png",
+        "/home/nick/.openclaw/media/tool-image-generation/pocket-golem-sleepy-a-opaque---d7ffcc07-6170-4c28-90fe-e1fc451f5b5a.png",
+        "/home/nick/.openclaw/media/tool-image-generation/pocket-golem-sleepy-b-opaque---e0d708f6-63ca-4b93-861c-6cb29f80d66f.png",
+        "/home/nick/.openclaw/media/tool-image-generation/pocket-golem-sleepy-opaque---8377dbcd-1cde-4f26-a2d0-dbf394b68dea.png"
+      ]
+    }
+  }
+}
