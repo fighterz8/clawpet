@@ -1,35 +1,70 @@
 # Clawpet
 
-A pixel-art desktop companion for [OpenClaw](https://openclaw.ai). Your AI assistant gets a face: a small dragon (Dawn), slime (Pip), or any Clawpet you generate. Reacts to what OpenClaw is doing — thinking, working, alert, done — and quietly idles the rest of the time.
+A pixel-art desktop companion for [OpenClaw](https://openclaw.ai). Your AI assistant gets a face: a small dragon (Dawn), slime (Pip), or any Clawpet you generate. It reacts to what OpenClaw is doing — reading, thinking, running commands, done — then quietly idles.
 
-> **Status:** v0.4, working end-to-end on Windows + macOS + Linux over **Tailscale**. Bring your own OpenClaw.
+> **Status:** v0.5-in-progress. The desktop app now owns the runtime/setup experience, with Tailscale-friendly pairing, automatic reconnect, tray controls, and live OpenClaw status.
 
 ![Dawn — six states](docs/screenshots/dawn-pip-comparison.png)
+
+## The product flow
+
+Clawpet is moving toward the normal-user experience Nick wanted:
+
+1. Download/open the desktop app (`.exe` / `.dmg` target).
+2. The app starts its local runtime.
+3. Setup shows whether the runtime is online.
+4. First-time users open a 6-digit pair code.
+5. OpenClaw claims the code once.
+6. After that, just start chatting — Clawpet should reconnect automatically.
+
+The setup window is not meant to stay open forever. Once paired, it prompts you to close setup; the pet keeps running from the system tray.
 
 ## What it actually is
 
 Three pieces working together:
 
-1. **A tiny local HTTP runtime** (`Hono` on Node, default `127.0.0.1:8737`) that holds the avatar's state.
-2. **A transparent always-on-top desktop overlay** (Tauri 2 + React + Vite) that polls the runtime and animates a pixel-art sprite for each state.
-3. **An OpenClaw skill + daemon** (`clawpet`) that tails OpenClaw's real session stream and sends state updates to the runtime.
+1. **Desktop app / overlay** — Tauri 2 + React + Vite. Opens setup and the transparent always-on-top pet window.
+2. **Local runtime** — native Rust runtime in the Tauri app for packaged builds; Node/Hono runtime remains available for dev/testing.
+3. **OpenClaw skill + daemon** — `clawpet` tails OpenClaw's real session stream and sends state updates to the runtime.
 
-The avatar lives on **your desktop**. OpenClaw can run on the same machine, on your home server, or anywhere on your tailnet — whichever is convenient.
+The avatar lives on **your display machine**. OpenClaw can run on the same machine, a Linux box, a home server, or anywhere on your tailnet.
 
-### Why Tailscale matters right now
+## Connection indicator
 
-The current cross-machine path is **Tailscale-first**. That's deliberate: most OpenClaw users run OpenClaw on a Linux box/server but want the pet on their daily-driver laptop or desktop. Tailscale gives Clawpet a private, encrypted, stable hostname like `<desktop-host>.<tailnet>.ts.net` without exposing a public port or building a cloud relay. Localhost works for same-machine setups; Tailscale is the recommended path for everything else.
+The overlay has a small status dot:
 
-## Quickstart: try it on the display machine first
+- 🟢 **Green** — authenticated OpenClaw event received; ready.
+- 🟡 **Yellow** — runtime is online, but OpenClaw has not authenticated yet. If you paired before, try chatting first; otherwise open setup and pair.
+- 🔴 **Red** — runtime/offline problem.
 
-Clawpet is a two-machine-friendly app:
+This avoids the confusing “public `/status` says connected, but commands are actually unauthorized” state.
 
-- **Display machine:** the laptop/desktop where you want to see the pet window. Install/run the runtime + overlay here.
-- **OpenClaw host:** the machine running OpenClaw. Pair from here after the display machine shows a code.
+## Returning users: do you need a pair code?
 
-You need on the display machine: **Node.js ≥ 20**, **git**, and (for the desktop window) **Rust + a C++ build toolchain**.
+Usually **no**.
 
-Install on the machine that should display the avatar:
+If you paired before, the desktop runtime persists its token locally and OpenClaw stores the matching token in `~/.openclaw/clawpet/config.json`. Reopen Clawpet, then start chatting with OpenClaw. The pet should reconnect without another code.
+
+Use a new pair code only if:
+
+- this is the first connection,
+- the dot stays yellow and the pet does not respond,
+- the token was rotated,
+- local app data/config was cleared,
+- or you rebuilt/reset the dev runtime during development.
+
+## Quickstart: current dev path
+
+Until signed installers are published, run from source on the display machine.
+
+Requirements on the display machine:
+
+- Node.js ≥ 20
+- git
+- Rust + platform build tools for Tauri
+- Tailscale for cross-machine OpenClaw/display setups
+
+Install:
 
 ```bash
 # macOS / Linux
@@ -37,45 +72,30 @@ curl -fsSL https://raw.githubusercontent.com/fighterz8/clawpet/main/scripts/inst
 ```
 
 ```powershell
-# Windows (PowerShell)
+# Windows PowerShell
 irm https://raw.githubusercontent.com/fighterz8/clawpet/main/scripts/install-windows.ps1 | iex
 ```
 
-The guided path is:
+Run the app:
 
 ```bash
-clawpet wizard display
-```
-
-Or run the steps manually. Try the pet before connecting OpenClaw:
-
-```bash
-# terminal 1 — runtime demo mode
-cd ~/clawpet && npm run runtime:demo
-
-# terminal 2 — desktop overlay
+cd ~/clawpet
 npm run desktop:dev
 ```
 
-`npm run runtime:demo` sets `CLAWPET_DEMO=1` and cycles through idle → thinking → focused → happy → alert → sleepy every 6 seconds. No OpenClaw pairing required. `npm run desktop:dev` opens the transparent overlay, not the landing page.
+The Tauri app opens setup and the pet overlay. In current v0.5 dev builds, the native runtime is built into the app; the older Node runtime can still be used with `CLAWPET_USE_NODE_RUNTIME=1` when needed.
 
-## Cross-machine setup
+## First-time pairing
 
-Use this when OpenClaw runs on one machine and the avatar displays on another. Tailscale is recommended.
+On the display machine, open setup and click **Show pair code**.
 
-On the display machine, bind the runtime to the Tailscale-reachable interface:
-
-```bash
-npm run runtime:tailscale
-```
-
-Then pair from the OpenClaw host using the display machine's Tailscale hostname:
+Send the command it shows to your OpenClaw assistant / host:
 
 ```bash
 clawpet wizard openclaw --code 472091 --host <desktop-host>.<tailnet>.ts.net:8737
 ```
 
-Manual equivalent:
+Manual equivalent on the OpenClaw host:
 
 ```bash
 clawpet pair --code 472091 --host <desktop-host>.<tailnet>.ts.net:8737
@@ -84,210 +104,127 @@ clawpet heartbeat-reactions off
 clawpet daemon start
 ```
 
-> Loopback (`127.0.0.1`) is trusted; non-loopback/Tailscale requires a bearer token. The token is auto-generated on first boot at `~/.openclaw/clawpet/runtime-token` (mode `0600`) and is normally transferred via the 6-digit pair flow below.
+After pairing, setup should show **Connected — setup complete**. Close setup; the pet stays available from the tray.
 
-### 1. On the OpenClaw side
+## Tray controls
 
-Install/link the command (one-time, already done by the installer):
+The tray menu includes:
 
-```bash
-cd ~/clawpet
-npm link
-clawpet config
-```
+- **Show / Hide Pet**
+- **Show Setup**
+- **Quit Clawpet**
 
-The repo exposes a `clawpet` bin that points at `skills/clawpet/bin/clawpet.mjs`.
+Closing setup hides it; it does not quit the app. Use the tray to reopen setup or quit.
 
-### 2. Pair the two machines (Plex/Spotify-style 6-digit code)
+## Verify connection
 
-On the **target** (the machine running the avatar), open a pair window:
+From the OpenClaw host:
 
 ```bash
-clawpet pair-mode
+clawpet status
+clawpet send happy "It works" --bubble "Hello! 🐲"
 ```
 
-It prints a banner with a 6-digit code:
+`clawpet status` includes `openClawAuth` when possible:
 
-```
-  ┌─────────────────────────────────────────────┐
-  │   Pair code:    472 · 091                   │
-  │   Runtime:      http://127.0.0.1:8737       │
-  │   Expires in:   90 s                        │
-  └─────────────────────────────────────────────┘
+- `ready` — stored token works.
+- `invalid-token` — runtime is reachable, but OpenClaw needs to pair again.
 
-  On your OpenClaw machine, run:
-    clawpet pair --code 472091 --host <this-machine-hostname>:8737
-```
+## Live reactivity daemon
 
-On the **OpenClaw machine**, run that command. The runtime rotates the bearer token, sends it back over the same connection, and the CLI saves it to `~/.openclaw/clawpet/config.json`. Pair window closes automatically. No copy-pasting tokens, no editing config files.
-
-> Security: 90-second window, 3 attempts before lockout, 1-second rate limit, timing-safe comparison, public endpoint never reveals the code, returns 404 (not 401) once closed so external scanners can't fingerprint state.
-
-Verify:
+Start the daemon on the OpenClaw host:
 
 ```bash
-clawpet ping     # public — runtime alive?
-clawpet status   # authed — current state + paired source
-clawpet send happy "It works" --bubble "Hello! 🐲" --quiet
-```
-
-### 3. Start the live tracker daemon (recommended)
-
-This is what makes Dawn actually feel alive — a sidecar that tails OpenClaw's session log and mirrors what the assistant is currently doing in real time, with **zero LLM involvement and zero token cost**:
-
-```bash
-clawpet daemon start    # starts in background, logs to ~/.openclaw/clawpet/daemon.log
-clawpet daemon status   # check it's running
+clawpet daemon start
+clawpet daemon status
 clawpet daemon stop
 ```
 
-The daemon watches `~/.openclaw/agents/main/sessions/<id>.jsonl`, the structured event stream OpenClaw writes for every turn. It maps tool calls → `focused`, errors → `alert`, completion → `happy`, etc. With the daemon running, the avatar reacts continuously and accurately throughout your conversation. The semantic emit commands (next section) are still useful for the LLM to express explicit beats, but the daemon handles the heavy lifting on its own.
+The daemon watches OpenClaw session JSONL and maps real activity to avatar state with zero LLM/token cost:
 
-## How OpenClaw drives the avatar
+- user prompt → thinking / “Reading your prompt…”
+- file reads → thinking / “Inspecting the repo…”
+- commands → focused / “Running command…”
+- completion → happy / “Done”
 
-There are **two layers**, in order of priority:
-
-**Layer 1 — the daemon (automatic, free).** Tails the session JSONL, emits states for every tool call / error / completion. No model involvement.
-
-**Layer 2 — semantic emits from the LLM (optional flavor).** Two CLI verbs:
-
-| Command | Use it for |
-| ------- | ---------- |
-| `clawpet react <event>` | Semantic, user-gated. Preferred. |
-| `clawpet send <state>`  | Direct state push. Manual cases. |
-
-Reaction events:
-
-| Event | Maps to | Fires at activity ≥ |
-| ----- | ------- | ------------------- |
-| `tool-error` / `blocker` / `done` | `alert` / `alert` / `happy` | `minimal` |
-| `long-task` / `thinking`          | `focused` / `thinking`      | `balanced` |
-| `user-message` / `tool-start`     | `thinking` / `focused`      | `balanced` / `expressive` |
-| `heartbeat`                       | `thinking`                  | separate flag |
-
-Activity is set by the **user**, not the LLM:
-
-```bash
-clawpet activity off          # silent
-clawpet activity minimal      # errors + completion only
-clawpet activity balanced     # default
-clawpet activity expressive   # also reacts to your messages and tool starts
-clawpet activity maximum      # reserved for richer per-tool reactions
-
-clawpet heartbeat-reactions on   # default off; opt-in flash during heartbeat polls
-```
-
-The CLI itself enforces the gate. If the LLM tries to emit something your level forbids, the call returns `{ ok: true, suppressed: true }` and nothing fires.
-
-## Cost discipline
-
-Emits are tiny HTTP POSTs — the only cost is the LLM tool call that issues them. With `--quiet`, expect:
-
-| Activity      | Typical extra tokens / active turn |
-| ------------- | ---------------------------------- |
-| `off`         | 0                                  |
-| `minimal`     | 0–80                               |
-| `balanced`    | 0–200                              |
-| `expressive`  | 100–400                            |
-| `maximum`     | 200–600                            |
+Bubble text is intentionally statusful rather than random-cute.
 
 ## Decay rules
 
-The runtime computes effective state lazily on every read. No timers, no LLM cost.
+The runtime computes effective state on read:
 
-- **Active states (`thinking`, `focused`, `alert`) persist forever** until a new event arrives. The avatar reflects what OpenClaw is *currently* doing, not what it did 8 seconds ago.
-- **`happy` is terminal** — it lingers 8s after being set, then reverts to `idle`. (Configurable via `terminalLingerMs`.)
-- **`idle` drifts to `sleepy` after 5 minutes** of no events. (Configurable via `sleepyAfterMs`.)
-- **Bubbles track the current effective state.** Active/terminal states keep their useful caption (`Thinking…`, `Working on tests…`, `Done!`) until another event replaces it. When terminal `happy` decays back to `idle`, the stale work caption is replaced with the simple bubble text `idle` after 8s.
+- `happy` lingers briefly, then returns to `idle`.
+- active states (`thinking`, `focused`, `alert`) safety-decay to `idle` after quiet time so missed `done` events do not leave the pet stuck.
+- `idle` can drift to `sleepy` after prolonged quiet.
 
 ## Multi-avatar
 
 Bundles live under `public/avatars/<name>-v<n>/`:
 
-```
+```text
 public/avatars/
-├── dawn-v0/         # baby dragon
+├── dawn-v0/
 │   ├── avatar.json
 │   └── assets/{idle,thinking,focused,happy,alert,sleepy}.png
-└── pip-v0/          # cyan slime — proves the multi-avatar pipeline
+└── pip-v0/
     ├── avatar.json
     └── assets/{idle,thinking,focused,happy,alert,sleepy}.png
 ```
 
-Switch which avatar the runtime serves:
-
-```bash
-CLAWPET_AVATAR_BUNDLE=pip-v0 npm run runtime:dev
-```
-
-The desktop overlay reads the matching bundle automatically. Build-time override:
-
-```bash
-VITE_CLAWPET_AVATAR_BUNDLE=pip-v0 npm run desktop:dev
-```
-
-### Generating a new Clawpet
-
-Every new sprite must follow [`docs/clawpet-style-guide.md`](docs/clawpet-style-guide.md) v1: pixel-art, 128×128 logical / 512×512 export, transparent background, limited palette, hard 1-px outline, cel shading, six required states (idle / thinking / focused / happy / alert / sleepy).
-
-The exciting part: the pet can be generated from **your OpenClaw's identity** — its name, `SOUL.md`, persona notes, and preferred creature/vibe. Dawn is the reference baby-dragon assistant familiar used by this repo. Pip is a second generated bundle proving the pipeline isn't hardcoded to one mascot. The locked prompt template in §7 keeps those personalized pets visually coherent instead of becoming random one-off art.
+OpenClaw is the intended source of truth for avatar assets/config. It can push bundles to the paired runtime over the authenticated connection.
 
 ## Architecture
 
-```
+```text
 ┌──────────────────────┐                 ┌──────────────────────────┐
-│  OpenClaw session    │   tool call     │  ~/clawpet/skills/       │
-│  (any machine)       ├────────────────▶│  clawpet/bin/clawpet.mjs │
+│  OpenClaw host       │   CLI/daemon    │  clawpet skill           │
+│  session JSONL       ├────────────────▶│  pair/send/react/status  │
 └──────────────────────┘                 └─────────────┬────────────┘
-                                                       │ HTTP POST + Bearer
+                                                       │ HTTP + Bearer
                                                        ▼
 ┌────────────────────────────────────────────────────────────────────┐
-│  Target machine                                                    │
+│  Display machine                                                    │
 │                                                                    │
-│  ┌─────────────────────┐   in-mem state    ┌────────────────────┐  │
-│  │  Hono runtime       │◀──────────────────│  state store       │  │
-│  │  /health /status    │                   │  + decay-on-read   │  │
-│  │  /avatar/state      │                   └────────────────────┘  │
-│  │  /admin/rotate-token│              ▲                            │
-│  └─────────────────────┘              │ /status (poll, loopback)   │
-│                                       │                            │
-│                                ┌──────┴───────────┐                │
-│                                │  Tauri overlay   │                │
-│                                │  React + Vite    │                │
-│                                │  PNG bundle      │                │
-│                                └──────────────────┘                │
+│  ┌─────────────────────┐      /status       ┌───────────────────┐  │
+│  │ Tauri desktop app   │◀──────────────────▶│ native runtime    │  │
+│  │ setup + overlay     │                    │ auth/state/bundle │  │
+│  │ tray controls       │                    │ pair-code flow    │  │
+│  └─────────────────────┘                    └───────────────────┘  │
 └────────────────────────────────────────────────────────────────────┘
 ```
 
-**Auth model:**
+## Auth model
 
-- `127.0.0.1` (loopback): trusted, no token needed. Local desktop overlay always works.
-- Anything else (LAN / Tailscale / `0.0.0.0`): token required on every request except `GET /health`, `GET /pair-mode`, and `POST /pair/claim` (the last two are public *only* while pair mode is active).
-- Token lives at `~/.openclaw/clawpet/runtime-token` and can be rotated:
-  - In-place from a paired client: `clawpet rotate-token`.
-  - From scratch via the magic-pair flow: `clawpet pair-mode` on the target, `clawpet pair --code … --host …` on the OpenClaw side. This is also the only way to recover from a lost token without ssh access to the target.
+- `GET /health`, `GET /pair-mode`, and active `POST /pair/claim` are public enough for setup/pairing.
+- state-changing runtime calls require bearer auth.
+- runtime token persists at `~/.openclaw/clawpet/runtime-token` on the display machine.
+- OpenClaw stores its matching token in `~/.openclaw/clawpet/config.json`.
+- rotate/re-pair if auth breaks.
 
-## Documentation
+## Status & next work
 
-- [`docs/clawpet-style-guide.md`](docs/clawpet-style-guide.md) — locked visual style for all Clawpets (v1).
-- [`docs/avatar-bundle-spec.md`](docs/avatar-bundle-spec.md) — bundle manifest schema.
-- [`docs/avatar-event-contract.md`](docs/avatar-event-contract.md) — runtime event format.
-- [`docs/runtime-first-mvp-plan.md`](docs/runtime-first-mvp-plan.md) — the runtime-first pivot rationale.
-- [`docs/roadmap.md`](docs/roadmap.md) — near-term, mid-term, and speculative directions.
-- [`docs/adr/`](docs/adr/) — architecture decision records.
+**Working:** native setup surface, native runtime, transparent draggable overlay, tray controls, connection indicator, 6-digit pairing, persisted reconnect token, authenticated readiness checks, daemon-driven real-time reactions, active-state idle safety decay, Tailscale-first cross-machine setup, multi-avatar bundles.
 
-## Status & non-goals
+**Next:**
 
-**Working:** transparent draggable overlay, system tray, six-state pixel sprites (Dawn pack v0.4.0 with proportion/palette-coherent regen of `idle` and `thinking`), runtime auth, lazy state decay with sticky bubbles, semantic reactions, activity gating, heartbeat opt-in, **Plex/Spotify-style 6-digit pair flow**, **session-JSONL daemon for automatic real-time reactivity**, Tailscale-native cross-machine projection, multi-avatar bundles.
-
-**Not yet:**
-- Signed binary releases (currently install via `git + npm + tauri`).
-- OpenClaw-hosted relay for users without Tailscale.
-- Native idle animation (frame loops within a state) — bigger "feels alive" jump.
-- Environment / screen awareness — see [roadmap](docs/roadmap.md).
+- produce and smoke-test packaged `.exe` / `.dmg` artifacts
+- harden setup/doctor flows further
+- fix the GitHub Dependabot moderate vulnerability
+- README marketing pass + hero GIF
+- frame-based animated avatar schema
+- Dawn-v1 animated bundle
 
 **Will not:** ambient cloud spend without a setting; surveillance-y always-on capture; closed paid avatar packs.
 
+## Documentation
+
+- [`docs/v0.5-brief.md`](docs/v0.5-brief.md) — current v0.5 direction.
+- [`docs/clawpet-style-guide.md`](docs/clawpet-style-guide.md) — locked visual style for all Clawpets.
+- [`docs/avatar-bundle-spec.md`](docs/avatar-bundle-spec.md) — bundle manifest schema.
+- [`docs/avatar-event-contract.md`](docs/avatar-event-contract.md) — runtime event format.
+- [`docs/roadmap.md`](docs/roadmap.md) — near-term, mid-term, and speculative directions.
+- [`docs/adr/`](docs/adr/) — architecture decision records.
+
 ## License
 
-Source: MIT. Avatar art bundles: see each `avatar.json` (Dawn and Pip are CC-BY-NC-4.0).
+Source: MIT. Avatar art bundles: see each `avatar.json`.
