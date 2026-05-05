@@ -4,9 +4,11 @@ import { dirname, join } from "node:path";
 import { homedir } from "node:os";
 import { randomBytes } from "node:crypto";
 import { createRuntimeApp } from "./app";
+import { RuntimeStateStore } from "./stateStore";
 
 const port = Number(process.env.CLAWPET_RUNTIME_PORT ?? 8737);
 const hostname = process.env.CLAWPET_RUNTIME_HOST ?? "127.0.0.1";
+const avatarId = process.env.CLAWPET_AVATAR_BUNDLE ?? "dawn-v0";
 
 const isLoopback = hostname === "127.0.0.1" || hostname === "::1" || hostname === "localhost";
 
@@ -35,8 +37,11 @@ const allowCorsOrigin = process.env.CLAWPET_RUNTIME_CORS
   ? process.env.CLAWPET_RUNTIME_CORS.split(",").map((s) => s.trim()).filter(Boolean)
   : undefined;
 
+const store = new RuntimeStateStore({ avatarId });
+
 serve({
   fetch: createRuntimeApp({
+    store,
     authToken,
     allowCorsOrigin,
     onTokenRotated: (newToken) => {
@@ -54,6 +59,7 @@ serve({
 });
 
 console.log(`Clawpet runtime listening on http://${hostname}:${port}`);
+console.log(`Avatar: ${avatarId} (override with CLAWPET_AVATAR_BUNDLE)`);
 if (authToken) {
   console.log(`Auth: Bearer token required. Token file: ${tokenFile}`);
   console.log(`To pair from another machine, run on that machine:`);

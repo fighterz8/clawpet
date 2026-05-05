@@ -14,7 +14,7 @@
       {
         "title": "Clawpet",
         "label": "main",
-        "url": "/?overlay=1",
+        "url": "/overlay.html",
         "width": 360,
         "height": 320,
         "minWidth": 360,

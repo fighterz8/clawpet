@@ -12,7 +12,12 @@ if (typeof window !== "undefined" && new URLSearchParams(window.location.search)
 import { AVATAR_EVENT_VERSION, avatarStates, resolveBubbleText, type AvatarState, type AvatarStateEvent, type ClawpetStatus } from "./contracts/avatarEvent";
 import { loadAvatarBundle, type ResolvedAvatarBundle } from "./avatars/bundle";
 
-const DEFAULT_AVATAR_BUNDLE_URL = "/avatars/dawn-v0";
+// Avatar bundle URL resolution order:
+//   1. Vite-time env override (VITE_CLAWPET_AVATAR_BUNDLE)
+//   2. /status from the runtime (avatar.avatarId)
+//   3. dawn-v0
+const BUILD_TIME_AVATAR = (import.meta as { env?: Record<string, string> }).env?.VITE_CLAWPET_AVATAR_BUNDLE;
+const DEFAULT_AVATAR_BUNDLE_URL = `/avatars/${BUILD_TIME_AVATAR || "dawn-v0"}`;
 
 function BundleAvatar({ state, bundle }: { state: AvatarState; bundle: ResolvedAvatarBundle | null }) {
   if (!bundle) {
