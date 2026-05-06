@@ -103,7 +103,7 @@ describe("runtime API", () => {
     expect(status.status).toBe(200);
   });
 
-  it("safety-decays active states (thinking/focused/alert) back to idle after quiet time", async () => {
+  it("holds a shown event for its linger window, then returns to idle", async () => {
     let nowMs = Date.parse("2026-05-04T19:30:01.000Z");
     const store = new RuntimeStateStore({
       now: () => new Date(nowMs),
@@ -116,14 +116,19 @@ describe("runtime API", () => {
 
     await app.request("/avatar/state", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...event, state: "focused", sentAt: new Date(nowMs).toISOString() }),
+      body: JSON.stringify({
+        ...event,
+        state: "focused",
+        sentAt: new Date(nowMs).toISOString(),
+        metadata: { sourceClass: "OpenClaw expression", lingerMs: 45000 },
+      }),
     });
     expect((await (await app.request("/status")).json()).avatar.state).toBe("focused");
 
-    nowMs += 30000; // still active inside the safety window
+    nowMs += 30000;
     expect((await (await app.request("/status")).json()).avatar.state).toBe("focused");
 
-    nowMs += 20000; // quiet long enough to safety-decay
+    nowMs += 20000;
     expect((await (await app.request("/status")).json()).avatar.state).toBe("idle");
   });
 
@@ -150,7 +155,7 @@ describe("runtime API", () => {
     expect((await (await app.request("/status")).json()).avatar.state).toBe("sleepy");
   });
 
-  it("keeps active bubbles sticky, then replaces terminal bubbles with idle", async () => {
+  it("keeps active bubbles sticky through linger, then replaces them with idle", async () => {
     let nowMs = Date.parse("2026-05-04T19:30:01.000Z");
     const store = new RuntimeStateStore({
       now: () => new Date(nowMs),
@@ -161,7 +166,13 @@ describe("runtime API", () => {
 
     await app.request("/avatar/state", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...event, state: "focused", bubble: "Working…", sentAt: new Date(nowMs).toISOString() }),
+      body: JSON.stringify({
+        ...event,
+        state: "focused",
+        bubble: "Working…",
+        sentAt: new Date(nowMs).toISOString(),
+        metadata: { sourceClass: "OpenClaw expression", lingerMs: 45000 },
+      }),
     });
     expect((await (await app.request("/status")).json()).avatar.bubble).toBe("Working…");
 
@@ -172,7 +183,13 @@ describe("runtime API", () => {
     // Terminal happy keeps its useful completion bubble during the 8s linger.
     await app.request("/avatar/state", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...event, state: "happy", bubble: "Done!", sentAt: new Date(nowMs).toISOString() }),
+      body: JSON.stringify({
+        ...event,
+        state: "happy",
+        bubble: "Done!",
+        sentAt: new Date(nowMs).toISOString(),
+        metadata: { sourceClass: "OpenClaw expression", lingerMs: 8000 },
+      }),
     });
     expect((await (await app.request("/status")).json()).avatar.bubble).toBe("Done!");
 
@@ -181,6 +198,144 @@ describe("runtime API", () => {
     const afterIdle = (await (await app.request("/status")).json()).avatar;
     expect(afterIdle.state).toBe("idle");
     expect(afterIdle.bubble).toBe("idle");
+  });
+
+  it("suppresses system signal while an OpenClaw expression is still lingering", async () => {
+    let nowMs = Date.parse("2026-05-04T19:30:01.000Z");
+    const store = new RuntimeStateStore({ now: () => new Date(nowMs) });
+    const app = createRuntimeApp({ store });
+
+    await app.request("/avatar/state", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...event,
+        eventId: "expr-1",
+        state: "focused",
+        bubble: "This one's being slippery.",
+        sentAt: new Date(nowMs).toISOString(),
+        metadata: { sourceClass: "OpenClaw expression", lingerMs: 8000 },
+      }),
+    });
+
+    nowMs += 1000;
+    await app.request("/avatar/state", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...event,
+        eventId: "sys-1",
+        state: "thinking",
+        bubble: "Reading…",
+        sentAt: new Date(nowMs).toISOString(),
+        source: { kind: "openclaw", instanceId: "clawpet-daemon-voice", displayName: "daemon voice" },
+        metadata: { sourceClass: "system signal", lingerMs: 2000 },
+      }),
+    });
+
+    const status = await (await app.request("/status")).json();
+    expect(status.avatar.state).toBe("focused");
+    expect(status.avatar.bubble).toBe("This one's being slippery.");
+
+    const events = await (await app.request("/events")).json();
+    expect(events.events[0]).toMatchObject({
+      event: { eventId: "sys-1" },
+      sourceClass: "system signal",
+      outcome: "suppressed",
+      reason: "active OpenClaw expression",
+      blockedByEventId: "expr-1",
+    });
+  });
+
+  it("lets user-requested emits replace an active OpenClaw expression", async () => {
+    let nowMs = Date.parse("2026-05-04T19:30:01.000Z");
+    const store = new RuntimeStateStore({ now: () => new Date(nowMs) });
+    const app = createRuntimeApp({ store });
+
+    await app.request("/avatar/state", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...event,
+        eventId: "expr-2",
+        state: "thinking",
+        bubble: "Parsing the ask…",
+        sentAt: new Date(nowMs).toISOString(),
+        metadata: { sourceClass: "OpenClaw expression", lingerMs: 8000 },
+      }),
+    });
+
+    nowMs += 1000;
+    await app.request("/avatar/state", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...event,
+        eventId: "usr-1",
+        state: "happy",
+        bubble: "Done!",
+        sentAt: new Date(nowMs).toISOString(),
+        source: { kind: "openclaw", instanceId: "clawpet-user-requested", displayName: "user-requested" },
+        metadata: { sourceClass: "user-requested", lingerMs: 12000 },
+      }),
+    });
+
+    const status = await (await app.request("/status")).json();
+    expect(status.avatar.state).toBe("happy");
+    expect(status.avatar.bubble).toBe("Done!");
+
+    const events = await (await app.request("/events")).json();
+    expect(events.events[0]).toMatchObject({
+      event: { eventId: "usr-1" },
+      sourceClass: "user-requested",
+      outcome: "replaced",
+      reason: "user-requested override",
+      replacedEventId: "expr-2",
+    });
+  });
+
+  it("skips duplicate OpenClaw expressions during the duplicate window", async () => {
+    let nowMs = Date.parse("2026-05-04T19:30:01.000Z");
+    const store = new RuntimeStateStore({ now: () => new Date(nowMs) });
+    const app = createRuntimeApp({ store });
+
+    await app.request("/avatar/state", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...event,
+        eventId: "expr-3",
+        state: "focused",
+        bubble: "This feels annoyingly close.",
+        sentAt: new Date(nowMs).toISOString(),
+        metadata: { sourceClass: "OpenClaw expression", lingerMs: 8000 },
+      }),
+    });
+
+    nowMs += 7000;
+    await app.request("/avatar/state", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...event,
+        eventId: "expr-4",
+        state: "focused",
+        bubble: "This feels annoyingly close.",
+        sentAt: new Date(nowMs).toISOString(),
+        metadata: { sourceClass: "OpenClaw expression", lingerMs: 8000 },
+      }),
+    });
+
+    const status = await (await app.request("/status")).json();
+    expect(status.avatar.bubble).toBe("This feels annoyingly close.");
+
+    const events = await (await app.request("/events")).json();
+    expect(events.events[0]).toMatchObject({
+      event: { eventId: "expr-4" },
+      sourceClass: "OpenClaw expression",
+      outcome: "skipped",
+      reason: "duplicate expression",
+    });
   });
 
   it("rotates the auth token via /admin/rotate-token", async () => {

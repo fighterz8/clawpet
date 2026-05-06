@@ -387,15 +387,21 @@ async function cmdSend(positional, flags) {
     process.exit(0);
   }
 
+  const source = resolveEmitSource("send");
+  const sourceClass = source.instanceId === "clawpet-user-requested" ? "user-requested" : "system signal";
   const event = {
     type: "avatar.state",
     version: "0.1.0",
     eventId: randomUUID(),
     sentAt: new Date().toISOString(),
-    source: resolveEmitSource("send"),
+    source,
     state,
     ...(message ? { message } : {}),
     ...(bubble ? { bubble } : {}),
+    metadata: {
+      sourceClass,
+      lingerMs: sourceClass === "user-requested" ? 12000 : 2000,
+    },
   };
 
   const url = resolveRuntimeUrl();
@@ -454,6 +460,7 @@ async function cmdReact(positional, flags) {
   }
 
   // Reuse cmdSend by faking argv; but simpler: inline the POST.
+  const sourceClass = isDaemonEmit ? "system signal" : "OpenClaw expression";
   const event = {
     type: "avatar.state",
     version: "0.1.0",
@@ -462,6 +469,10 @@ async function cmdReact(positional, flags) {
     source,
     state: def.state,
     ...(bubble !== undefined ? { bubble: bubble.slice(0, MAX_BUBBLE_LENGTH) } : {}),
+    metadata: {
+      sourceClass,
+      lingerMs: isDaemonEmit ? 2000 : 8000,
+    },
   };
   const url = resolveRuntimeUrl();
   try {

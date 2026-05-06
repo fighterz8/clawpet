@@ -200,7 +200,15 @@ export function createRuntimeApp(options: CreateRuntimeAppOptions = {}) {
     if (!result.ok) return c.json({ ok: false, errors: result.errors }, 400);
 
     const entry = store.applyEvent(result.value);
-    return c.json({ ok: true, status: store.getStatus(), receivedAt: entry.receivedAt, latencyMs: entry.latencyMs });
+    return c.json({
+      ok: true,
+      status: store.getStatus(),
+      receivedAt: entry.receivedAt,
+      latencyMs: entry.latencyMs,
+      outcome: entry.outcome,
+      sourceClass: entry.sourceClass,
+      reason: entry.reason,
+    });
   });
 
   app.post("/admin/avatar-bundle", async (c) => {

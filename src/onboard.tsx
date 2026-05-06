@@ -46,9 +46,14 @@ type RuntimeEventEntry = {
     message?: string;
     bubble?: string;
     source?: { displayName?: string; instanceId?: string };
+    metadata?: Record<string, string | number | boolean | null>;
   };
   receivedAt: string;
   latencyMs: number | null;
+  sourceClass?: "system signal" | "OpenClaw expression" | "user-requested";
+  outcome?: "shown" | "replaced" | "suppressed" | "skipped";
+  reason?: string;
+  lingerMs?: number;
 };
 
 type ReactivitySettings = {
@@ -150,27 +155,25 @@ function summarizeEvent(entry: RuntimeEventEntry) {
 }
 
 function eventOrigin(entry: RuntimeEventEntry) {
+  if (entry.sourceClass) return entry.sourceClass;
+  const explicit = typeof entry.event.metadata?.sourceClass === "string" ? entry.event.metadata.sourceClass : undefined;
+  if (explicit === "system signal" || explicit === "OpenClaw expression" || explicit === "user-requested") return explicit;
   const display = entry.event.source?.displayName?.toLowerCase() ?? "";
   const instance = entry.event.source?.instanceId?.toLowerCase() ?? "";
   const source = `${display} ${instance}`;
-
-  // Activity log taxonomy:
-  // - system signal: zero-token local/daemon plumbing and work telemetry.
-  // - OpenClaw expression: optional autonomous/contextual expression layer.
-  // - user-requested: explicit routines or one-off manual emits requested by Nick.
-  // Only the new explicit routine marker counts as user-requested. Older
-  // direct/manual/test metadata such as `clawpet-user-requested-manual` was
-  // too broad and should display as system signal.
   if (instance === "clawpet-user-requested" || display === "user-requested") return "user-requested";
-  if (source.includes("daemon") || source.includes("jsonl") || source.includes("manual") || source.includes("direct")) return "system signal";
-  if (source.includes("expression")) return "OpenClaw expression";
-  if (source.includes("openclaw")) return "OpenClaw expression";
+  if (source.includes("expression") || source.includes("openclaw")) return "OpenClaw expression";
   return "system signal";
 }
 
 function eventMeta(entry: RuntimeEventEntry) {
   const state = entry.event.state;
-  return `${state} · ${eventOrigin(entry)}`;
+  const outcome = entry.outcome ?? "shown";
+  return `${state} · ${eventOrigin(entry)} · ${outcome}`;
+}
+
+function eventReason(entry: RuntimeEventEntry) {
+  return entry.reason?.trim() || null;
 }
 
 function App() {
@@ -460,11 +463,11 @@ function App() {
                       <span className={`clp-edot s-${entry.event.state}`} />
                       <span className="clp-et">{formatClock(entry.receivedAt)}</span>
                       <span className="clp-em">{summarizeEvent(entry)}</span>
-                      <span className="clp-ed">{eventMeta(entry)}</span>
+                      <span className="clp-ed">{eventMeta(entry)}{eventReason(entry) ? ` · ${eventReason(entry)}` : ""}</span>
                     </div>
                   ))
                 ) : (
-                  <div className="clp-empty-log">No events yet. By default this log shows system signal. OpenClaw expression appears only when expression level is enabled; user-requested appears only for routines or emits Nick explicitly asked for.</div>
+                  <div className="clp-empty-log">No events yet. This log records system signal, OpenClaw expression, and user-requested emits, including events that were shown, suppressed, replaced, or skipped.</div>
                 )}
               </div>
               <div className="clp-source-legend" aria-label="Activity log source definitions">

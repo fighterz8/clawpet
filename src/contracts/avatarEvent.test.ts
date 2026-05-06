@@ -46,6 +46,18 @@ describe("avatar event contract", () => {
     if (!result.ok) expect(result.errors).toContain("message appears to contain a secret or OAuth code");
   });
 
+  it("accepts optional runtime-arbitration metadata conventions", () => {
+    const result = validateAvatarStateEvent({
+      ...validEvent,
+      metadata: {
+        sourceClass: "OpenClaw expression",
+        lingerMs: 8000,
+        sessionKey: "agent:main:discord:direct:172471885806829569",
+      },
+    });
+    expect(result.ok).toBe(true);
+  });
+
   it("rejects oversized ttl and metadata objects", () => {
     const result = validateAvatarStateEvent({
       ...validEvent,

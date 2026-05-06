@@ -28,6 +28,12 @@ export type AvatarStateEvent = {
   ttlMs?: number;
   priority?: AvatarPriority;
   correlationId?: string;
+  /**
+   * Optional emitter metadata. Runtime v0.3.0+ may look for keys such as:
+   * - sourceClass: "system signal" | "OpenClaw expression" | "user-requested"
+   * - lingerMs: number
+   * - sessionKey/channel/surface: provenance for future concurrency work
+   */
   metadata?: Record<string, string | number | boolean | null>;
 };
 
