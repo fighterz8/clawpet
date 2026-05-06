@@ -15,21 +15,22 @@ const DAEMON_VOICE_LEVELS = ["silent", "lite", "vivid"];
 const DEFAULT_DAEMON_VOICE = "lite";
 const EXPRESSION_LEVELS = ["off", "low", "medium", "high"];
 const DEFAULT_EXPRESSION_LEVEL = "off";
+const MAX_BUBBLE_LENGTH = 160;
 
 // Map semantic events -> avatar states. Used by `clawpet react <event>`.
 // Values: { state, defaultBubble, minLevel } where minLevel is the lowest activity
 // level at which this reaction fires. Anything below minLevel is a silent no-op.
 const REACTIONS = {
-  "user-message":  { state: "thinking", bubble: "Reading your prompt…", minLevel: "balanced" },
-  "tool-start":    { state: "focused",  bubble: "Working…",       minLevel: "expressive" },
-  "tool-error":    { state: "alert",    bubble: "Hit an error",   minLevel: "minimal"    },
-  "blocker":       { state: "alert",    bubble: "Need your input", minLevel: "minimal"    },
-  "done":          { state: "happy",    bubble: "Done",            minLevel: "minimal"    },
-  "long-task":     { state: "focused",  bubble: "Heads down",      minLevel: "balanced"   },
-  "thinking":      { state: "thinking", bubble: "Thinking…",       minLevel: "balanced"   },
+  "user-message":  { state: "thinking", bubble: "Reading your prompt…", expressionBubble: "I’m looking at what you asked and choosing the next move.", minLevel: "balanced" },
+  "tool-start":    { state: "focused",  bubble: "Working…",       expressionBubble: "I’m using the tool result to move the actual work forward.", minLevel: "expressive" },
+  "tool-error":    { state: "alert",    bubble: "Hit an error",   expressionBubble: "That path tripped; I’m checking the failure instead of pretending it worked.", minLevel: "minimal"    },
+  "blocker":       { state: "alert",    bubble: "Need your input", expressionBubble: "I found the decision point that needs your call.", minLevel: "minimal"    },
+  "done":          { state: "happy",    bubble: "Done",            expressionBubble: "That piece is landed; I’m checking the next seam now.", minLevel: "minimal"    },
+  "long-task":     { state: "focused",  bubble: "Heads down",      expressionBubble: "This is a deeper pass, so I’m staying focused rather than chattering.", minLevel: "balanced"   },
+  "thinking":      { state: "thinking", bubble: "Thinking…",       expressionBubble: "I’m weighing the tradeoff before changing anything else.", minLevel: "balanced"   },
   // Heartbeat is gated on a SEPARATE config flag (reactToHeartbeats), not
   // the activity level. Default disabled. Activity 'off' still fully suppresses.
-  "heartbeat":     { state: "thinking", bubble: "Heartbeat",        minLevel: "_heartbeat" },
+  "heartbeat":     { state: "thinking", bubble: "Heartbeat",        expressionBubble: "Heartbeat check is running.", minLevel: "_heartbeat" },
 };
 
 function levelRank(level) { return ACTIVITY_LEVELS.indexOf(level); }
@@ -365,7 +366,7 @@ async function cmdSend(positional, flags) {
   const message = rest.join(" ").trim() || undefined;
   const bubble = typeof flags.bubble === "string" ? flags.bubble : undefined;
   const quiet = Boolean(flags.quiet);
-  if (bubble && bubble.length > 64) fail("send: --bubble must be <= 64 chars");
+  if (bubble && bubble.length > MAX_BUBBLE_LENGTH) fail(`send: --bubble must be <= ${MAX_BUBBLE_LENGTH} chars`);
   if (message && message.length > 280) fail("send: message must be <= 280 chars");
 
   // User-controlled activity gate. `send` is treated as a manual emit; it fires
@@ -425,16 +426,32 @@ async function cmdReact(positional, flags) {
     process.exit(0);
   }
 
-  const bubble = typeof flags.bubble === "string" ? flags.bubble : def.bubble;
+  const source = resolveEmitSource("react");
+  const isDaemonEmit = source.instanceId === "openclaw-daemon";
+  let bubble = typeof flags.bubble === "string" ? flags.bubble : def.bubble;
+
+  if (!isDaemonEmit) {
+    const expressionLevel = resolveExpressionLevel();
+    if (expressionLevel === "off") {
+      if (!flags.quiet) console.log(JSON.stringify({ ok: true, suppressed: true, reason: "expression level is 'off'" }));
+      process.exit(0);
+    }
+    // OpenClaw expression should complement the daemon, not duplicate it.
+    // low: state-only signal; medium: short distinct preset; high: caller text allowed.
+    if (expressionLevel === "low") bubble = "";
+    else if (expressionLevel === "medium") bubble = def.expressionBubble;
+    else if (!bubble || bubble === def.bubble) bubble = def.expressionBubble;
+  }
+
   // Reuse cmdSend by faking argv; but simpler: inline the POST.
   const event = {
     type: "avatar.state",
     version: "0.1.0",
     eventId: randomUUID(),
     sentAt: new Date().toISOString(),
-    source: resolveEmitSource("react"),
+    source,
     state: def.state,
-    bubble: bubble.slice(0, 64),
+    ...(bubble !== undefined ? { bubble: bubble.slice(0, MAX_BUBBLE_LENGTH) } : {}),
   };
   const url = resolveRuntimeUrl();
   try {

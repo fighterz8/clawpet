@@ -427,14 +427,36 @@ function App() {
                           key={level}
                           className={reactivity?.daemonVoice === level ? "clp-rstep active" : "clp-rstep"}
                           aria-disabled="true"
+                          title="Managed by the paired OpenClaw host"
+                        >
+                          {level}
+                        </div>
+                      ))}
+                    </div>
+                    <span className="clp-reactivity-k">Expression level</span>
+                    <div className="clp-react-track clp-react-track--expression">
+                      {(reactivity?.expressionLevels?.length ? reactivity.expressionLevels : ["off", "low", "medium", "high"]).map((level) => (
+                        <div
+                          key={level}
+                          className={reactivity?.expressionLevel === level ? "clp-rstep active" : "clp-rstep"}
+                          aria-disabled="true"
+                          title="Managed by the paired OpenClaw host"
                         >
                           {level}
                         </div>
                       ))}
                     </div>
                     <div className="clp-rrow">
-                      <span>expression</span>
-                      <span className="clp-rrow-x">{reactivity?.expressionLevel ?? "off"}</span>
+                      <span>expression behavior</span>
+                      <span className="clp-rrow-x">
+                        {reactivity?.expressionLevel === "off"
+                          ? "silent"
+                          : reactivity?.expressionLevel === "low"
+                            ? "state only"
+                            : reactivity?.expressionLevel === "medium"
+                              ? "distinct preset"
+                              : "contextual"}
+                      </span>
                     </div>
                     <div className="clp-rrow">
                       <span className={reactivity?.heartbeatReactions ? "clp-tg on" : "clp-tg"}><span className="clp-tg-p" /></span>

@@ -23,7 +23,7 @@ export type AvatarStateEvent = {
   state: AvatarState;
   /** Long-form status text (shown in console/event log). */
   message?: string;
-  /** Short overlay caption (<= 64 chars). Falls back to truncated message if absent. */
+  /** Overlay caption (<= 160 chars). Falls back to truncated message if absent. */
   bubble?: string;
   ttlMs?: number;
   priority?: AvatarPriority;
@@ -57,7 +57,7 @@ export type ValidationResult<T> =
   | { ok: false; errors: string[] };
 
 const MAX_MESSAGE_LENGTH = 280;
-const MAX_BUBBLE_LENGTH = 64;
+const MAX_BUBBLE_LENGTH = 160;
 const MAX_TTL_MS = 60 * 60 * 1000;
 const MAX_METADATA_KEYS = 20;
 const MAX_EVENT_BYTES = 16 * 1024;

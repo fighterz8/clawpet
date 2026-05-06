@@ -485,6 +485,10 @@ body.ob-hidden { display: none; }
   margin-bottom: 6px;
 }
 
+.clp-react-track--expression {
+  margin-bottom: 8px;
+}
+
 .clp-rstep {
   flex: 1;
   padding: 6px 3px;
