@@ -96,15 +96,12 @@ pub fn run() {
         })
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                // Keep the helper/control surface available instead of letting users hide
-                // the only verification window by accident. Tray quit remains the real exit.
+                // Closing a window should tuck Clawpet back into the tray rather than
+                // quitting the whole app. The setup/control surface (`main`) was
+                // mistakenly being re-shown immediately, which made it feel impossible
+                // to close. Hide both windows here; tray quit remains the true exit.
                 api.prevent_close();
-                if window.label() == "main" {
-                    let _ = window.show();
-                    let _ = window.set_focus();
-                } else {
-                    let _ = window.hide();
-                }
+                let _ = window.hide();
             }
         })
         .run(tauri::generate_context!())
