@@ -9,15 +9,15 @@ npm exec tauri build    # full Linux bundle build
 
 On Linux this produces:
 
-- `src-tauri/target/release/bundle/deb/Clawpet_0.1.0_amd64.deb`
-- `src-tauri/target/release/bundle/rpm/Clawpet-0.1.0-1.x86_64.rpm`
-- `src-tauri/target/release/bundle/appimage/Clawpet_0.1.0_amd64.AppImage`
+- `src-tauri/target/release/bundle/deb/Clawpet_0.2.0_amd64.deb`
+- `src-tauri/target/release/bundle/rpm/Clawpet-0.2.0-1.x86_64.rpm`
+- `src-tauri/target/release/bundle/appimage/Clawpet_0.2.0_amd64.AppImage`
 
 Smoke checks used on the OpenClaw Linux host:
 
 ```bash
 timeout 8s xvfb-run -a src-tauri/target/release/app
-timeout 8s xvfb-run -a src-tauri/target/release/bundle/appimage/Clawpet_0.1.0_amd64.AppImage
+timeout 8s xvfb-run -a src-tauri/target/release/bundle/appimage/Clawpet_0.2.0_amd64.AppImage
 ```
 
 Latest smoke after runtime-ownership/reconnect/status-dot work: 2026-05-05.

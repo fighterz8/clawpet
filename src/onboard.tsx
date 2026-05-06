@@ -317,7 +317,7 @@ function App() {
           <div>
             <div className="clp-brand">
               <span className="clp-name">clawpet</span>
-              <span className="clp-ver">v0.1.1</span>
+              <span className="clp-ver">v0.2.0</span>
             </div>
             <div className="clp-sub">VALIDATION CONSOLE FOR OPENCLAW</div>
           </div>
