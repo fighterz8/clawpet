@@ -487,7 +487,7 @@ function App() {
               </div>
               <div className="clp-source-legend" aria-label="Activity log source definitions">
                 <div><strong>system signal</strong><span>Default zero-token OpenClaw/Clawpet work telemetry. Replaces daemon/runtime labels in the visible log.</span></div>
-                <div><strong>OpenClaw expression</strong><span>Optional autonomous/contextual avatar remarks controlled by expression level.</span></div>
+                <div><strong>OpenClaw expression</strong><span>Optional autonomous/contextual avatar remarks controlled by expression on/off.</span></div>
                 <div><strong>user-requested</strong><span>Explicit manual emits or routines the user asked the pet to perform.</span></div>
                 <div><strong>rule of thumb</strong><span>The log should mostly be system signal unless expression is enabled or the user explicitly asks for a routine.</span></div>
               </div>
@@ -524,9 +524,9 @@ function App() {
                     </div>
                   ))}
                 </div>
-                <span className="clp-reactivity-k">Expression level</span>
+                <span className="clp-reactivity-k">Expression</span>
                 <div className="clp-react-track clp-react-track--expression">
-                  {(reactivity?.expressionLevels?.length ? reactivity.expressionLevels : ["off", "low", "medium", "high"]).map((level) => (
+                  {(reactivity?.expressionLevels?.length ? reactivity.expressionLevels : ["off", "on"]).map((level) => (
                     <div
                       key={level}
                       className={reactivity?.expressionLevel === level ? "clp-rstep active" : "clp-rstep"}
@@ -540,13 +540,7 @@ function App() {
                 <div className="clp-rrow">
                   <span>expression behavior</span>
                   <span className="clp-rrow-x">
-                    {reactivity?.expressionLevel === "off"
-                      ? "silent"
-                      : reactivity?.expressionLevel === "low"
-                        ? "state only"
-                        : reactivity?.expressionLevel === "medium"
-                          ? "distinct preset"
-                          : "contextual"}
+                    {reactivity?.expressionLevel === "off" ? "silent" : "enabled"}
                   </span>
                 </div>
                 <div className="clp-rrow">
@@ -555,7 +549,7 @@ function App() {
                   <span className="clp-rrow-x">{reactivity?.heartbeatReactions ? "on" : "off"}</span>
                 </div>
                 <div className="clp-reactivity-note">
-                  Managed by paired OpenClaw host{reactivity?.managedBy ? ` · ${reactivity.managedBy}` : ""}. Legacy activity is hidden; system signal + expression level are the source of truth.
+                  Managed by paired OpenClaw host{reactivity?.managedBy ? ` · ${reactivity.managedBy}` : ""}. Legacy activity is hidden; system signal + expression on/off are the source of truth.
                 </div>
                 {reactivity?.error ? <div className="clp-error-inline">{reactivity.error}</div> : null}
               </div>

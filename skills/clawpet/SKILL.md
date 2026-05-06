@@ -17,7 +17,7 @@ Treat the OpenClaw machine as the source of truth for Clawpet control:
 - Avatar appearance/assets should be generated and stored on the OpenClaw host first, then synced/pushed to the desktop runtime over the paired Tailscale connection.
 - Do **not** tell users to manually edit avatar assets on their daily-driver machine except as a temporary developer workaround.
 
-Current implemented control plane: pairing, state/bubble emits, activity settings, heartbeat setting, token rotation, install hints, auto-reactivity daemon, and avatar bundle push from OpenClaw → paired runtime.
+Current implemented control plane: pairing, state/bubble emits, daemon voice, expression on/off, heartbeat setting, token rotation, install hints, auto-reactivity daemon, and avatar bundle push from OpenClaw → paired runtime.
 
 ## Quickstart for agents
 
@@ -71,7 +71,15 @@ clawpet daemon disable  # disable systemd user autostart
 clawpet daemon run      # foreground debugging
 ```
 
-Activity levels control daemon density:
+Daemon voice controls system-signal density/presentation. Expression is a separate on/off gate for optional OpenClaw flavor emits:
+
+```bash
+clawpet daemon-voice lite
+clawpet expression-level on
+clawpet expression-level off
+```
+
+Legacy activity levels still exist for backward compatibility and daemon-density mapping:
 
 | Level | Behavior |
 | --- | --- |
@@ -89,7 +97,7 @@ clawpet activity expressive
 clawpet activity off
 ```
 
-Warn before increasing to `expressive` or `maximum`: higher levels add extra visible reactions and may add token cost if the model also performs optional flavor emits. The daemon itself is free.
+Warn before increasing legacy activity to `expressive` or `maximum`: higher levels add extra visible system-signal reactions. Optional OpenClaw expression emits are controlled separately by `clawpet expression-level on|off`; the daemon itself is free.
 
 ## Manual state and flavor emits
 

@@ -13,7 +13,8 @@ const ACTIVITY_LEVELS = ["off", "minimal", "balanced", "expressive", "maximum"];
 const DEFAULT_ACTIVITY = "balanced";
 const DAEMON_VOICE_LEVELS = ["silent", "lite", "vivid"];
 const DEFAULT_DAEMON_VOICE = "lite";
-const EXPRESSION_LEVELS = ["off", "low", "medium", "high"];
+const EXPRESSION_LEVELS = ["off", "on"];
+const LEGACY_EXPRESSION_ON_LEVELS = ["low", "medium", "high"];
 const DEFAULT_EXPRESSION_LEVEL = "off";
 const MAX_BUBBLE_LENGTH = 160;
 
@@ -118,10 +119,18 @@ function mapActivityToExpressionLevel(activity) {
     case "off":
     case "minimal": return "off";
     case "balanced":
-    case "expressive": return "low";
-    case "maximum": return "medium";
+    case "expressive":
+    case "maximum": return "on";
     default: return DEFAULT_EXPRESSION_LEVEL;
   }
+}
+
+function normalizeExpressionLevel(level) {
+  if (!level) return undefined;
+  const normalized = String(level).toLowerCase();
+  if (EXPRESSION_LEVELS.includes(normalized)) return normalized;
+  if (LEGACY_EXPRESSION_ON_LEVELS.includes(normalized)) return "on";
+  return undefined;
 }
 
 function resolveDaemonVoice() {
@@ -133,10 +142,11 @@ function resolveDaemonVoice() {
 }
 
 function resolveExpressionLevel() {
-  const env = process.env.CLAWPET_EXPRESSION_LEVEL;
-  if (env && EXPRESSION_LEVELS.includes(env)) return env;
+  const env = normalizeExpressionLevel(process.env.CLAWPET_EXPRESSION_LEVEL);
+  if (env) return env;
   const cfg = loadConfig();
-  if (cfg.expressionLevel && EXPRESSION_LEVELS.includes(cfg.expressionLevel)) return cfg.expressionLevel;
+  const configured = normalizeExpressionLevel(cfg.expressionLevel);
+  if (configured) return configured;
   return mapActivityToExpressionLevel(resolveActivity());
 }
 
@@ -214,7 +224,7 @@ Usage:
   clawpet react <event> [--bubble TEXT] [--quiet]   # event: user-message|tool-start|tool-error|blocker|done|long-task|thinking
   clawpet activity [off|minimal|balanced|expressive|maximum]  # deprecated legacy alias
   clawpet daemon-voice [silent|lite|vivid]
-  clawpet expression-level [off|low|medium|high]
+  clawpet expression-level [off|on]
   clawpet heartbeat-reactions [on|off]              # default off
   clawpet pair --url <runtime-url> [--token <bearer-token>]
   clawpet pair --code <6-digit> --host <host[:port]>     # magic-pair: claim a code on a remote runtime
@@ -462,11 +472,10 @@ async function cmdReact(positional, flags) {
       process.exit(0);
     }
 
-    // OpenClaw expression should complement the daemon, not duplicate it.
-    // low: state-only signal; medium: short distinct preset; high: caller text allowed.
-    if (expressionLevel === "low") bubble = "";
-    else if (expressionLevel === "medium") bubble = def.expressionBubble;
-    else if (!bubble || bubble === def.bubble) bubble = def.expressionBubble;
+    // OpenClaw expression is now a simple on/off gate. When on, callers may
+    // provide contextual text; otherwise use the distinct preset so expression
+    // complements system signal instead of duplicating it.
+    if (!bubble || bubble === def.bubble) bubble = def.expressionBubble;
   }
 
   // Reuse cmdSend by faking argv; but simpler: inline the POST.
@@ -555,13 +564,14 @@ async function cmdExpressionLevel(positional, _flags) {
     console.log(JSON.stringify({ expressionLevel: resolveExpressionLevel(), levels: EXPRESSION_LEVELS, configPath: CONFIG_PATH }, null, 2));
     return;
   }
-  if (!EXPRESSION_LEVELS.includes(level)) fail(`expression-level: invalid level '${level}'. Must be one of: ${EXPRESSION_LEVELS.join(", ")}`);
+  const normalizedLevel = normalizeExpressionLevel(level);
+  if (!normalizedLevel) fail(`expression-level: invalid level '${level}'. Must be one of: ${EXPRESSION_LEVELS.join(", ")}`);
   const cfg = loadConfig();
   const previous = resolveExpressionLevel();
-  cfg.expressionLevel = level;
+  cfg.expressionLevel = normalizedLevel;
   saveConfig(cfg);
   const mirror = await syncReactivityMirror();
-  console.log(JSON.stringify({ ok: true, previous, current: level, configPath: CONFIG_PATH }, null, 2));
+  console.log(JSON.stringify({ ok: true, previous, current: normalizedLevel, configPath: CONFIG_PATH }, null, 2));
   if (!mirror.ok && !mirror.skipped) console.error(`clawpet: warning: failed syncing reactivity mirror (${mirror.status ?? mirror.error ?? "unknown error"})`);
 }
 
