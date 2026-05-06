@@ -262,6 +262,10 @@ body.ob-hidden { display: none; }
   overflow: hidden;
 }
 
+.clp-grid--status {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .clp-card {
   background: #11141a;
   border: 0.5px solid rgba(255, 255, 255, 0.06);
@@ -275,10 +279,12 @@ body.ob-hidden { display: none; }
 .clp-card--activity,
 .clp-card--summary,
 .clp-card--activity-page,
-.clp-card--settings-page { min-height: 0; }
+.clp-card--settings-page,
+.clp-card--pairing-page { min-height: 0; }
 
 .clp-card--activity-page,
-.clp-card--settings-page {
+.clp-card--settings-page,
+.clp-card--pairing-page {
   flex: 1;
 }
 
@@ -447,6 +453,10 @@ body.ob-hidden { display: none; }
 
 .clp-summary-list--settings {
   margin-bottom: 8px;
+}
+
+.clp-summary-list--pairing {
+  margin-top: 12px;
 }
 
 .clp-summary-row {
@@ -761,6 +771,7 @@ body.ob-hidden { display: none; }
   .clp { height: auto; min-height: 100vh; }
   .clp-tele,
   .clp-grid { grid-template-columns: 1fr 1fr; }
+  .clp-grid--status { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 700px) {

@@ -65,7 +65,7 @@ type ReactivitySettings = {
   error?: string | null;
 };
 
-type TabKey = "status" | "activity" | "settings";
+type TabKey = "status" | "pairing" | "activity" | "settings";
 
 async function fetchJson(url: string, init?: RequestInit) {
   const res = await fetch(url, init);
@@ -246,7 +246,7 @@ function App() {
         body: JSON.stringify({ seconds: 120 }),
       })) as { code: string; expiresAt: number };
       setPair({ active: true, code: p.code, expiresAt: p.expiresAt });
-      setTab("status");
+      setTab("pairing");
     } catch (e) {
       setRuntimeError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -334,6 +334,9 @@ function App() {
           <button className={tab === "status" ? "clp-tab active" : "clp-tab"} onClick={() => setTab("status")}>
             Status
           </button>
+          <button className={tab === "pairing" ? "clp-tab active" : "clp-tab"} onClick={() => setTab("pairing")}>
+            Pairing
+          </button>
           <button className={tab === "activity" ? "clp-tab active" : "clp-tab"} onClick={() => setTab("activity")}>
             Activity Log
           </button>
@@ -368,7 +371,7 @@ function App() {
                 </div>
               </div>
 
-              <div className="clp-grid">
+              <div className="clp-grid clp-grid--status">
                 <div className="clp-card clp-card--summary">
                   <div className="clp-cardh">
                     <span>Health summary</span>
@@ -384,52 +387,64 @@ function App() {
                       <strong className={openClawReady ? "clp-summary-v ok" : "clp-summary-v warn"}>{openClawReady ? "linked" : "waiting"}</strong>
                     </div>
                     <div className="clp-summary-row">
-                      <span className="clp-summary-k">Pair window</span>
-                      <strong className={pair.active ? "clp-summary-v ok" : "clp-summary-v"}>{pair.active && expiresIn !== null ? `${expiresIn}s left` : "inactive"}</strong>
-                    </div>
-                    <div className="clp-summary-row">
                       <span className="clp-summary-k">Last event</span>
                       <strong className={lastEventAge ? "clp-summary-v ok" : "clp-summary-v muted"}>{lastEventAge ?? "none"}</strong>
+                    </div>
+                    <div className="clp-summary-row">
+                      <span className="clp-summary-k">Pairing</span>
+                      <strong className={pair.active ? "clp-summary-v ok" : "clp-summary-v muted"}>{pair.active && expiresIn !== null ? `window open · ${expiresIn}s` : "available in Pairing tab"}</strong>
                     </div>
                   </div>
                   <div className="clp-mini-note">Live avatar remains the only preview for now.</div>
                   {runtimeError && <div className="clp-error-inline">{runtimeError}</div>}
                 </div>
-
-                <div className="clp-card">
-                  <div className="clp-cardh">
-                    <span>Pair code</span>
-                    <span className="clp-cardm">{pair.active && expiresIn !== null ? `${expiresIn}-second window` : "120-second window"}</span>
-                  </div>
-                  <div className="clp-pair-display">
-                    <div className="clp-pair-left">
-                      <div className={pair.active ? "clp-pair-digits clp-pair-digits--live" : "clp-pair-digits"}>{groupedCode}</div>
-                      <div className="clp-pair-help">
-                        {pair.active
-                          ? "Pair window is open now. Run the command below on the OpenClaw host."
-                          : "No active pair window. "}
-                        {!pair.active && <b>Generate</b>} {!pair.active ? "to authorize a new OpenClaw machine." : null}
-                      </div>
-                    </div>
-                    <div className="clp-pair-actions">
-                      <button className="clp-gen-btn" disabled={busy} onClick={() => void startPairMode()}>
-                        {busy ? "Opening…" : pair.active ? "Regenerate" : "Generate"}
-                      </button>
-                      {pair.active && (
-                        <button className="clp-copy clp-copy--ghost" disabled={busy} onClick={() => void cancelPairMode()}>
-                          Cancel
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  <div className="clp-cmd-row clp-cmd-row--stack">
-                    <div className="clp-cmd">$ clawpet wizard openclaw --code {pair.code ?? "<code>"} --host {hostArg}</div>
-                    <CopyButton text={openClawCommand} disabled={!pair.code} />
-                  </div>
-                  <div className="clp-cmd-help">Sends the bearer token back over the same connection. Pair window auto-closes on success.</div>
-                </div>
               </div>
             </>
+          )}
+
+          {tab === "pairing" && (
+            <div className="clp-card clp-card--pairing-page">
+              <div className="clp-cardh">
+                <span>Pairing</span>
+                <span className="clp-cardm">OpenClaw host authorization</span>
+              </div>
+              <div className="clp-pair-display">
+                <div className="clp-pair-left">
+                  <div className={pair.active ? "clp-pair-digits clp-pair-digits--live" : "clp-pair-digits"}>{groupedCode}</div>
+                  <div className="clp-pair-help">
+                    {pair.active
+                      ? "Pair window is open now. Run the command below on the OpenClaw host."
+                      : "No active pair window. "}
+                    {!pair.active && <b>Generate</b>} {!pair.active ? "to authorize a new OpenClaw machine." : null}
+                  </div>
+                </div>
+                <div className="clp-pair-actions">
+                  <button className="clp-gen-btn" disabled={busy} onClick={() => void startPairMode()}>
+                    {busy ? "Opening…" : pair.active ? "Regenerate" : "Generate"}
+                  </button>
+                  {pair.active && (
+                    <button className="clp-copy clp-copy--ghost" disabled={busy} onClick={() => void cancelPairMode()}>
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div className="clp-summary-list clp-summary-list--pairing">
+                <div className="clp-summary-row">
+                  <span className="clp-summary-k">Display host</span>
+                  <strong className="clp-summary-v">{displayHost}</strong>
+                </div>
+                <div className="clp-summary-row">
+                  <span className="clp-summary-k">Host argument</span>
+                  <strong className="clp-summary-v">{hostArg}</strong>
+                </div>
+              </div>
+              <div className="clp-cmd-row clp-cmd-row--stack">
+                <div className="clp-cmd">$ clawpet wizard openclaw --code {pair.code ?? "<code>"} --host {hostArg}</div>
+                <CopyButton text={openClawCommand} disabled={!pair.code} />
+              </div>
+              <div className="clp-cmd-help">Sends the bearer token back over the same connection. Pair window auto-closes on success.</div>
+            </div>
           )}
 
           {tab === "activity" && (
