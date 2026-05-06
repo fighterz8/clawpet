@@ -20,6 +20,7 @@ type PairMode = {
   expiresAt?: number;
   runtimeUrl?: string;
 };
+
 type ClawpetStatus = {
   connected?: boolean;
   lastEventAt?: string | null;
@@ -30,8 +31,9 @@ type ClawpetStatus = {
     bundleVersion?: string;
   };
 };
+
 type BundleManifest = { name?: string; version?: string; states?: Record<string, unknown> };
-type TabKey = "home" | "pair" | "details";
+type TabKey = "dashboard" | "pair";
 
 async function fetchJson(url: string, init?: RequestInit) {
   const res = await fetch(url, init);
@@ -42,21 +44,24 @@ async function fetchJson(url: string, init?: RequestInit) {
   } catch {
     body = text;
   }
-  if (!res.ok)
+  if (!res.ok) {
     throw new Error(
       typeof body === "object" && body && "errors" in body
         ? String((body as { errors: unknown }).errors)
         : `HTTP ${res.status}`,
     );
+  }
   return body;
 }
 
-function CopyButton({ text }: { text: string }) {
+function CopyButton({ text, disabled }: { text: string; disabled?: boolean }) {
   const [copied, setCopied] = useState(false);
   return (
     <button
-      className="ob-copy"
+      className={disabled ? "clp-copy clp-copy--disabled" : "clp-copy"}
+      disabled={disabled}
       onClick={() => {
+        if (disabled) return;
         void navigator.clipboard.writeText(text);
         setCopied(true);
         window.setTimeout(() => setCopied(false), 1200);
@@ -67,16 +72,28 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-function MiniStat({ label, value }: { label: string; value: React.ReactNode }) {
+function PixelMark() {
   return (
-    <div className="ob-mini-stat">
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
+    <svg viewBox="0 0 16 14" shapeRendering="crispEdges" width="100%" height="100%" aria-hidden="true">
+      <rect x="4" y="0" width="1" height="2" fill="#7A1F0E" />
+      <rect x="11" y="0" width="1" height="2" fill="#7A1F0E" />
+      <rect x="3" y="2" width="10" height="1" fill="#E76F51" />
+      <rect x="2" y="3" width="12" height="6" fill="#E76F51" />
+      <rect x="3" y="9" width="10" height="1" fill="#E76F51" />
+      <rect x="4" y="10" width="8" height="1" fill="#E76F51" />
+      <rect x="5" y="11" width="6" height="1" fill="#E76F51" />
+      <rect x="4" y="3" width="2" height="1" fill="#F4A261" />
+      <rect x="10" y="3" width="2" height="1" fill="#F4A261" />
+      <rect x="6" y="6" width="4" height="3" fill="#FCE5D6" />
+      <rect x="5" y="4" width="1" height="2" fill="#FFFFFF" />
+      <rect x="10" y="4" width="1" height="2" fill="#FFFFFF" />
+      <rect x="5" y="5" width="1" height="1" fill="#1A0A05" />
+      <rect x="10" y="5" width="1" height="1" fill="#1A0A05" />
+    </svg>
   );
 }
 
-function OnboardApp() {
+function App() {
   const [health, setHealth] = useState<RuntimeStatus | null>(null);
   const [runtimeError, setRuntimeError] = useState<string | null>(null);
   const [pair, setPair] = useState<PairMode>({ active: false });
@@ -84,7 +101,7 @@ function OnboardApp() {
   const [bundleManifest, setBundleManifest] = useState<BundleManifest | null>(null);
   const [busy, setBusy] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [tab, setTab] = useState<TabKey>("home");
+  const [tab, setTab] = useState<TabKey>("dashboard");
 
   async function refresh() {
     try {
@@ -104,9 +121,7 @@ function OnboardApp() {
         // ignore
       }
       try {
-        const m = (await fetchJson(
-          `${RUNTIME_URL}/avatar-bundle/current/avatar.json`,
-        )) as BundleManifest;
+        const m = (await fetchJson(`${RUNTIME_URL}/avatar-bundle/current/avatar.json`)) as BundleManifest;
         setBundleManifest(m);
       } catch {
         setBundleManifest(null);
@@ -141,15 +156,6 @@ function OnboardApp() {
     }
   }
 
-  async function refreshNow() {
-    setRefreshing(true);
-    try {
-      await refresh();
-    } finally {
-      window.setTimeout(() => setRefreshing(false), 250);
-    }
-  }
-
   async function cancelPairMode() {
     setBusy(true);
     try {
@@ -163,220 +169,258 @@ function OnboardApp() {
     }
   }
 
-  const groupedCode = pair.code ? `${pair.code.slice(0, 3)} · ${pair.code.slice(3)}` : "—";
-  const displayHost = health?.displayHost || "<display-host>";
-  const hostArg = displayHost.includes(":") ? displayHost : `${displayHost}:8737`;
-  const openClawCommand = pair.code
-    ? `clawpet wizard openclaw --code ${pair.code} --host ${hostArg}`
-    : `clawpet wizard openclaw --code <code> --host ${hostArg}`;
+  async function refreshNow() {
+    setRefreshing(true);
+    try {
+      await refresh();
+    } finally {
+      window.setTimeout(() => setRefreshing(false), 250);
+    }
+  }
+
   const runtimeOnline = Boolean(health?.ok);
-  const appOwnedRuntime =
-    health?.runtime === "tauri-internal" || health?.owner === "clawpet-desktop-app";
-  const runtimeOwnerLabel =
-    health?.runtime === "tauri-internal"
-      ? "desktop app runtime"
-      : health?.runtime === "node-dev"
-        ? "external dev runtime"
-        : health?.runtime ?? "unknown runtime";
   const openClawConnected = Boolean(status?.connected);
   const hasOpenClawActivity = Boolean(status?.lastEventAt);
   const openClawReady = openClawConnected || hasOpenClawActivity;
-  const expiresIn = useMemo(
-    () =>
-      pair.expiresAt
-        ? Math.max(0, Math.round((pair.expiresAt - Date.now()) / 1000))
-        : null,
-    [pair.expiresAt, pair.active],
-  );
+  const displayHost = health?.displayHost || "gladriel:8737";
+  const hostArg = displayHost.includes(":") ? displayHost : `${displayHost}:8737`;
+  const avatarId = status?.avatar?.avatarId ?? bundleManifest?.name ?? "unknown";
+  const avatarState = status?.avatar?.state ?? "idle";
+  const avatarBubble = status?.avatar?.bubble ?? "—";
+  const bundleVersion = status?.avatar?.bundleVersion ?? bundleManifest?.version ?? "—";
+  const runtimeLabel =
+    health?.runtime === "tauri-internal"
+      ? "desktop"
+      : health?.runtime === "node-dev"
+        ? "dev runtime"
+        : health?.runtime ?? "runtime";
+  const groupedCode = pair.code ? `${pair.code.slice(0, 3)}   ${pair.code.slice(3)}` : "— — —   — — —";
+  const openClawCommand = pair.code
+    ? `clawpet wizard openclaw --code ${pair.code} --host ${hostArg}`
+    : `clawpet wizard openclaw --code <code> --host ${hostArg}`;
+  const expiresIn = pair.expiresAt ? Math.max(0, Math.round((pair.expiresAt - Date.now()) / 1000)) : null;
   const lastEventAge = useMemo(() => {
-    if (!status?.lastEventAt) return null;
+    if (!status?.lastEventAt) return "none";
     const n = Number(status.lastEventAt);
     const ms = Number.isFinite(n) ? Date.now() - n : Date.now() - Date.parse(status.lastEventAt);
-    if (!Number.isFinite(ms) || ms < 0) return null;
-    if (ms < 60_000) return `${Math.max(1, Math.round(ms / 1000))}s ago`;
-    if (ms < 60 * 60_000) return `${Math.round(ms / 60_000)}m ago`;
-    return `${Math.round(ms / (60 * 60_000))}h ago`;
+    if (!Number.isFinite(ms) || ms < 0) return "unknown";
+    if (ms < 60_000) return `${Math.max(1, Math.round(ms / 1000))}s`;
+    if (ms < 60 * 60_000) return `${Math.round(ms / 60_000)}m`;
+    return `${Math.round(ms / (60 * 60_000))}h`;
   }, [status?.lastEventAt]);
-  const avatarState = status?.avatar?.state ?? "unknown";
-  const avatarBubble = status?.avatar?.bubble ?? "—";
-  const runtimeAvatarId = status?.avatar?.avatarId ?? bundleManifest?.name ?? "unknown";
-  const runtimeBundleVersion = status?.avatar?.bundleVersion ?? bundleManifest?.version ?? "—";
-  const runtimeBundleStateCount = bundleManifest?.states ? Object.keys(bundleManifest.states).length : 0;
-
-  const statusTone = runtimeOnline ? (openClawReady ? "ob-pill--ok" : "ob-pill--warn") : "ob-pill--bad";
-  const statusLabel = !runtimeOnline
-    ? "offline"
-    : openClawReady
-      ? "connected"
-      : "waiting";
+  const lastEventStamp = useMemo(() => {
+    if (!status?.lastEventAt) return "none yet";
+    const n = Number(status.lastEventAt);
+    const date = new Date(Number.isFinite(n) ? n : Date.parse(status.lastEventAt));
+    if (Number.isNaN(date.getTime())) return "unknown";
+    return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" });
+  }, [status?.lastEventAt]);
+  const chipLabel = openClawReady ? `LINKED · ${lastEventAge.toUpperCase()}` : runtimeOnline ? "WAITING" : "OFFLINE";
+  const stateDotClass = `clp-edot s-${["idle", "happy", "focused", "thinking", "alert"].includes(avatarState) ? avatarState : "idle"}`;
 
   return (
-    <main className="ob-shell">
-      <section className="ob-frame">
-        <header className="ob-topbar">
+    <main className="clp-shell">
+      <section className="clp">
+        <div className="clp-tb">
+          <span className="clp-tb-n">
+            <span className="clp-mini-mark"><PixelMark /></span>
+            clawpet
+          </span>
+          <span className="clp-spx" />
+          <span className="clp-tw">−</span>
+          <span className="clp-tw">□</span>
+          <span className="clp-tw x">×</span>
+        </div>
+
+        <div className="clp-h">
+          <div className="clp-mark">
+            <PixelMark />
+          </div>
           <div>
-            <p className="ob-eyebrow">Desktop companion</p>
-            <h1 className="ob-logo-word">CLAWPET</h1>
-            <p className="ob-tagline">Compact control panel for pairing, health, and avatar checks.</p>
+            <div className="clp-brand">
+              <span className="clp-name">clawpet</span>
+              <span className="clp-ver">v0.1.1</span>
+            </div>
+            <div className="clp-sub">VALIDATION CONSOLE FOR OPENCLAW</div>
           </div>
-          <div className="ob-topbar-side">
-            <span className={`ob-pill ${statusTone}`}>{statusLabel}</span>
-            <button className="ob-secondary" disabled={refreshing} onClick={() => void refreshNow()}>
-              {refreshing ? "Refreshing…" : "Refresh"}
-            </button>
+          <div className={openClawReady ? "clp-chip" : "clp-chip clp-chip--warn"}>
+            <span className="clp-pulse" />
+            <span>{chipLabel}</span>
           </div>
-        </header>
+          <button className="clp-icon" disabled={refreshing} onClick={() => void refreshNow()} aria-label="Refresh">
+            ↻
+          </button>
+        </div>
 
-        <section className="ob-hero-panel">
-          <div className="ob-hero-icon">🐲</div>
-          <div className="ob-hero-copy">
-            <strong>
-              {openClawReady
-                ? "Clawpet is linked and ready."
-                : runtimeOnline
-                  ? "Runtime is up. Pair only if the pet stays yellow or silent."
-                  : "Runtime is offline right now."}
-            </strong>
-            <span>
-              {openClawConnected
-                ? hasOpenClawActivity
-                  ? "OpenClaw has already sent live activity."
-                  : "Connection is established; first activity should arrive soon."
-                : runtimeOnline
-                  ? "Use the pair panel only when needed."
-                  : "In dev, run npm run runtime:tailscale if it does not come up."}
-            </span>
-          </div>
-          <section className="ob-summary-grid">
-            <MiniStat label="Runtime" value={runtimeOwnerLabel} />
-            <MiniStat label="Avatar" value={runtimeAvatarId} />
-            <MiniStat label="State" value={avatarState} />
-            <MiniStat label="Last event" value={lastEventAge ?? "none yet"} />
-          </section>
-        </section>
+        <div className="clp-tabs">
+          <button className={tab === "dashboard" ? "clp-tab active" : "clp-tab"} onClick={() => setTab("dashboard")}>
+            Dashboard
+          </button>
+          <button className={tab === "pair" ? "clp-tab active" : "clp-tab"} onClick={() => setTab("pair")}>
+            Pair
+          </button>
+        </div>
 
-        <section className="ob-panel-shell">
-          <nav className="ob-tabs" aria-label="Clawpet sections">
-            <button className={tab === "home" ? "ob-tab ob-tab--active" : "ob-tab"} onClick={() => setTab("home")}>
-              Home
-            </button>
-            <button className={tab === "pair" ? "ob-tab ob-tab--active" : "ob-tab"} onClick={() => setTab("pair")}>
-              Pair
-            </button>
-            <button className={tab === "details" ? "ob-tab ob-tab--active" : "ob-tab"} onClick={() => setTab("details")}>
-              Details
-            </button>
-          </nav>
-
-          <section className="ob-panel">
-          {tab === "home" && (
-            <div className="ob-tab-panel">
-              <div className="ob-panel-grid ob-panel-grid--home">
-                <div className="ob-card ob-card--tight">
-                  <div className="ob-card-head">
-                    <h2>Connection</h2>
-                    <span className={`ob-pill ${statusTone}`}>{statusLabel}</span>
-                  </div>
-                  {!runtimeOnline && (
-                    <div className="ob-warn">Runtime is not reachable. If this persists in dev, run <code>npm run runtime:tailscale</code>.</div>
-                  )}
-                  {runtimeOnline && !appOwnedRuntime && (
-                    <div className="ob-warn">Port 8737 is occupied by a non-packaged runtime. Fine for dev, but odd for a packaged install.</div>
-                  )}
-                  {runtimeOnline && (
-                    <div className={openClawReady ? "ob-ok" : "ob-warn"}>
-                      {openClawConnected
-                        ? hasOpenClawActivity
-                          ? "OpenClaw is connected and activity is flowing."
-                          : "OpenClaw is connected. Waiting for first visible activity."
-                        : "Runtime is online, but OpenClaw has not connected yet."}
-                    </div>
-                  )}
+        <div className="clp-body2">
+          {tab === "dashboard" && (
+            <>
+              <div className="clp-tele">
+                <div className="clp-tcell">
+                  <div className="clp-tl">Avatar</div>
+                  <div className="clp-tv">{avatarId}</div>
+                  <div className="clp-tx">bundle · {bundleVersion}</div>
                 </div>
-
-                <div className="ob-card ob-card--tight">
-                  <div className="ob-card-head">
-                    <h2>Quick actions</h2>
-                  </div>
-                  <div className="ob-actions ob-actions--stacked">
-                    <button className="ob-primary ob-primary--pair" disabled={!runtimeOnline || busy} onClick={() => void startPairMode()}>
-                      {busy ? "Opening…" : openClawReady ? "Repair connection" : "Show pair code"}
-                    </button>
-                    {pair.active && (
-                      <button className="ob-secondary" disabled={busy} onClick={() => void cancelPairMode()}>
-                        Cancel pair code
-                      </button>
-                    )}
-                  </div>
-                  <p className="ob-muted ob-muted--small">
-                    Close the window anytime. Clawpet stays alive in the tray.
-                  </p>
+                <div className="clp-tcell s">
+                  <div className="clp-tl">State</div>
+                  <div className="clp-tv"><span className="clp-sdot" />{avatarState}</div>
+                  <div className="clp-tx">since {lastEventStamp}</div>
+                </div>
+                <div className="clp-tcell">
+                  <div className="clp-tl">Host</div>
+                  <div className="clp-tv">{hostArg}</div>
+                  <div className="clp-tx">tailscale · trusted</div>
+                </div>
+                <div className="clp-tcell">
+                  <div className="clp-tl">Runtime</div>
+                  <div className="clp-tv">{runtimeLabel}</div>
+                  <div className="clp-tx">last event {lastEventAge} ago</div>
                 </div>
               </div>
-            </div>
+
+              <div className="clp-grid">
+                <div className="clp-card">
+                  <div className="clp-cardh">
+                    <span>Activity</span>
+                    <span className="clp-cardm"><span className="clp-cardm-d" />live · daemon</span>
+                  </div>
+                  <div className="clp-feed">
+                    <div className="clp-ev"><span className={stateDotClass} /><span className="clp-et">{lastEventStamp}</span><span className="clp-em">{openClawReady ? `→ ${avatarState}` : "waiting"}</span><span className="clp-ed">{openClawConnected ? "OpenClaw connected" : runtimeOnline ? "runtime online" : "runtime offline"}</span></div>
+                    <div className="clp-ev"><span className="clp-edot s-happy" /><span className="clp-et">bubble</span><span className="clp-em">{avatarBubble || "—"}</span><span className="clp-ed">latest bubble</span></div>
+                    <div className="clp-ev"><span className="clp-edot s-focused" /><span className="clp-et">bundle</span><span className="clp-em">{bundleVersion}</span><span className="clp-ed">current runtime pack</span></div>
+                    <div className="clp-ev"><span className="clp-edot s-thinking" /><span className="clp-et">host</span><span className="clp-em">{displayHost}</span><span className="clp-ed">display target</span></div>
+                    <div className="clp-ev"><span className="clp-edot s-alert" /><span className="clp-et">health</span><span className="clp-em">{runtimeOnline ? "ok" : "offline"}</span><span className="clp-ed">{runtimeError ?? "no runtime errors"}</span></div>
+                  </div>
+                  <div className="clp-hb">
+                    <span className="clp-hb-l">heartbeat</span>
+                    <span className="clp-hb-d" />
+                    <span className="clp-hb-s">{openClawReady ? "alive" : "idle"}</span>
+                    <span className="clp-hb-sep">·</span>
+                    <span className="clp-hb-x">last {lastEventAge} ago</span>
+                    <span className="clp-hb-sep">·</span>
+                    <span className="clp-hb-x">poll 1.5s</span>
+                  </div>
+                </div>
+
+                <div className="clp-card">
+                  <div className="clp-cardh">
+                    <span>Connection</span>
+                    <span className="clp-cardm">live</span>
+                  </div>
+                  <div className="clp-react-l">Status</div>
+                  <div className="clp-react-track">
+                    <div className={!runtimeOnline ? "clp-rstep active" : "clp-rstep"}>offline</div>
+                    <div className={runtimeOnline && !openClawConnected ? "clp-rstep active" : "clp-rstep"}>runtime</div>
+                    <div className={openClawConnected ? "clp-rstep active" : "clp-rstep"}>linked</div>
+                    <div className={hasOpenClawActivity ? "clp-rstep active" : "clp-rstep"}>active</div>
+                  </div>
+                  <div className="clp-rrow">
+                    <span className={runtimeOnline ? "clp-tg on" : "clp-tg"}><span className="clp-tg-p" /></span>
+                    <span>runtime reachable</span>
+                    <span className="clp-rrow-x">{runtimeOnline ? "on" : "off"}</span>
+                  </div>
+                  <div className="clp-rrow">
+                    <span className={openClawConnected ? "clp-tg on" : "clp-tg"}><span className="clp-tg-p" /></span>
+                    <span>OpenClaw linked</span>
+                    <span className="clp-rrow-x">{openClawConnected ? "on" : "off"}</span>
+                  </div>
+                  <div className="clp-rrow">
+                    <span className={pair.active ? "clp-tg on" : "clp-tg"}><span className="clp-tg-p" /></span>
+                    <span>pair window active</span>
+                    <span className="clp-rrow-x">{pair.active && expiresIn !== null ? `${expiresIn}s` : "off"}</span>
+                  </div>
+                  <div className="clp-rcost">
+                    <span>openclaw auth</span>
+                    <span><b>{openClawReady ? "ready" : "waiting"}</b></span>
+                  </div>
+                </div>
+              </div>
+            </>
           )}
 
           {tab === "pair" && (
-            <div className="ob-tab-panel">
-              <div className="ob-card ob-card--tight">
-                <div className="ob-card-head">
-                  <h2>Pair with OpenClaw</h2>
-                  {pair.active && expiresIn !== null ? <span className="ob-timer">{expiresIn}s</span> : null}
-                </div>
-                {openClawReady && !pair.active && !pair.code && (
-                  <div className="ob-ok">Already connected. Re-pair only if the pet is yellow, silent, or token state was reset.</div>
-                )}
-                <div className="ob-codebox">
-                  <span>Pair code</span>
-                  <strong>{groupedCode}</strong>
-                  <small>{pair.active ? "Use this on the OpenClaw host" : "Generate only when needed"}</small>
-                </div>
-                <div className="ob-command">
-                  <code>{openClawCommand}</code>
-                  <CopyButton text={openClawCommand} />
-                </div>
-                <div className="ob-help ob-help--compact">
-                  <strong>Use pairing when:</strong>
-                  <ul>
-                    <li>this is first-time setup,</li>
-                    <li>the pet is yellow and not reacting,</li>
-                    <li>you cleared or rotated tokens.</li>
-                  </ul>
-                </div>
+            <>
+              <div className="clp-banner">
+                <span className="clp-banner-k">{openClawReady ? "Linked" : "Pairing"}</span>
+                <span>
+                  {openClawReady
+                    ? "Re-pair only if the pet is yellow, silent, or tokens were rotated."
+                    : "Generate a pair code to authorize this OpenClaw machine."}
+                </span>
               </div>
-            </div>
-          )}
 
-          {tab === "details" && (
-            <div className="ob-tab-panel">
-              <div className="ob-diagnostics ob-diagnostics--compact" aria-label="Current avatar diagnostics">
-                <MiniStat label="Avatar id" value={runtimeAvatarId} />
-                <MiniStat label="Bundle version" value={runtimeBundleVersion} />
-                <MiniStat label="Bundle states" value={runtimeBundleStateCount || "none"} />
-                <MiniStat label="Bubble" value={avatarBubble} />
-                <MiniStat label="Display host" value={displayHost} />
-                <MiniStat label="Last event" value={lastEventAge ?? "none yet"} />
-              </div>
-              {!bundleManifest && (
-                <div className="ob-warn">
-                  No runtime avatar bundle is stored yet. If the pet still shows an old avatar, you may be seeing a local fallback instead of a pushed bundle.
+              <div className="clp-card">
+                <div className="clp-cardh">
+                  <span>Pair code</span>
+                  <span className="clp-cardm">{pair.active && expiresIn !== null ? `${expiresIn}-second window` : "120-second window"}</span>
                 </div>
-              )}
-              <div className="ob-card ob-card--tight ob-checklist">
-                <h2>What OpenClaw handles</h2>
-                <ul className="ob-list">
-                  <li>Claims the pair code from the OpenClaw host.</li>
-                  <li>Saves the runtime token on both sides.</li>
-                  <li>Starts the zero-token daemon.</li>
-                  <li>Pushes avatar assets and config to the runtime.</li>
+                <div className="clp-pair-display">
+                  <div className="clp-pair-left">
+                    <div className={pair.active ? "clp-pair-digits clp-pair-digits--live" : "clp-pair-digits"}>{groupedCode}</div>
+                    <div className="clp-pair-help">
+                      {pair.active
+                        ? "Pair window is open now. Run the command below on the OpenClaw host."
+                        : "No active pair window. "}
+                      {!pair.active && <b>Generate</b>} {!pair.active ? "to authorize a new OpenClaw machine." : null}
+                    </div>
+                  </div>
+                  <div className="clp-pair-actions">
+                    <button className="clp-gen-btn" disabled={busy} onClick={() => void startPairMode()}>
+                      {busy ? "Opening…" : pair.active ? "Regenerate" : "Generate"}
+                    </button>
+                    {pair.active && (
+                      <button className="clp-copy clp-copy--ghost" disabled={busy} onClick={() => void cancelPairMode()}>
+                        Cancel
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="clp-card">
+                <div className="clp-cardh">
+                  <span>Run on the OpenClaw machine</span>
+                  <span className="clp-cardm">copies command with code filled in</span>
+                </div>
+                <div className="clp-cmd-row">
+                  <div className="clp-cmd">$ clawpet wizard openclaw --code {pair.code ?? "<code>"} --host {hostArg}</div>
+                  <CopyButton text={openClawCommand} disabled={!pair.code} />
+                </div>
+                <div className="clp-cmd-help">Sends the bearer token back over the same connection. Pair window auto-closes on success.</div>
+              </div>
+
+              <div className="clp-card">
+                <div className="clp-cardh">
+                  <span>When to pair</span>
+                </div>
+                <ul className="clp-when-list">
+                  <li><span className="clp-when-dot" />First-time setup between an OpenClaw host and this target.</li>
+                  <li><span className="clp-when-dot" />The pet is yellow and not reacting to OpenClaw activity.</li>
+                  <li><span className="clp-when-dot" />You cleared or rotated tokens on either side.</li>
                 </ul>
               </div>
-            </div>
+
+              <div className="clp-foot">
+                <span>loopback trusted</span>
+                <span className="clp-foot-sep">·</span>
+                <span>runtime {runtimeLabel}</span>
+                <span className="clp-foot-sep">·</span>
+                <span>{bundleManifest?.states ? `${Object.keys(bundleManifest.states).length} states` : "no bundle metadata"}</span>
+              </div>
+            </>
           )}
 
-          {runtimeError && <p className="ob-error">{runtimeError}</p>}
-          </section>
-        </section>
+          {runtimeError && <div className="clp-error">{runtimeError}</div>}
+        </div>
       </section>
     </main>
   );
@@ -384,6 +428,6 @@ function OnboardApp() {
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <OnboardApp />
+    <App />
   </React.StrictMode>,
 );
