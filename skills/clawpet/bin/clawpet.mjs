@@ -316,7 +316,7 @@ async function cmdSend(positional, flags) {
     version: "0.1.0",
     eventId: randomUUID(),
     sentAt: new Date().toISOString(),
-    source: { kind: "openclaw", displayName: "openclaw-clawpet-skill" },
+    source: { kind: "openclaw", displayName: "openclaw-expression" },
     state,
     ...(message ? { message } : {}),
     ...(bubble ? { bubble } : {}),
@@ -367,7 +367,7 @@ async function cmdReact(positional, flags) {
     version: "0.1.0",
     eventId: randomUUID(),
     sentAt: new Date().toISOString(),
-    source: { kind: "openclaw", displayName: "openclaw-clawpet-skill" },
+    source: { kind: "openclaw", displayName: "openclaw-daemon" },
     state: def.state,
     bubble: bubble.slice(0, 64),
   };

@@ -145,11 +145,17 @@ function summarizeEvent(entry: RuntimeEventEntry) {
   return `state → ${entry.event.state}`;
 }
 
+function eventOrigin(entry: RuntimeEventEntry) {
+  const display = entry.event.source?.displayName?.toLowerCase() ?? "";
+  const instance = entry.event.source?.instanceId?.toLowerCase() ?? "";
+  if (display.includes("daemon") || instance.includes("daemon")) return "daemon emit";
+  if (display.includes("expression") || display.includes("openclaw")) return "openclaw emit";
+  return "runtime emit";
+}
+
 function eventMeta(entry: RuntimeEventEntry) {
   const state = entry.event.state;
-  const source = entry.event.source?.displayName || entry.event.source?.instanceId || "OpenClaw";
-  if (entry.event.message || entry.event.bubble) return `${state} emit · ${source}`;
-  return `${state} update · ${source}`;
+  return `${state} · ${eventOrigin(entry)}`;
 }
 
 function App() {
@@ -287,17 +293,6 @@ function App() {
   return (
     <main className="clp-shell">
       <section className="clp">
-        <div className="clp-tb">
-          <span className="clp-tb-n">
-            <span className="clp-mini-mark"><PixelMark /></span>
-            clawpet
-          </span>
-          <span className="clp-spx" />
-          <span className="clp-tw">−</span>
-          <span className="clp-tw">□</span>
-          <span className="clp-tw x">×</span>
-        </div>
-
         <div className="clp-h">
           <div className="clp-mark">
             <PixelMark />

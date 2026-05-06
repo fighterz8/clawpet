@@ -112,9 +112,22 @@ struct PairClaimBody {
 }
 #[derive(Deserialize)]
 struct AvatarEvent {
+    #[serde(rename = "eventId")]
+    event_id: Option<String>,
+    #[serde(rename = "sentAt")]
+    sent_at: Option<String>,
     state: String,
     bubble: Option<String>,
     message: Option<String>,
+    source: Option<AvatarEventSource>,
+}
+
+#[derive(Clone, Deserialize)]
+struct AvatarEventSource {
+    #[serde(rename = "displayName")]
+    display_name: Option<String>,
+    #[serde(rename = "instanceId")]
+    instance_id: Option<String>,
 }
 #[derive(Deserialize)]
 struct AvatarBundleUpload {
@@ -694,7 +707,9 @@ fn route(
         };
         let mut s = state.lock().unwrap();
         let received_at = now_iso();
-        let event_id = format!("evt_{}", now_ms());
+        let event_id = ev.event_id.unwrap_or_else(|| format!("evt_{}", now_ms()));
+        let sent_at = ev.sent_at.unwrap_or_else(|| received_at.clone());
+        let source = ev.source.clone();
         s.raw_state = ev.state;
         let bubble = ev.bubble;
         let message = ev.message;
@@ -712,13 +727,13 @@ fn route(
             EventEntry {
                 event: EventPayload {
                     event_id,
-                    sent_at: received_at.clone(),
+                    sent_at,
                     state: state_name,
                     message,
                     bubble,
                     source: EventSource {
-                        display_name: Some("OpenClaw".into()),
-                        instance_id: None,
+                        display_name: source.as_ref().and_then(|src| src.display_name.clone()).or_else(|| Some("OpenClaw".into())),
+                        instance_id: source.as_ref().and_then(|src| src.instance_id.clone()),
                     },
                 },
                 received_at,

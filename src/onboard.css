@@ -32,48 +32,8 @@ body.ob-hidden { display: none; }
   font-size: 13px;
   line-height: 1.4;
   display: grid;
-  grid-template-rows: auto auto auto 1fr;
+  grid-template-rows: auto auto 1fr;
 }
-
-.clp-tb {
-  background: #14171e;
-  padding: 6px 10px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border-bottom: 0.5px solid rgba(255, 255, 255, 0.05);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-}
-
-.clp-tb-n {
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.45);
-  letter-spacing: 0.6px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.clp-mini-mark {
-  width: 11px;
-  height: 10px;
-  display: inline-grid;
-}
-
-.clp-spx { flex: 1; }
-
-.clp-tw {
-  width: 22px;
-  height: 18px;
-  display: grid;
-  place-items: center;
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.45);
-  cursor: default;
-}
-
-.clp-tw:hover { background: rgba(255, 255, 255, 0.06); }
-.clp-tw.x:hover { background: #e76f51; color: white; }
 
 .clp-h {
   padding: 13px 18px;
@@ -224,7 +184,8 @@ body.ob-hidden { display: none; }
   display: flex;
   flex-direction: column;
   gap: 10px;
-  overflow: auto;
+  overflow: hidden;
+  min-height: 0;
 }
 
 .clp-tele {
@@ -297,6 +258,8 @@ body.ob-hidden { display: none; }
   grid-template-columns: 1.55fr 1fr;
   gap: 10px;
   min-height: 0;
+  flex: 1;
+  overflow: hidden;
 }
 
 .clp-card {
@@ -309,7 +272,8 @@ body.ob-hidden { display: none; }
   min-height: 0;
 }
 
-.clp-card--activity { min-height: 290px; }
+.clp-card--activity,
+.clp-card--summary { min-height: 0; }
 
 .clp-cardh {
   display: flex;
@@ -349,14 +313,24 @@ body.ob-hidden { display: none; }
 }
 
 .clp-feed--log {
+  flex: 1;
   min-height: 0;
   overflow: auto;
-  padding-right: 2px;
+  padding-right: 6px;
+}
+
+.clp-feed--log::-webkit-scrollbar {
+  width: 8px;
+}
+
+.clp-feed--log::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,.12);
+  border-radius: 999px;
 }
 
 .clp-ev {
   display: grid;
-  grid-template-columns: 8px 72px minmax(0, 1fr) minmax(110px, auto);
+  grid-template-columns: 8px 72px minmax(0, 1fr) minmax(124px, auto);
   gap: 10px;
   align-items: center;
   font-size: 11px;
