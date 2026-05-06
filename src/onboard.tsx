@@ -158,9 +158,12 @@ function eventOrigin(entry: RuntimeEventEntry) {
   // - system signal: zero-token local/daemon plumbing and work telemetry.
   // - OpenClaw expression: optional autonomous/contextual expression layer.
   // - user-requested: explicit routines or one-off manual emits requested by Nick.
-  if (source.includes("daemon") || source.includes("jsonl")) return "system signal";
+  // Only the new explicit routine marker counts as user-requested. Older
+  // direct/manual/test metadata such as `clawpet-user-requested-manual` was
+  // too broad and should display as system signal.
+  if (instance === "clawpet-user-requested" || display === "user-requested") return "user-requested";
+  if (source.includes("daemon") || source.includes("jsonl") || source.includes("manual") || source.includes("direct")) return "system signal";
   if (source.includes("expression")) return "OpenClaw expression";
-  if (source.includes("user-requested")) return "user-requested";
   if (source.includes("openclaw")) return "OpenClaw expression";
   return "system signal";
 }
@@ -383,7 +386,7 @@ function App() {
                     )}
                   </div>
                   <div className="clp-source-legend" aria-label="Activity log source definitions">
-                    <div><strong>system signal</strong><span>Default zero-token OpenClaw/Clawpet work telemetry. This includes daemon/runtime plumbing without treating it as a separate voice.</span></div>
+                    <div><strong>system signal</strong><span>Default zero-token OpenClaw/Clawpet work telemetry. Replaces daemon/runtime labels in the visible log.</span></div>
                     <div><strong>OpenClaw expression</strong><span>Optional autonomous/contextual avatar remarks controlled by expression level.</span></div>
                     <div><strong>user-requested</strong><span>Explicit manual emits or routines Nick asked Dawn to perform.</span></div>
                     <div><strong>rule of thumb</strong><span>The log should mostly be system signal unless expression is enabled or Nick explicitly asks for a routine.</span></div>
@@ -466,7 +469,7 @@ function App() {
                       <span className="clp-rrow-x">{reactivity?.heartbeatReactions ? "on" : "off"}</span>
                     </div>
                     <div className="clp-reactivity-note">
-                      Managed by paired OpenClaw host{reactivity?.managedBy ? ` · ${reactivity.managedBy}` : ""}. Legacy activity is hidden; daemon voice + expression level are the source of truth.
+                      Managed by paired OpenClaw host{reactivity?.managedBy ? ` · ${reactivity.managedBy}` : ""}. Legacy activity is hidden; system signal + expression level are the source of truth.
                     </div>
                     {reactivity?.error ? <div className="clp-error-inline">{reactivity.error}</div> : null}
                   </div>

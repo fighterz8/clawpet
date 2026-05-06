@@ -152,18 +152,18 @@ Use a second dedicated setting:
 
 Without separation, the system becomes confusing:
 
-- daemon voice events look like model-driven personality
+- system signal events look like model-driven personality
 - model-driven commentary duplicates status messages
 - users cannot tell what costs tokens
 - `activity level` becomes overloaded and unclear
 
 Clean split:
 
-- **system signal** = zero-token non-expressive OpenClaw/Clawpet work telemetry. This includes daemon JSONL/tool/session mirroring and local runtime plumbing, but the user-facing log should not present runtime as a separate voice.
+- **system signal** = zero-token non-expressive OpenClaw/Clawpet work telemetry. This includes daemon JSONL/tool/session mirroring and local runtime plumbing, but the user-facing log should not present either daemon or runtime as separate voices.
 - **OpenClaw expression** = optional autonomous/contextual avatar remarks controlled by expression level. These may use tokens and should stop completely when expression is off.
 - **user-requested** = explicit manual emits or routines Nick asked for, such as “celebrate when we finish a task.” These should appear only because the user requested them.
 
-Runtime and daemon are intentionally grouped in the user-facing activity log as `system signal` because neither is an expressive/manual avatar decision. Internal provenance can remain in raw payloads, but the visible log should not make runtime feel like a separate speaker.
+Runtime and daemon are intentionally grouped in the user-facing activity log as `system signal` because neither is an expressive/manual avatar decision. Internal provenance can remain in raw payloads, but the visible log should not make runtime or daemon feel like separate speakers.
 
 ---
 
@@ -378,14 +378,14 @@ Keep as separate toggle.
 
 Show source clearly:
 
-- `system signal` — zero-token daemon/runtime work telemetry and plumbing
+- `system signal` — zero-token work telemetry and plumbing
 - `OpenClaw expression` — optional autonomous/contextual expression layer
 - `user-requested` — explicit one-off/manual/routine emits requested by the user
 
 Optional future detail:
 
-- `daemon voice · read`
-- `daemon voice · exec`
+- `system signal · read`
+- `system signal · exec`
 - `OpenClaw expression · progress`
 - `OpenClaw expression · blocker`
 - `user-requested · celebration routine`
