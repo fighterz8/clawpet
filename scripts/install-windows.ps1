@@ -35,7 +35,17 @@ if (-not (Test-Path $repoDir)) {
   git clone https://github.com/fighterz8/clawpet.git $repoDir
 } else {
   Write-Host "==> Updating existing repo at $repoDir" -ForegroundColor Cyan
-  git -C $repoDir pull --ff-only
+  git -C $repoDir fetch origin main
+  $dirty = git -C $repoDir status --porcelain
+  if ([string]::IsNullOrWhiteSpace($dirty)) {
+    git -C $repoDir reset --hard origin/main
+  } else {
+    git -C $repoDir pull --ff-only
+    if ($LASTEXITCODE -ne 0) {
+      Write-Error "Existing Clawpet repo has local changes or diverged history. Commit/stash changes or set CLAWPET_REPO_DIR to a fresh install path."
+      exit 1
+    }
+  }
 }
 
 Push-Location $repoDir

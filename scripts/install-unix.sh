@@ -30,7 +30,12 @@ if [[ ! -d "$REPO_DIR" ]]; then
   git clone https://github.com/fighterz8/clawpet.git "$REPO_DIR"
 else
   cyan "==> Updating existing repo at $REPO_DIR"
-  git -C "$REPO_DIR" pull --ff-only
+  git -C "$REPO_DIR" fetch origin main
+  if [[ -z "$(git -C "$REPO_DIR" status --porcelain)" ]]; then
+    git -C "$REPO_DIR" reset --hard origin/main
+  else
+    git -C "$REPO_DIR" pull --ff-only || err "Existing Clawpet repo has local changes or diverged history. Commit/stash changes or set CLAWPET_REPO_DIR to a fresh install path."
+  fi
 fi
 
 cyan "==> Installing npm deps and linking clawpet command..."
