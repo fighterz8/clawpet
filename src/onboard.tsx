@@ -54,6 +54,11 @@ type RuntimeEventEntry = {
 type ReactivitySettings = {
   available: boolean;
   activity?: string | null;
+  activityLegacy?: string | null;
+  daemonVoice?: string | null;
+  daemonVoiceLevels?: string[];
+  expressionLevel?: string | null;
+  expressionLevels?: string[];
   heartbeatReactions?: boolean | null;
   activityLevels: string[];
   writable?: boolean;
@@ -148,8 +153,11 @@ function summarizeEvent(entry: RuntimeEventEntry) {
 function eventOrigin(entry: RuntimeEventEntry) {
   const display = entry.event.source?.displayName?.toLowerCase() ?? "";
   const instance = entry.event.source?.instanceId?.toLowerCase() ?? "";
-  if (display.includes("daemon") || instance.includes("daemon")) return "daemon emit";
-  if (display.includes("expression") || display.includes("openclaw")) return "openclaw emit";
+  const source = `${display} ${instance}`;
+  if (source.includes("daemon-direct") || source.includes("openclaw-daemon")) return "daemon emit";
+  if (source.includes("manual") || source.includes("direct")) return "manual emit";
+  if (source.includes("expression")) return "openclaw emit";
+  if (source.includes("openclaw")) return "openclaw emit";
   return "runtime emit";
 }
 
@@ -286,9 +294,6 @@ function App() {
   const chipLabel = openClawReady ? `LINKED · ${lastEventAge?.toUpperCase() ?? "LIVE"}` : runtimeOnline ? "WAITING" : "OFFLINE";
   const heartbeatModeClass = openClawReady ? "clp-ekg clp-ekg--live" : "clp-ekg clp-ekg--flat";
   const activityBadge = status?.pairedOpenClaw?.displayName || status?.pairedOpenClaw?.instanceId || "live daemon";
-  const activityLevels = reactivity?.activityLevels?.length
-    ? reactivity.activityLevels
-    : ["off", "minimal", "balanced", "expressive", "maximum"];
 
   return (
     <main className="clp-shell">
@@ -409,17 +414,21 @@ function App() {
                     </div>
                   </div>
                   <div className="clp-reactivity-panel">
-                    <span className="clp-reactivity-k">Activity level</span>
+                    <span className="clp-reactivity-k">Daemon voice</span>
                     <div className="clp-react-track">
-                      {activityLevels.map((level) => (
+                      {(reactivity?.daemonVoiceLevels?.length ? reactivity.daemonVoiceLevels : ["silent", "lite", "vivid"]).map((level) => (
                         <div
                           key={level}
-                          className={reactivity?.activity === level ? "clp-rstep active" : "clp-rstep"}
+                          className={reactivity?.daemonVoice === level ? "clp-rstep active" : "clp-rstep"}
                           aria-disabled="true"
                         >
-                          {level === "expressive" ? "expr" : level === "minimal" ? "min" : level}
+                          {level}
                         </div>
                       ))}
+                    </div>
+                    <div className="clp-rrow">
+                      <span>expression</span>
+                      <span className="clp-rrow-x">{reactivity?.expressionLevel ?? "off"}</span>
                     </div>
                     <div className="clp-rrow">
                       <span className={reactivity?.heartbeatReactions ? "clp-tg on" : "clp-tg"}><span className="clp-tg-p" /></span>
@@ -427,7 +436,7 @@ function App() {
                       <span className="clp-rrow-x">{reactivity?.heartbeatReactions ? "on" : "off"}</span>
                     </div>
                     <div className="clp-reactivity-note">
-                      Managed by paired OpenClaw host{reactivity?.managedBy ? ` · ${reactivity.managedBy}` : ""}
+                      Managed by paired OpenClaw host{reactivity?.managedBy ? ` · ${reactivity.managedBy}` : ""}{reactivity?.activityLegacy ? ` · legacy activity ${reactivity.activityLegacy}` : ""}
                     </div>
                     {reactivity?.error ? <div className="clp-error-inline">{reactivity.error}</div> : null}
                   </div>

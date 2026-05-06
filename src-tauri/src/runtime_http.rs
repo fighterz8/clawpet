@@ -92,6 +92,16 @@ struct RuntimeState {
 struct ReactivityMirror {
     available: bool,
     activity: Option<String>,
+    #[serde(rename = "activityLegacy")]
+    activity_legacy: Option<String>,
+    #[serde(rename = "daemonVoice")]
+    daemon_voice: Option<String>,
+    #[serde(rename = "daemonVoiceLevels")]
+    daemon_voice_levels: Vec<String>,
+    #[serde(rename = "expressionLevel")]
+    expression_level: Option<String>,
+    #[serde(rename = "expressionLevels")]
+    expression_levels: Vec<String>,
     #[serde(rename = "heartbeatReactions")]
     heartbeat_reactions: Option<bool>,
     #[serde(rename = "activityLevels")]
@@ -197,6 +207,17 @@ fn default_reactivity(error: Option<String>) -> ReactivityMirror {
     ReactivityMirror {
         available: false,
         activity: None,
+        activity_legacy: None,
+        daemon_voice: None,
+        daemon_voice_levels: vec!["silent", "lite", "vivid"]
+            .into_iter()
+            .map(str::to_string)
+            .collect(),
+        expression_level: None,
+        expression_levels: vec!["off", "low", "medium", "high"]
+            .into_iter()
+            .map(str::to_string)
+            .collect(),
         heartbeat_reactions: None,
         activity_levels: vec!["off", "minimal", "balanced", "expressive", "maximum"]
             .into_iter()
@@ -755,12 +776,26 @@ fn route(
             Err(_) => return response(400, json!({"ok":false,"errors":["invalid reactivity payload"]})),
         };
         let mut s = state.lock().unwrap();
+        let defaults = default_reactivity(None);
         s.reactivity = ReactivityMirror {
             available: incoming.available,
-            activity: incoming.activity,
+            activity: incoming.activity.clone(),
+            activity_legacy: incoming.activity_legacy.or(incoming.activity),
+            daemon_voice: incoming.daemon_voice,
+            daemon_voice_levels: if incoming.daemon_voice_levels.is_empty() {
+                defaults.daemon_voice_levels
+            } else {
+                incoming.daemon_voice_levels
+            },
+            expression_level: incoming.expression_level,
+            expression_levels: if incoming.expression_levels.is_empty() {
+                defaults.expression_levels
+            } else {
+                incoming.expression_levels
+            },
             heartbeat_reactions: incoming.heartbeat_reactions,
             activity_levels: if incoming.activity_levels.is_empty() {
-                default_reactivity(None).activity_levels
+                defaults.activity_levels
             } else {
                 incoming.activity_levels
             },

@@ -11,6 +11,10 @@ const VERSION = "0.4.0";
 const STATES = ["idle", "thinking", "focused", "happy", "alert", "sleepy"];
 const ACTIVITY_LEVELS = ["off", "minimal", "balanced", "expressive", "maximum"];
 const DEFAULT_ACTIVITY = "balanced";
+const DAEMON_VOICE_LEVELS = ["silent", "lite", "vivid"];
+const DEFAULT_DAEMON_VOICE = "lite";
+const EXPRESSION_LEVELS = ["off", "low", "medium", "high"];
+const DEFAULT_EXPRESSION_LEVEL = "off";
 
 // Map semantic events -> avatar states. Used by `clawpet react <event>`.
 // Values: { state, defaultBubble, minLevel } where minLevel is the lowest activity
@@ -56,6 +60,11 @@ async function syncReactivityMirror() {
   const payload = {
     available: true,
     activity: resolveActivity(),
+    activityLegacy: resolveActivity(),
+    daemonVoice: resolveDaemonVoice(),
+    daemonVoiceLevels: DAEMON_VOICE_LEVELS,
+    expressionLevel: resolveExpressionLevel(),
+    expressionLevels: EXPRESSION_LEVELS,
     heartbeatReactions: resolveHeartbeatReactions(),
     activityLevels: ACTIVITY_LEVELS,
     writable: false,
@@ -90,6 +99,44 @@ function resolveActivity() {
   const cfg = loadConfig();
   if (cfg.activity && ACTIVITY_LEVELS.includes(cfg.activity)) return cfg.activity;
   return DEFAULT_ACTIVITY;
+}
+
+function mapActivityToDaemonVoice(activity) {
+  switch (activity) {
+    case "off": return "silent";
+    case "minimal":
+    case "balanced": return "lite";
+    case "expressive":
+    case "maximum": return "vivid";
+    default: return DEFAULT_DAEMON_VOICE;
+  }
+}
+
+function mapActivityToExpressionLevel(activity) {
+  switch (activity) {
+    case "off":
+    case "minimal": return "off";
+    case "balanced":
+    case "expressive": return "low";
+    case "maximum": return "medium";
+    default: return DEFAULT_EXPRESSION_LEVEL;
+  }
+}
+
+function resolveDaemonVoice() {
+  const env = process.env.CLAWPET_DAEMON_VOICE;
+  if (env && DAEMON_VOICE_LEVELS.includes(env)) return env;
+  const cfg = loadConfig();
+  if (cfg.daemonVoice && DAEMON_VOICE_LEVELS.includes(cfg.daemonVoice)) return cfg.daemonVoice;
+  return mapActivityToDaemonVoice(resolveActivity());
+}
+
+function resolveExpressionLevel() {
+  const env = process.env.CLAWPET_EXPRESSION_LEVEL;
+  if (env && EXPRESSION_LEVELS.includes(env)) return env;
+  const cfg = loadConfig();
+  if (cfg.expressionLevel && EXPRESSION_LEVELS.includes(cfg.expressionLevel)) return cfg.expressionLevel;
+  return mapActivityToExpressionLevel(resolveActivity());
 }
 
 function resolveHeartbeatReactions() {
@@ -165,6 +212,8 @@ Usage:
   clawpet send <state> [message] [--bubble TEXT] [--quiet]
   clawpet react <event> [--bubble TEXT] [--quiet]   # event: user-message|tool-start|tool-error|blocker|done|long-task|thinking
   clawpet activity [off|minimal|balanced|expressive|maximum]
+  clawpet daemon-voice [silent|lite|vivid]
+  clawpet expression-level [off|low|medium|high]
   clawpet heartbeat-reactions [on|off]              # default off
   clawpet pair --url <runtime-url> [--token <bearer-token>]
   clawpet pair --code <6-digit> --host <host[:port]>     # magic-pair: claim a code on a remote runtime
@@ -293,6 +342,22 @@ async function cmdStatus() {
   } catch (e) { fail(`runtime unreachable at ${url}: ${e.message}`, 2); }
 }
 
+function resolveEmitSource(mode = "send") {
+  const source = (process.env.CLAWPET_EMIT_SOURCE || "manual").toLowerCase();
+  if (source === "daemon") {
+    return {
+      kind: "openclaw",
+      displayName: mode === "react" ? "openclaw-daemon" : "openclaw-daemon-direct",
+      instanceId: "openclaw-daemon",
+    };
+  }
+  return {
+    kind: "openclaw",
+    displayName: mode === "react" ? "openclaw-expression" : "openclaw-manual",
+    instanceId: mode === "react" ? "openclaw-expression" : "openclaw-manual",
+  };
+}
+
 async function cmdSend(positional, flags) {
   const [state, ...rest] = positional;
   if (!state) fail("send: <state> required");
@@ -316,7 +381,7 @@ async function cmdSend(positional, flags) {
     version: "0.1.0",
     eventId: randomUUID(),
     sentAt: new Date().toISOString(),
-    source: { kind: "openclaw", displayName: "openclaw-expression" },
+    source: resolveEmitSource("send"),
     state,
     ...(message ? { message } : {}),
     ...(bubble ? { bubble } : {}),
@@ -367,7 +432,7 @@ async function cmdReact(positional, flags) {
     version: "0.1.0",
     eventId: randomUUID(),
     sentAt: new Date().toISOString(),
-    source: { kind: "openclaw", displayName: "openclaw-daemon" },
+    source: resolveEmitSource("react"),
     state: def.state,
     bubble: bubble.slice(0, 64),
   };
@@ -412,6 +477,40 @@ async function cmdActivity(positional, _flags) {
   const cfg = loadConfig();
   const previous = cfg.activity || DEFAULT_ACTIVITY;
   cfg.activity = level;
+  if (!cfg.daemonVoice) cfg.daemonVoice = mapActivityToDaemonVoice(level);
+  if (!cfg.expressionLevel) cfg.expressionLevel = mapActivityToExpressionLevel(level);
+  saveConfig(cfg);
+  const mirror = await syncReactivityMirror();
+  console.log(JSON.stringify({ ok: true, previous, current: level, daemonVoice: resolveDaemonVoice(), expressionLevel: resolveExpressionLevel(), configPath: CONFIG_PATH }, null, 2));
+  if (!mirror.ok && !mirror.skipped) console.error(`clawpet: warning: failed syncing reactivity mirror (${mirror.status ?? mirror.error ?? "unknown error"})`);
+}
+
+async function cmdDaemonVoice(positional, _flags) {
+  const [level] = positional;
+  if (!level) {
+    console.log(JSON.stringify({ daemonVoice: resolveDaemonVoice(), levels: DAEMON_VOICE_LEVELS, configPath: CONFIG_PATH }, null, 2));
+    return;
+  }
+  if (!DAEMON_VOICE_LEVELS.includes(level)) fail(`daemon-voice: invalid level '${level}'. Must be one of: ${DAEMON_VOICE_LEVELS.join(", ")}`);
+  const cfg = loadConfig();
+  const previous = resolveDaemonVoice();
+  cfg.daemonVoice = level;
+  saveConfig(cfg);
+  const mirror = await syncReactivityMirror();
+  console.log(JSON.stringify({ ok: true, previous, current: level, configPath: CONFIG_PATH }, null, 2));
+  if (!mirror.ok && !mirror.skipped) console.error(`clawpet: warning: failed syncing reactivity mirror (${mirror.status ?? mirror.error ?? "unknown error"})`);
+}
+
+async function cmdExpressionLevel(positional, _flags) {
+  const [level] = positional;
+  if (!level) {
+    console.log(JSON.stringify({ expressionLevel: resolveExpressionLevel(), levels: EXPRESSION_LEVELS, configPath: CONFIG_PATH }, null, 2));
+    return;
+  }
+  if (!EXPRESSION_LEVELS.includes(level)) fail(`expression-level: invalid level '${level}'. Must be one of: ${EXPRESSION_LEVELS.join(", ")}`);
+  const cfg = loadConfig();
+  const previous = resolveExpressionLevel();
+  cfg.expressionLevel = level;
   saveConfig(cfg);
   const mirror = await syncReactivityMirror();
   console.log(JSON.stringify({ ok: true, previous, current: level, configPath: CONFIG_PATH }, null, 2));
@@ -608,14 +707,20 @@ function cmdConfig() {
     runtimeUrl: resolveRuntimeUrl(),
     runtimeTokenSet: Boolean(resolveRuntimeToken()),
     activity: resolveActivity(),
+    daemonVoice: resolveDaemonVoice(),
+    expressionLevel: resolveExpressionLevel(),
     heartbeatReactions: resolveHeartbeatReactions(),
     configPath: CONFIG_PATH,
     configExists: existsSync(CONFIG_PATH),
     envUrlOverride: Boolean(process.env.CLAWPET_RUNTIME_URL),
     envTokenOverride: Boolean(process.env.CLAWPET_RUNTIME_TOKEN),
     envActivityOverride: Boolean(process.env.CLAWPET_ACTIVITY),
+    envDaemonVoiceOverride: Boolean(process.env.CLAWPET_DAEMON_VOICE),
+    envExpressionLevelOverride: Boolean(process.env.CLAWPET_EXPRESSION_LEVEL),
     states: STATES,
     activityLevels: ACTIVITY_LEVELS,
+    daemonVoiceLevels: DAEMON_VOICE_LEVELS,
+    expressionLevels: EXPRESSION_LEVELS,
   }, null, 2));
 }
 
@@ -719,6 +824,8 @@ switch (cmd) {
   case "send": await cmdSend(positional, flags); break;
   case "react": await cmdReact(positional, flags); break;
   case "activity": await cmdActivity(positional, flags); break;
+  case "daemon-voice": await cmdDaemonVoice(positional, flags); break;
+  case "expression-level": await cmdExpressionLevel(positional, flags); break;
   case "heartbeat-reactions": case "heartbeats": await cmdHeartbeats(positional, flags); break;
   case "pair": await cmdPair(flags); break;
   case "pair-mode": await cmdPairMode(positional, flags); break;

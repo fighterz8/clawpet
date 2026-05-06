@@ -27,39 +27,49 @@ const POLL_MS = 400;       // how often to check for new bytes
 const ROTATE_MS = 5000;    // how often to re-scan for newer session file
 const AVATAR_RECONCILE_MS = 30_000; // re-assert OpenClaw's desired avatar after runtime restarts
 
-// ---------- Tool → reaction mapping ----------
-// state/bubble pairs; minLevel is the minimum activity level to fire.
-// Copy is intentionally process-accurate over cute/random: the bubble should
-// tell the user what OpenClaw is actually doing right now.
+// ---------- Daemon voice dictionary ----------
+// Preset, zero-token phrase pools. `lite` keeps one compact phrase; `vivid`
+// gives a richer deterministic pool. `silent` suppresses daemon bubbles.
 
-const TOOL_REACTIONS = {
-  exec:            { state: "focused",  bubble: ["Running command…", "Checking the machine…", "Executing locally…"], minLevel: "balanced" },
-  process:         { state: "thinking", bubble: ["Checking command…", "Reading command output…"], minLevel: "balanced" },
-  read:            { state: "thinking", bubble: ["Reading files…", "Inspecting the repo…", "Looking at the code…"], minLevel: "balanced" },
-  edit:            { state: "focused",  bubble: ["Editing files…", "Making the change…"], minLevel: "balanced" },
-  write:           { state: "focused",  bubble: ["Writing files…", "Saving changes…"], minLevel: "balanced" },
-  apply_patch:     { state: "focused",  bubble: ["Patching files…", "Applying patch…"], minLevel: "balanced" },
-  web_fetch:       { state: "thinking", bubble: ["Reading web page…", "Fetching docs…"], minLevel: "balanced" },
-  web_search:      { state: "thinking", bubble: ["Searching web…", "Looking it up…"], minLevel: "balanced" },
-  memory_search:   { state: "thinking", bubble: ["Checking memory…", "Looking back…"], minLevel: "balanced" },
-  memory_get:      { state: "thinking", bubble: ["Reading memory…", "Pulling context…"], minLevel: "balanced" },
-  image:           { state: "thinking", bubble: "Inspecting image…",     minLevel: "balanced" },
-  image_generate:  { state: "focused",  bubble: "Generating image…",     minLevel: "balanced" },
-  video_generate:  { state: "focused",  bubble: "Generating video…",     minLevel: "balanced" },
-  sessions_spawn:  { state: "focused",  bubble: "Starting helper…",      minLevel: "balanced" },
-  sessions_send:   { state: "focused",  bubble: "Delegating task…",      minLevel: "balanced" },
-  update_plan:     { state: "thinking", bubble: "Updating plan…",        minLevel: "expressive" },
-  session_status:  { state: "thinking", bubble: "Checking status…",      minLevel: "maximum" },
-  // default for unknown tools
-  __default__:     { state: "thinking", bubble: "Working…",              minLevel: "expressive" },
+const DAEMON_VOICE_LEVELS = ["silent", "lite", "vivid"];
+const DEFAULT_DAEMON_VOICE = "lite";
+
+const DAEMON_EVENTS = {
+  exec:            { state: "focused",  lite: ["Running…"], vivid: ["Running a command…", "Checking the machine…", "Trying this locally…"] },
+  process:         { state: "thinking", lite: ["Checking…"], vivid: ["Checking command…", "Reading command output…"] },
+  read:            { state: "thinking", lite: ["Reading…"], vivid: ["Reading files…", "Inspecting the repo…", "Looking at the code…"] },
+  edit:            { state: "focused",  lite: ["Editing…"], vivid: ["Editing files…", "Making the change…"] },
+  write:           { state: "focused",  lite: ["Writing…"], vivid: ["Writing files…", "Saving changes…"] },
+  apply_patch:     { state: "focused",  lite: ["Patching…"], vivid: ["Patching files…", "Applying patch…"] },
+  web_fetch:       { state: "thinking", lite: ["Fetching…"], vivid: ["Reading web page…", "Fetching docs…"] },
+  web_search:      { state: "thinking", lite: ["Searching…"], vivid: ["Searching web…", "Looking it up…"] },
+  memory_search:   { state: "thinking", lite: ["Recalling…"], vivid: ["Checking memory…", "Looking back…"] },
+  memory_get:      { state: "thinking", lite: ["Recalling…"], vivid: ["Reading memory…", "Pulling context…"] },
+  image:           { state: "thinking", lite: ["Inspecting…"], vivid: ["Inspecting image…"] },
+  image_generate:  { state: "focused",  lite: ["Generating…"], vivid: ["Generating image…"] },
+  video_generate:  { state: "focused",  lite: ["Rendering…"], vivid: ["Generating video…"] },
+  sessions_spawn:  { state: "focused",  lite: ["Delegating…"], vivid: ["Starting helper…"] },
+  sessions_send:   { state: "focused",  lite: ["Delegating…"], vivid: ["Delegating task…"] },
+  update_plan:     { state: "thinking", lite: ["Planning…"], vivid: ["Updating plan…"] },
+  session_status:  { state: "thinking", lite: ["Status…"], vivid: ["Checking status…"] },
+  "user-message": { state: "thinking", lite: ["Reading…"], vivid: ["Reading your prompt…", "Got it — reading…", "Prompt received…"] },
+  done:            { state: "happy",    lite: ["Done"], vivid: ["Done", "Finished", "Wrapped up"] },
+  __default__:     { state: "thinking", lite: ["Working…"], vivid: ["Working…"] },
 };
 
-const USER_MSG_BUBBLES = ["Reading your prompt…", "Got it — reading…", "Prompt received…"];
-const DONE_BUBBLES = ["Done", "Finished", "Wrapped up"];
+function stableIndex(seed, length) {
+  let hash = 0;
+  for (const ch of seed) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+  return length > 0 ? hash % length : 0;
+}
 
-function pickBubble(list, salt = "") {
-  const n = Math.abs([...`${Date.now()}${salt}`].reduce((a, c) => a + c.charCodeAt(0), 0));
-  return list[n % list.length];
+function pickPhrase(list, seed, lastPhrase) {
+  if (!Array.isArray(list) || list.length === 0) return undefined;
+  let index = stableIndex(seed, list.length);
+  if (lastPhrase && list.length > 1 && list[index] === lastPhrase) {
+    index = (index + 1) % list.length;
+  }
+  return list[index];
 }
 
 function log(line) {
@@ -79,6 +89,7 @@ function callClawpet(args) {
   const proc = spawn(process.execPath, [CLI, ...args], {
     detached: false,
     stdio: ["ignore", "ignore", "ignore"],
+    env: { ...process.env, CLAWPET_EMIT_SOURCE: "daemon" },
   });
   proc.on("error", () => {}); // swallow
 }
@@ -86,6 +97,35 @@ function callClawpet(args) {
 function readConfig() {
   try { return JSON.parse(readFileSync(join(STATE_DIR, "config.json"), "utf8")); }
   catch { return {}; }
+}
+
+function readActivity() {
+  try {
+    const cfg = readConfig();
+    const v = process.env.CLAWPET_ACTIVITY || cfg.activity || "balanced";
+    return ["off", "minimal", "balanced", "expressive", "maximum"].includes(v) ? v : "balanced";
+  } catch {
+    return process.env.CLAWPET_ACTIVITY || "balanced";
+  }
+}
+
+function mapActivityToDaemonVoice(activity) {
+  switch (activity) {
+    case "off": return "silent";
+    case "minimal":
+    case "balanced": return "lite";
+    case "expressive":
+    case "maximum": return "vivid";
+    default: return DEFAULT_DAEMON_VOICE;
+  }
+}
+
+function readDaemonVoice() {
+  const cfg = readConfig();
+  const env = process.env.CLAWPET_DAEMON_VOICE;
+  if (env && DAEMON_VOICE_LEVELS.includes(env)) return env;
+  if (cfg.daemonVoice && DAEMON_VOICE_LEVELS.includes(cfg.daemonVoice)) return cfg.daemonVoice;
+  return mapActivityToDaemonVoice(readActivity());
 }
 
 let lastAvatarReconcileAt = 0;
@@ -107,54 +147,34 @@ function reconcileDesiredAvatar(force = false) {
   callClawpet(["avatar", "push", dir]);
 }
 
-function dispatchToolReaction(toolName) {
+let lastBubbleByEvent = new Map();
+
+function dispatchDaemonEvent(eventName, seedSuffix = "") {
   const now = Date.now();
   if (now - lastDispatchAt < DISPATCH_THROTTLE_MS) return;
   lastDispatchAt = now;
-  const cfg = TOOL_REACTIONS[toolName] || TOOL_REACTIONS.__default__;
-  const bubble = Array.isArray(cfg.bubble) ? pickBubble(cfg.bubble, toolName) : cfg.bubble;
-  // We use `send` directly with state because tool reactions are tool-name
-  // specific and don't all map cleanly onto react event keys. Activity gating
-  // is enforced by passing through `react thinking`/`react long-task`/`react user-message`
-  // when possible; for tool-specific copy we apply our own gate here.
-  const activity = readActivity();
-  if (!levelAllows(activity, cfg.minLevel)) return;
+  const daemonVoice = readDaemonVoice();
+  if (daemonVoice === "silent") return;
+  const cfg = DAEMON_EVENTS[eventName] || DAEMON_EVENTS.__default__;
+  const pool = cfg[daemonVoice] || cfg.vivid || cfg.lite;
+  const lastPhrase = lastBubbleByEvent.get(eventName);
+  const bubble = pickPhrase(pool, `${eventName}:${seedSuffix || now}`, lastPhrase);
+  if (!bubble) return;
+  lastBubbleByEvent.set(eventName, bubble);
   callClawpet(["send", cfg.state, bubble, "--bubble", bubble, "--quiet"]);
-  log(`tool ${toolName} -> ${cfg.state} "${bubble}"`);
+  log(`${eventName} -> ${cfg.state} "${bubble}" (${daemonVoice})`);
 }
 
-function dispatchUserMessage() {
-  const now = Date.now();
-  if (now - lastDispatchAt < DISPATCH_THROTTLE_MS) return;
-  lastDispatchAt = now;
-  const bubble = pickBubble(USER_MSG_BUBBLES, "user");
-  callClawpet(["react", "user-message", "--bubble", bubble, "--quiet"]);
-  log(`user message -> ${bubble}`);
+function dispatchToolReaction(toolName, seedSuffix = "") {
+  dispatchDaemonEvent(toolName, seedSuffix || toolName);
 }
 
-function dispatchDone() {
-  const now = Date.now();
-  if (now - lastDispatchAt < DISPATCH_THROTTLE_MS) return;
-  lastDispatchAt = now;
-  const bubble = pickBubble(DONE_BUBBLES, "done");
-  callClawpet(["react", "done", "--bubble", bubble, "--quiet"]);
-  log(`assistant done -> ${bubble}`);
+function dispatchUserMessage(seedSuffix = "user") {
+  dispatchDaemonEvent("user-message", seedSuffix);
 }
 
-// ---------- Activity gate (mirror of CLI logic, kept simple) ----------
-const ACTIVITY_LEVELS = ["off", "minimal", "balanced", "expressive", "maximum"];
-function levelRank(l) { return ACTIVITY_LEVELS.indexOf(l); }
-function levelAllows(current, minRequired) {
-  return current !== "off" && levelRank(current) >= levelRank(minRequired);
-}
-function readActivity() {
-  try {
-    const cfg = readConfig();
-    const v = process.env.CLAWPET_ACTIVITY || cfg.activity || "balanced";
-    return ACTIVITY_LEVELS.includes(v) ? v : "balanced";
-  } catch {
-    return process.env.CLAWPET_ACTIVITY || "balanced";
-  }
+function dispatchDone(seedSuffix = "done") {
+  dispatchDaemonEvent("done", seedSuffix);
 }
 
 // ---------- Session JSONL discovery ----------
@@ -188,26 +208,25 @@ function classifyLine(line) {
     // reacts before the model finishes thinking or starts tools.
     const hasToolResult = content.some(c => c.type === "tool_result");
     if (hasToolResult) return; // tool result, not a user prompt
-    dispatchUserMessage();
+    dispatchUserMessage(String(evt.message?.id || evt.timestamp || Date.now()));
     return;
   }
 
   if (role === "assistant") {
     const toolCalls = content.filter(c => c.type === "toolCall");
     if (toolCalls.length > 0) {
-      // Fire reaction for the highest-priority tool in this turn.
-      // Order: heavy tools (balanced) > thinking tools (expressive) > others.
-      const ordered = toolCalls.slice().sort((a, b) => {
-        const ra = TOOL_REACTIONS[a.name]?.minLevel || "expressive";
-        const rb = TOOL_REACTIONS[b.name]?.minLevel || "expressive";
-        return levelRank(ra) - levelRank(rb);
-      });
-      dispatchToolReaction(ordered[0].name);
+      // Fire one deterministic daemon reaction for the first tool in this
+      // assistant turn. Phase 1 split removed legacy activity-priority
+      // metadata from the daemon; phrase/state selection now lives entirely in
+      // DAEMON_EVENTS so daemon voice stays separate from OpenClaw expression.
+      const selected = toolCalls[0];
+      const seed = toolCalls.map(c => `${c.name}:${c.id || ""}`).join("|");
+      dispatchToolReaction(selected.name, seed);
       return;
     }
     // No tool calls: assistant produced a final answer.
     const hasText = content.some(c => c.type === "text" && c.text && c.text.trim().length > 0);
-    if (hasText) dispatchDone();
+    if (hasText) dispatchDone(String(evt.message?.id || evt.timestamp || Date.now()));
   }
 }
 
