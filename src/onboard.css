@@ -273,7 +273,14 @@ body.ob-hidden { display: none; }
 }
 
 .clp-card--activity,
-.clp-card--summary { min-height: 0; }
+.clp-card--summary,
+.clp-card--activity-page,
+.clp-card--settings-page { min-height: 0; }
+
+.clp-card--activity-page,
+.clp-card--settings-page {
+  flex: 1;
+}
 
 .clp-cardh {
   display: flex;
@@ -317,6 +324,10 @@ body.ob-hidden { display: none; }
   min-height: 0;
   overflow: auto;
   padding-right: 6px;
+}
+
+.clp-feed--page {
+  min-height: 260px;
 }
 
 .clp-feed--log::-webkit-scrollbar {
@@ -434,6 +445,10 @@ body.ob-hidden { display: none; }
   gap: 6px;
 }
 
+.clp-summary-list--settings {
+  margin-bottom: 8px;
+}
+
 .clp-summary-row {
   display: flex;
   align-items: center;
@@ -467,6 +482,12 @@ body.ob-hidden { display: none; }
   margin-top: 8px;
   padding-top: 8px;
   border-top: 0.5px solid rgba(255,255,255,.05);
+}
+
+.clp-reactivity-panel--page {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
 }
 
 .clp-reactivity-k {
@@ -637,6 +658,10 @@ body.ob-hidden { display: none; }
   gap: 8px;
 }
 
+.clp-cmd-row--stack {
+  margin-top: 10px;
+}
+
 .clp-cmd {
   flex: 1;
   background: #0a0c10;
@@ -679,6 +704,14 @@ body.ob-hidden { display: none; }
   color: rgba(255, 255, 255, 0.45);
   margin-top: 9px;
   letter-spacing: 0.2px;
+}
+
+.clp-mini-note {
+  margin-top: auto;
+  padding-top: 8px;
+  color: rgba(255,255,255,.45);
+  font-size: 11px;
+  border-top: 0.5px solid rgba(255,255,255,.05);
 }
 
 .clp-when-list {

@@ -173,7 +173,11 @@ fn display_host() -> String {
     std::env::var("CLAWPET_DISPLAY_HOST")
         .or_else(|_| std::env::var("COMPUTERNAME"))
         .or_else(|_| std::env::var("HOSTNAME"))
-        .unwrap_or_else(|_| "<display-host>".into())
+        .or_else(|_| hostname::get().map(|s| s.to_string_lossy().into_owned()))
+        .map(|host| host.trim().trim_end_matches(".local").to_string())
+        .ok()
+        .filter(|host| !host.is_empty())
+        .unwrap_or_else(|| "display-host".into())
 }
 
 fn token_path() -> Option<PathBuf> {

@@ -65,7 +65,7 @@ type ReactivitySettings = {
   error?: string | null;
 };
 
-type TabKey = "dashboard" | "pair";
+type TabKey = "status" | "activity" | "settings";
 
 async function fetchJson(url: string, init?: RequestInit) {
   const res = await fetch(url, init);
@@ -183,7 +183,7 @@ function App() {
   const [reactivity, setReactivity] = useState<ReactivitySettings | null>(null);
   const [busy, setBusy] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [tab, setTab] = useState<TabKey>("dashboard");
+  const [tab, setTab] = useState<TabKey>("status");
 
   async function refresh() {
     try {
@@ -246,7 +246,7 @@ function App() {
         body: JSON.stringify({ seconds: 120 }),
       })) as { code: string; expiresAt: number };
       setPair({ active: true, code: p.code, expiresAt: p.expiresAt });
-      setTab("pair");
+      setTab("status");
     } catch (e) {
       setRuntimeError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -280,7 +280,7 @@ function App() {
   const openClawConnected = Boolean(status?.connected);
   const hasOpenClawActivity = Boolean(status?.lastEventAt);
   const openClawReady = hasOpenClawActivity;
-  const displayHost = health?.displayHost || "gladriel:8737";
+  const displayHost = health?.displayHost || "display-host";
   const hostArg = displayHost.includes(":") ? displayHost : `${displayHost}:8737`;
   const avatarId = status?.avatar?.avatarId ?? bundleManifest?.name ?? "unknown";
   const avatarState = (status?.avatar?.state as AvatarState | undefined) ?? "idle";
@@ -331,16 +331,19 @@ function App() {
         </div>
 
         <div className="clp-tabs">
-          <button className={tab === "dashboard" ? "clp-tab active" : "clp-tab"} onClick={() => setTab("dashboard")}>
-            Dashboard
+          <button className={tab === "status" ? "clp-tab active" : "clp-tab"} onClick={() => setTab("status")}>
+            Status
           </button>
-          <button className={tab === "pair" ? "clp-tab active" : "clp-tab"} onClick={() => setTab("pair")}>
-            Pair
+          <button className={tab === "activity" ? "clp-tab active" : "clp-tab"} onClick={() => setTab("activity")}>
+            Activity Log
+          </button>
+          <button className={tab === "settings" ? "clp-tab active" : "clp-tab"} onClick={() => setTab("settings")}>
+            Settings
           </button>
         </div>
 
         <div className="clp-body2">
-          {tab === "dashboard" && (
+          {tab === "status" && (
             <>
               <div className="clp-tele">
                 <div className="clp-tcell">
@@ -354,9 +357,9 @@ function App() {
                   <div className="clp-tx">updated {formatClock(status?.lastEventAt ?? null)}</div>
                 </div>
                 <div className="clp-tcell">
-                  <div className="clp-tl">Host</div>
-                  <div className="clp-tv">{hostArg}</div>
-                  <div className="clp-tx">tailscale · trusted</div>
+                  <div className="clp-tl">Display host</div>
+                  <div className="clp-tv">{displayHost}</div>
+                  <div className="clp-tx">pair target · trusted</div>
                 </div>
                 <div className="clp-tcell">
                   <div className="clp-tl">Runtime</div>
@@ -366,33 +369,6 @@ function App() {
               </div>
 
               <div className="clp-grid">
-                <div className="clp-card clp-card--activity">
-                  <div className="clp-cardh">
-                    <span>Activity log</span>
-                    <span className="clp-cardm"><span className="clp-cardm-d" />{activityBadge}</span>
-                  </div>
-                  <div className="clp-feed clp-feed--log">
-                    {events.length > 0 ? (
-                      events.map((entry) => (
-                        <div className="clp-ev" key={entry.event.eventId}>
-                          <span className={`clp-edot s-${entry.event.state}`} />
-                          <span className="clp-et">{formatClock(entry.receivedAt)}</span>
-                          <span className="clp-em">{summarizeEvent(entry)}</span>
-                          <span className="clp-ed">{eventMeta(entry)}</span>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="clp-empty-log">No events yet. By default this log shows system signals from OpenClaw. OpenClaw expression appears only when expression level is enabled; user-requested appears only for routines or emits Nick explicitly asked for.</div>
-                    )}
-                  </div>
-                  <div className="clp-source-legend" aria-label="Activity log source definitions">
-                    <div><strong>system signal</strong><span>Default zero-token OpenClaw/Clawpet work telemetry. Replaces daemon/runtime labels in the visible log.</span></div>
-                    <div><strong>OpenClaw expression</strong><span>Optional autonomous/contextual avatar remarks controlled by expression level.</span></div>
-                    <div><strong>user-requested</strong><span>Explicit manual emits or routines Nick asked Dawn to perform.</span></div>
-                    <div><strong>rule of thumb</strong><span>The log should mostly be system signal unless expression is enabled or Nick explicitly asks for a routine.</span></div>
-                  </div>
-                </div>
-
                 <div className="clp-card clp-card--summary">
                   <div className="clp-cardh">
                     <span>Health summary</span>
@@ -412,134 +388,145 @@ function App() {
                       <strong className={pair.active ? "clp-summary-v ok" : "clp-summary-v"}>{pair.active && expiresIn !== null ? `${expiresIn}s left` : "inactive"}</strong>
                     </div>
                     <div className="clp-summary-row">
-                      <span className="clp-summary-k">Daemon voice</span>
-                      <strong className={reactivity?.available ? "clp-summary-v ok" : "clp-summary-v muted"}>
-                        {reactivity?.available ? reactivity.daemonVoice ?? "lite" : "waiting"}
-                      </strong>
-                    </div>
-                    <div className="clp-summary-row">
-                      <span className="clp-summary-k">Expression</span>
-                      <strong className={reactivity?.expressionLevel === "off" ? "clp-summary-v muted" : "clp-summary-v ok"}>
-                        {reactivity?.available ? reactivity.expressionLevel ?? "off" : "waiting"}
-                      </strong>
+                      <span className="clp-summary-k">Last event</span>
+                      <strong className={lastEventAge ? "clp-summary-v ok" : "clp-summary-v muted"}>{lastEventAge ?? "none"}</strong>
                     </div>
                   </div>
-                  <div className="clp-reactivity-panel">
-                    <span className="clp-reactivity-k">Daemon voice</span>
-                    <div className="clp-react-track">
-                      {(reactivity?.daemonVoiceLevels?.length ? reactivity.daemonVoiceLevels : ["silent", "lite", "vivid"]).map((level) => (
-                        <div
-                          key={level}
-                          className={reactivity?.daemonVoice === level ? "clp-rstep active" : "clp-rstep"}
-                          aria-disabled="true"
-                          title="Managed by the paired OpenClaw host"
-                        >
-                          {level}
-                        </div>
-                      ))}
-                    </div>
-                    <span className="clp-reactivity-k">Expression level</span>
-                    <div className="clp-react-track clp-react-track--expression">
-                      {(reactivity?.expressionLevels?.length ? reactivity.expressionLevels : ["off", "low", "medium", "high"]).map((level) => (
-                        <div
-                          key={level}
-                          className={reactivity?.expressionLevel === level ? "clp-rstep active" : "clp-rstep"}
-                          aria-disabled="true"
-                          title="Managed by the paired OpenClaw host"
-                        >
-                          {level}
-                        </div>
-                      ))}
-                    </div>
-                    <div className="clp-rrow">
-                      <span>expression behavior</span>
-                      <span className="clp-rrow-x">
-                        {reactivity?.expressionLevel === "off"
-                          ? "silent"
-                          : reactivity?.expressionLevel === "low"
-                            ? "state only"
-                            : reactivity?.expressionLevel === "medium"
-                              ? "distinct preset"
-                              : "contextual"}
-                      </span>
-                    </div>
-                    <div className="clp-rrow">
-                      <span className={reactivity?.heartbeatReactions ? "clp-tg on" : "clp-tg"}><span className="clp-tg-p" /></span>
-                      <span>heartbeat reactions</span>
-                      <span className="clp-rrow-x">{reactivity?.heartbeatReactions ? "on" : "off"}</span>
-                    </div>
-                    <div className="clp-reactivity-note">
-                      Managed by paired OpenClaw host{reactivity?.managedBy ? ` · ${reactivity.managedBy}` : ""}. Legacy activity is hidden; system signal + expression level are the source of truth.
-                    </div>
-                    {reactivity?.error ? <div className="clp-error-inline">{reactivity.error}</div> : null}
-                  </div>
+                  <div className="clp-mini-note">Live avatar remains the only preview for now.</div>
                   {runtimeError && <div className="clp-error-inline">{runtimeError}</div>}
+                </div>
+
+                <div className="clp-card">
+                  <div className="clp-cardh">
+                    <span>Pair code</span>
+                    <span className="clp-cardm">{pair.active && expiresIn !== null ? `${expiresIn}-second window` : "120-second window"}</span>
+                  </div>
+                  <div className="clp-pair-display">
+                    <div className="clp-pair-left">
+                      <div className={pair.active ? "clp-pair-digits clp-pair-digits--live" : "clp-pair-digits"}>{groupedCode}</div>
+                      <div className="clp-pair-help">
+                        {pair.active
+                          ? "Pair window is open now. Run the command below on the OpenClaw host."
+                          : "No active pair window. "}
+                        {!pair.active && <b>Generate</b>} {!pair.active ? "to authorize a new OpenClaw machine." : null}
+                      </div>
+                    </div>
+                    <div className="clp-pair-actions">
+                      <button className="clp-gen-btn" disabled={busy} onClick={() => void startPairMode()}>
+                        {busy ? "Opening…" : pair.active ? "Regenerate" : "Generate"}
+                      </button>
+                      {pair.active && (
+                        <button className="clp-copy clp-copy--ghost" disabled={busy} onClick={() => void cancelPairMode()}>
+                          Cancel
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="clp-cmd-row clp-cmd-row--stack">
+                    <div className="clp-cmd">$ clawpet wizard openclaw --code {pair.code ?? "<code>"} --host {hostArg}</div>
+                    <CopyButton text={openClawCommand} disabled={!pair.code} />
+                  </div>
+                  <div className="clp-cmd-help">Sends the bearer token back over the same connection. Pair window auto-closes on success.</div>
                 </div>
               </div>
             </>
           )}
 
-          {tab === "pair" && (
-            <>
-              <div className="clp-card">
-                <div className="clp-cardh">
-                  <span>Pair code</span>
-                  <span className="clp-cardm">{pair.active && expiresIn !== null ? `${expiresIn}-second window` : "120-second window"}</span>
-                </div>
-                <div className="clp-pair-display">
-                  <div className="clp-pair-left">
-                    <div className={pair.active ? "clp-pair-digits clp-pair-digits--live" : "clp-pair-digits"}>{groupedCode}</div>
-                    <div className="clp-pair-help">
-                      {pair.active
-                        ? "Pair window is open now. Run the command below on the OpenClaw host."
-                        : "No active pair window. "}
-                      {!pair.active && <b>Generate</b>} {!pair.active ? "to authorize a new OpenClaw machine." : null}
+          {tab === "activity" && (
+            <div className="clp-card clp-card--activity-page">
+              <div className="clp-cardh">
+                <span>Activity log</span>
+                <span className="clp-cardm"><span className="clp-cardm-d" />{activityBadge}</span>
+              </div>
+              <div className="clp-feed clp-feed--log clp-feed--page">
+                {events.length > 0 ? (
+                  events.map((entry) => (
+                    <div className="clp-ev" key={entry.event.eventId}>
+                      <span className={`clp-edot s-${entry.event.state}`} />
+                      <span className="clp-et">{formatClock(entry.receivedAt)}</span>
+                      <span className="clp-em">{summarizeEvent(entry)}</span>
+                      <span className="clp-ed">{eventMeta(entry)}</span>
                     </div>
-                  </div>
-                  <div className="clp-pair-actions">
-                    <button className="clp-gen-btn" disabled={busy} onClick={() => void startPairMode()}>
-                      {busy ? "Opening…" : pair.active ? "Regenerate" : "Generate"}
-                    </button>
-                    {pair.active && (
-                      <button className="clp-copy clp-copy--ghost" disabled={busy} onClick={() => void cancelPairMode()}>
-                        Cancel
-                      </button>
-                    )}
-                  </div>
-                </div>
+                  ))
+                ) : (
+                  <div className="clp-empty-log">No events yet. By default this log shows system signal. OpenClaw expression appears only when expression level is enabled; user-requested appears only for routines or emits Nick explicitly asked for.</div>
+                )}
               </div>
+              <div className="clp-source-legend" aria-label="Activity log source definitions">
+                <div><strong>system signal</strong><span>Default zero-token OpenClaw/Clawpet work telemetry. Replaces daemon/runtime labels in the visible log.</span></div>
+                <div><strong>OpenClaw expression</strong><span>Optional autonomous/contextual avatar remarks controlled by expression level.</span></div>
+                <div><strong>user-requested</strong><span>Explicit manual emits or routines Nick asked Dawn to perform.</span></div>
+                <div><strong>rule of thumb</strong><span>The log should mostly be system signal unless expression is enabled or Nick explicitly asks for a routine.</span></div>
+              </div>
+            </div>
+          )}
 
-              <div className="clp-card">
-                <div className="clp-cardh">
-                  <span>Run on the OpenClaw machine</span>
-                  <span className="clp-cardm">copies command with code filled in</span>
-                </div>
-                <div className="clp-cmd-row">
-                  <div className="clp-cmd">$ clawpet wizard openclaw --code {pair.code ?? "<code>"} --host {hostArg}</div>
-                  <CopyButton text={openClawCommand} disabled={!pair.code} />
-                </div>
-                <div className="clp-cmd-help">Sends the bearer token back over the same connection. Pair window auto-closes on success.</div>
+          {tab === "settings" && (
+            <div className="clp-card clp-card--settings-page">
+              <div className="clp-cardh">
+                <span>Settings</span>
+                <span className="clp-cardm">OpenClaw-managed</span>
               </div>
-
-              <div className="clp-card">
-                <div className="clp-cardh">
-                  <span>When to pair</span>
+              <div className="clp-summary-list clp-summary-list--settings">
+                <div className="clp-summary-row">
+                  <span className="clp-summary-k">Daemon voice</span>
+                  <strong className={reactivity?.available ? "clp-summary-v ok" : "clp-summary-v muted"}>{reactivity?.available ? reactivity.daemonVoice ?? "lite" : "waiting"}</strong>
                 </div>
-                <ul className="clp-when-list">
-                  <li><span className="clp-when-dot" />First-time setup between an OpenClaw host and this target.</li>
-                  <li><span className="clp-when-dot" />The pet is yellow and not reacting to OpenClaw activity.</li>
-                  <li><span className="clp-when-dot" />You cleared or rotated tokens on either side.</li>
-                </ul>
+                <div className="clp-summary-row">
+                  <span className="clp-summary-k">Expression</span>
+                  <strong className={reactivity?.expressionLevel === "off" ? "clp-summary-v muted" : "clp-summary-v ok"}>{reactivity?.available ? reactivity.expressionLevel ?? "off" : "waiting"}</strong>
+                </div>
               </div>
-
-              <div className="clp-foot">
-                <span>loopback trusted</span>
-                <span className="clp-foot-sep">·</span>
-                <span>runtime {runtimeLabel}</span>
-                <span className="clp-foot-sep">·</span>
-                <span>{bundleManifest?.states ? `${Object.keys(bundleManifest.states).length} states` : "no bundle metadata"}</span>
+              <div className="clp-reactivity-panel clp-reactivity-panel--page">
+                <span className="clp-reactivity-k">Daemon voice</span>
+                <div className="clp-react-track">
+                  {(reactivity?.daemonVoiceLevels?.length ? reactivity.daemonVoiceLevels : ["silent", "lite", "vivid"]).map((level) => (
+                    <div
+                      key={level}
+                      className={reactivity?.daemonVoice === level ? "clp-rstep active" : "clp-rstep"}
+                      aria-disabled="true"
+                      title="Managed by the paired OpenClaw host"
+                    >
+                      {level}
+                    </div>
+                  ))}
+                </div>
+                <span className="clp-reactivity-k">Expression level</span>
+                <div className="clp-react-track clp-react-track--expression">
+                  {(reactivity?.expressionLevels?.length ? reactivity.expressionLevels : ["off", "low", "medium", "high"]).map((level) => (
+                    <div
+                      key={level}
+                      className={reactivity?.expressionLevel === level ? "clp-rstep active" : "clp-rstep"}
+                      aria-disabled="true"
+                      title="Managed by the paired OpenClaw host"
+                    >
+                      {level}
+                    </div>
+                  ))}
+                </div>
+                <div className="clp-rrow">
+                  <span>expression behavior</span>
+                  <span className="clp-rrow-x">
+                    {reactivity?.expressionLevel === "off"
+                      ? "silent"
+                      : reactivity?.expressionLevel === "low"
+                        ? "state only"
+                        : reactivity?.expressionLevel === "medium"
+                          ? "distinct preset"
+                          : "contextual"}
+                  </span>
+                </div>
+                <div className="clp-rrow">
+                  <span className={reactivity?.heartbeatReactions ? "clp-tg on" : "clp-tg"}><span className="clp-tg-p" /></span>
+                  <span>heartbeat reactions</span>
+                  <span className="clp-rrow-x">{reactivity?.heartbeatReactions ? "on" : "off"}</span>
+                </div>
+                <div className="clp-reactivity-note">
+                  Managed by paired OpenClaw host{reactivity?.managedBy ? ` · ${reactivity.managedBy}` : ""}. Legacy activity is hidden; system signal + expression level are the source of truth.
+                </div>
+                {reactivity?.error ? <div className="clp-error-inline">{reactivity.error}</div> : null}
               </div>
-            </>
+            </div>
           )}
         </div>
       </section>
