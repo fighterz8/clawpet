@@ -144,8 +144,8 @@ export class RuntimeStateStore {
     const explicit = metadataNumber(event, "lingerMs");
     if (explicit !== undefined) return clampLingerMs(explicit);
     if (typeof event.ttlMs === "number" && Number.isFinite(event.ttlMs)) return clampLingerMs(event.ttlMs);
-    if (sourceClass === "user-requested") return 12_000;
-    if (sourceClass === "OpenClaw expression") return 8_000;
+    if (sourceClass === "user-requested") return 14_000;
+    if (sourceClass === "OpenClaw expression") return 10_000;
     if (event.state === "happy") return this.terminalLingerMs;
     return Math.min(this.activeLingerMs, 2_000);
   }

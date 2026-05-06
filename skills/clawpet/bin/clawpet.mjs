@@ -400,7 +400,7 @@ async function cmdSend(positional, flags) {
     ...(bubble ? { bubble } : {}),
     metadata: {
       sourceClass,
-      lingerMs: sourceClass === "user-requested" ? 12000 : 2000,
+      lingerMs: sourceClass === "user-requested" ? 14000 : 2000,
     },
   };
 
@@ -471,7 +471,7 @@ async function cmdReact(positional, flags) {
     ...(bubble !== undefined ? { bubble: bubble.slice(0, MAX_BUBBLE_LENGTH) } : {}),
     metadata: {
       sourceClass,
-      lingerMs: isDaemonEmit ? 2000 : 8000,
+      lingerMs: isDaemonEmit ? 2000 : 10000,
     },
   };
   const url = resolveRuntimeUrl();
