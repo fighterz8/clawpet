@@ -98,15 +98,15 @@ struct ReactivityMirror {
     activity_legacy: Option<String>,
     #[serde(rename = "daemonVoice")]
     daemon_voice: Option<String>,
-    #[serde(rename = "daemonVoiceLevels")]
+    #[serde(rename = "daemonVoiceLevels", default)]
     daemon_voice_levels: Vec<String>,
     #[serde(rename = "expressionLevel")]
     expression_level: Option<String>,
-    #[serde(rename = "expressionLevels")]
+    #[serde(rename = "expressionLevels", default)]
     expression_levels: Vec<String>,
     #[serde(rename = "heartbeatReactions")]
     heartbeat_reactions: Option<bool>,
-    #[serde(rename = "activityLevels")]
+    #[serde(rename = "activityLevels", default)]
     activity_levels: Vec<String>,
     writable: bool,
     #[serde(rename = "managedBy")]

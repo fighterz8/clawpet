@@ -159,18 +159,20 @@ Without separation, the system becomes confusing:
 
 Clean split:
 
-- **daemon voice** = what OpenClaw is doing
-- **OpenClaw expression** = what the avatar thinks about what is happening
+- **runtime** = local Clawpet app/runtime events: startup, demo, validation, pair/runtime internals. These are not Dawn thinking and should be rare in normal use.
+- **daemon voice** = zero-token mirror of OpenClaw's structured JSONL/tool/session stream: reading files, running commands, checking output, finishing. This is the reliable ambient work signal.
+- **OpenClaw expression** = optional autonomous/contextual avatar remarks controlled by expression level. These may use tokens and should stop completely when expression is off.
+- **user-requested** = explicit manual emits or routines Nick asked for, such as “celebrate when we finish a task.” These should appear only because the user requested them.
 
 ---
 
 ## Proposed settings model
 
-### Existing setting to replace/refine
+### Removed user-facing setting
 
-Current `activity` setting mixes density and tone too much.
+Legacy `activity` mixed density, tone, and expression. It should no longer appear as a primary user-facing setting. Keep it only as a backwards-compatible internal/CLI alias while migrating.
 
-### Proposed new config fields
+### Source-of-truth config fields
 
 ```json
 {

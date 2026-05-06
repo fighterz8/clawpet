@@ -749,3 +749,37 @@ body.ob-hidden { display: none; }
   }
   .clp-ed { display: none; }
 }
+
+.clp-source-legend {
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 0.5px solid rgba(255,255,255,.06);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.clp-source-legend div {
+  min-width: 0;
+  padding: 7px 8px;
+  border: 0.5px solid rgba(255,255,255,.06);
+  border-radius: 6px;
+  background: rgba(255,255,255,.025);
+}
+
+.clp-source-legend strong {
+  display: block;
+  margin-bottom: 3px;
+  color: #f4a261;
+  font-size: 9.5px;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+}
+
+.clp-source-legend span {
+  display: block;
+  color: rgba(255,255,255,.46);
+  font-size: 9.5px;
+  line-height: 1.3;
+}

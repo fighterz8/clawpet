@@ -60,13 +60,13 @@ async function syncReactivityMirror() {
   if (!url || !token) return { ok: false, skipped: true, reason: "runtime not paired yet" };
   const payload = {
     available: true,
-    activity: resolveActivity(),
     activityLegacy: resolveActivity(),
     daemonVoice: resolveDaemonVoice(),
     daemonVoiceLevels: DAEMON_VOICE_LEVELS,
     expressionLevel: resolveExpressionLevel(),
     expressionLevels: EXPRESSION_LEVELS,
     heartbeatReactions: resolveHeartbeatReactions(),
+    // Compatibility for older runtimes; hidden from the user-facing console.
     activityLevels: ACTIVITY_LEVELS,
     writable: false,
     managedBy: "openclaw-host",
@@ -212,7 +212,7 @@ Usage:
   clawpet status
   clawpet send <state> [message] [--bubble TEXT] [--quiet]
   clawpet react <event> [--bubble TEXT] [--quiet]   # event: user-message|tool-start|tool-error|blocker|done|long-task|thinking
-  clawpet activity [off|minimal|balanced|expressive|maximum]
+  clawpet activity [off|minimal|balanced|expressive|maximum]  # deprecated legacy alias
   clawpet daemon-voice [silent|lite|vivid]
   clawpet expression-level [off|low|medium|high]
   clawpet heartbeat-reactions [on|off]              # default off
@@ -278,7 +278,7 @@ async function cmdWizard(positional, flags) {
     console.log("Run this on the OpenClaw machine after the display machine shows a pair code.\n");
     console.log("Usage:");
     console.log("  clawpet wizard openclaw --code <6-digit-code> --host <display-host>:8737");
-    console.log("\nThis will pair, set balanced activity, disable heartbeat flashes, start the daemon, and send a test bubble.");
+    console.log("\nThis will pair, sync daemon/expression settings, disable heartbeat flashes, start the daemon, and send a test bubble.");
     return;
   }
 
@@ -730,7 +730,7 @@ function cmdConfig() {
   console.log(JSON.stringify({
     runtimeUrl: resolveRuntimeUrl(),
     runtimeTokenSet: Boolean(resolveRuntimeToken()),
-    activity: resolveActivity(),
+    activityLegacy: resolveActivity(),
     daemonVoice: resolveDaemonVoice(),
     expressionLevel: resolveExpressionLevel(),
     heartbeatReactions: resolveHeartbeatReactions(),
@@ -742,7 +742,6 @@ function cmdConfig() {
     envDaemonVoiceOverride: Boolean(process.env.CLAWPET_DAEMON_VOICE),
     envExpressionLevelOverride: Boolean(process.env.CLAWPET_EXPRESSION_LEVEL),
     states: STATES,
-    activityLevels: ACTIVITY_LEVELS,
     daemonVoiceLevels: DAEMON_VOICE_LEVELS,
     expressionLevels: EXPRESSION_LEVELS,
   }, null, 2));

@@ -53,14 +53,13 @@ type RuntimeEventEntry = {
 
 type ReactivitySettings = {
   available: boolean;
-  activity?: string | null;
   activityLegacy?: string | null;
   daemonVoice?: string | null;
   daemonVoiceLevels?: string[];
   expressionLevel?: string | null;
   expressionLevels?: string[];
   heartbeatReactions?: boolean | null;
-  activityLevels: string[];
+  activityLevels?: string[];
   writable?: boolean;
   managedBy?: string | null;
   error?: string | null;
@@ -218,7 +217,6 @@ function App() {
       } catch (e) {
         setReactivity({
           available: false,
-          activityLevels: ["off", "minimal", "balanced", "expressive", "maximum"],
           error: e instanceof Error ? e.message : String(e),
         });
       }
@@ -304,7 +302,7 @@ function App() {
         ? "WAITING"
         : "OFFLINE";
   const heartbeatModeClass = openClawReady ? "clp-ekg clp-ekg--live" : "clp-ekg clp-ekg--flat";
-  const activityBadge = "daemon voice · expression · user-requested";
+  const activityBadge = "source labels are user-facing truth";
 
   return (
     <main className="clp-shell">
@@ -367,7 +365,7 @@ function App() {
               <div className="clp-grid">
                 <div className="clp-card clp-card--activity">
                   <div className="clp-cardh">
-                    <span>Activity</span>
+                    <span>Activity log</span>
                     <span className="clp-cardm"><span className="clp-cardm-d" />{activityBadge}</span>
                   </div>
                   <div className="clp-feed clp-feed--log">
@@ -381,21 +379,14 @@ function App() {
                         </div>
                       ))
                     ) : (
-                      <div className="clp-empty-log">No daemon events yet. Once OpenClaw emits avatar activity, it will stream here.</div>
+                      <div className="clp-empty-log">No events yet. Daemon voice, OpenClaw expression, user-requested, and runtime events will appear here with distinct labels.</div>
                     )}
                   </div>
-                  <div className="clp-hb clp-hb--signal">
-                    <span className="clp-hb-l">signal</span>
-                    <span className={heartbeatModeClass} aria-hidden="true">
-                      <svg viewBox="0 0 120 16" preserveAspectRatio="none">
-                        {openClawReady ? (
-                          <polyline points="0,9 12,9 18,9 24,4 30,14 38,2 46,9 60,9 68,9 74,5 80,12 88,3 96,9 120,9" />
-                        ) : (
-                          <polyline points="0,9 120,9" />
-                        )}
-                      </svg>
-                    </span>
-                    <span className="clp-hb-s">{openClawReady ? "live" : openClawConnected ? "paired" : "flat"}</span>
+                  <div className="clp-source-legend" aria-label="Activity log source definitions">
+                    <div><strong>daemon voice</strong><span>JSONL/tool/session mirror from OpenClaw. Zero-token ambient work signals.</span></div>
+                    <div><strong>OpenClaw expression</strong><span>Optional autonomous/contextual avatar remarks controlled by expression level.</span></div>
+                    <div><strong>user-requested</strong><span>Explicit manual emits or routines Nick asked Dawn to perform.</span></div>
+                    <div><strong>runtime</strong><span>Local Clawpet app/runtime startup, demo, validation, or internal events.</span></div>
                   </div>
                 </div>
 
@@ -418,9 +409,15 @@ function App() {
                       <strong className={pair.active ? "clp-summary-v ok" : "clp-summary-v"}>{pair.active && expiresIn !== null ? `${expiresIn}s left` : "inactive"}</strong>
                     </div>
                     <div className="clp-summary-row">
-                      <span className="clp-summary-k">Reactivity</span>
+                      <span className="clp-summary-k">Daemon voice</span>
                       <strong className={reactivity?.available ? "clp-summary-v ok" : "clp-summary-v muted"}>
-                        {reactivity?.available ? reactivity.activity ?? "balanced" : "waiting"}
+                        {reactivity?.available ? reactivity.daemonVoice ?? "lite" : "waiting"}
+                      </strong>
+                    </div>
+                    <div className="clp-summary-row">
+                      <span className="clp-summary-k">Expression</span>
+                      <strong className={reactivity?.expressionLevel === "off" ? "clp-summary-v muted" : "clp-summary-v ok"}>
+                        {reactivity?.available ? reactivity.expressionLevel ?? "off" : "waiting"}
                       </strong>
                     </div>
                   </div>
@@ -469,7 +466,7 @@ function App() {
                       <span className="clp-rrow-x">{reactivity?.heartbeatReactions ? "on" : "off"}</span>
                     </div>
                     <div className="clp-reactivity-note">
-                      Managed by paired OpenClaw host{reactivity?.managedBy ? ` · ${reactivity.managedBy}` : ""}{reactivity?.activityLegacy ? ` · legacy activity ${reactivity.activityLegacy}` : ""}
+                      Managed by paired OpenClaw host{reactivity?.managedBy ? ` · ${reactivity.managedBy}` : ""}. Legacy activity is hidden; daemon voice + expression level are the source of truth.
                     </div>
                     {reactivity?.error ? <div className="clp-error-inline">{reactivity.error}</div> : null}
                   </div>
