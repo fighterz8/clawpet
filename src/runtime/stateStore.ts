@@ -117,7 +117,7 @@ export class RuntimeStateStore {
     this.mode = options.mode ?? "local";
     this.avatarId = options.avatarId ?? "dawn-v0";
     this.bundleVersion = options.bundleVersion ?? "0.1.0";
-    this.maxEvents = options.maxEvents ?? 50;
+    this.maxEvents = options.maxEvents ?? 200;
     this.now = options.now ?? (() => new Date());
     this.terminalLingerMs = options.terminalLingerMs ?? 8000;
     this.activeLingerMs = options.activeLingerMs ?? 45 * 1000;

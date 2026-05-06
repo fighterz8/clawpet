@@ -207,7 +207,7 @@ function App() {
       }
       try {
         const e = (await fetchJson(`${RUNTIME_URL}/events`)) as { events: RuntimeEventEntry[] };
-        setEvents(Array.isArray(e.events) ? e.events.slice(0, 8) : []);
+        setEvents(Array.isArray(e.events) ? e.events : []);
       } catch {
         setEvents([]);
       }
@@ -309,6 +309,20 @@ function App() {
         : "OFFLINE";
   const heartbeatModeClass = openClawReady ? "clp-ekg clp-ekg--live" : "clp-ekg clp-ekg--flat";
   const activityBadge = "source labels are user-facing truth";
+  const exportedLog = useMemo(
+    () => JSON.stringify({ exportedAt: new Date().toISOString(), eventCount: events.length, events }, null, 2),
+    [events],
+  );
+
+  function exportLog() {
+    const blob = new Blob([exportedLog], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `clawpet-activity-log-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
 
   return (
     <main className="clp-shell">
@@ -455,6 +469,7 @@ function App() {
               <div className="clp-cardh">
                 <span>Activity log</span>
                 <span className="clp-cardm"><span className="clp-cardm-d" />{activityBadge}</span>
+                <button className="clp-copy clp-copy--ghost clp-export" disabled={!events.length} onClick={exportLog}>Export JSON</button>
               </div>
               <div className="clp-feed clp-feed--log clp-feed--page">
                 {events.length > 0 ? (
@@ -473,8 +488,8 @@ function App() {
               <div className="clp-source-legend" aria-label="Activity log source definitions">
                 <div><strong>system signal</strong><span>Default zero-token OpenClaw/Clawpet work telemetry. Replaces daemon/runtime labels in the visible log.</span></div>
                 <div><strong>OpenClaw expression</strong><span>Optional autonomous/contextual avatar remarks controlled by expression level.</span></div>
-                <div><strong>user-requested</strong><span>Explicit manual emits or routines Nick asked Dawn to perform.</span></div>
-                <div><strong>rule of thumb</strong><span>The log should mostly be system signal unless expression is enabled or Nick explicitly asks for a routine.</span></div>
+                <div><strong>user-requested</strong><span>Explicit manual emits or routines the user asked the pet to perform.</span></div>
+                <div><strong>rule of thumb</strong><span>The log should mostly be system signal unless expression is enabled or the user explicitly asks for a routine.</span></div>
               </div>
             </div>
           )}

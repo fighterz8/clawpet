@@ -298,6 +298,7 @@ body.ob-hidden { display: none; }
   letter-spacing: 1.4px;
   text-transform: uppercase;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  flex-wrap: wrap;
 }
 
 .clp-cardm {
@@ -334,6 +335,10 @@ body.ob-hidden { display: none; }
 
 .clp-feed--page {
   min-height: 260px;
+}
+
+.clp-export {
+  margin-left: auto;
 }
 
 .clp-feed--log::-webkit-scrollbar {
