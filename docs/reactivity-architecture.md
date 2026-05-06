@@ -159,13 +159,11 @@ Without separation, the system becomes confusing:
 
 Clean split:
 
-- **system signal** = zero-token non-expressive plumbing. This includes:
-  - **daemon** sub-source: mirror of OpenClaw's structured JSONL/tool/session stream: reading files, running commands, checking output, finishing.
-  - **runtime** sub-source: local Clawpet app/runtime events: startup, demo, validation, pair/runtime internals.
+- **system signal** = zero-token non-expressive OpenClaw/Clawpet work telemetry. This includes daemon JSONL/tool/session mirroring and local runtime plumbing, but the user-facing log should not present runtime as a separate voice.
 - **OpenClaw expression** = optional autonomous/contextual avatar remarks controlled by expression level. These may use tokens and should stop completely when expression is off.
 - **user-requested** = explicit manual emits or routines Nick asked for, such as “celebrate when we finish a task.” These should appear only because the user requested them.
 
-Runtime and daemon are intentionally grouped in the user-facing activity log as `system signal` because neither is an expressive/manual avatar decision. The sub-label can preserve provenance (`daemon` vs `runtime`) without making them feel like competing voices.
+Runtime and daemon are intentionally grouped in the user-facing activity log as `system signal` because neither is an expressive/manual avatar decision. Internal provenance can remain in raw payloads, but the visible log should not make runtime feel like a separate speaker.
 
 ---
 
@@ -380,8 +378,7 @@ Keep as separate toggle.
 
 Show source clearly:
 
-- `system signal · daemon` — JSONL/tool/session mirror from the sidecar daemon
-- `system signal · runtime` — local runtime/demo/internal events
+- `system signal` — zero-token daemon/runtime work telemetry and plumbing
 - `OpenClaw expression` — optional autonomous/contextual expression layer
 - `user-requested` — explicit one-off/manual/routine emits requested by the user
 

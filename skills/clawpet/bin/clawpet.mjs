@@ -361,8 +361,11 @@ function resolveEmitSource(mode = "send") {
   }
   return {
     kind: "openclaw",
-    displayName: "user-requested manual emit",
-    instanceId: "clawpet-user-requested-manual",
+    // Direct CLI sends are usually setup/test/plumbing. Only explicitly
+    // requested routines should surface as user-requested, via
+    // CLAWPET_EMIT_SOURCE=user-requested.
+    displayName: source === "user-requested" ? "user-requested" : "system signal",
+    instanceId: source === "user-requested" ? "clawpet-user-requested" : "clawpet-system-signal-direct",
   };
 }
 
@@ -376,8 +379,8 @@ async function cmdSend(positional, flags) {
   if (bubble && bubble.length > MAX_BUBBLE_LENGTH) fail(`send: --bubble must be <= ${MAX_BUBBLE_LENGTH} chars`);
   if (message && message.length > 280) fail("send: message must be <= 280 chars");
 
-  // User-controlled activity gate. `send` is treated as a manual emit; it fires
-  // at minimal+ but is suppressed at 'off'.
+  // Direct sends are setup/test/plumbing by default; explicit user-requested
+  // routines can mark CLAWPET_EMIT_SOURCE=user-requested.
   const activity = resolveActivity();
   if (activity === "off") {
     if (!quiet) console.log(JSON.stringify({ ok: true, suppressed: true, reason: "activity is 'off'" }));
