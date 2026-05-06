@@ -36,16 +36,16 @@ body.ob-hidden { display: none; }
 }
 
 .clp-h {
-  padding: 13px 18px;
+  padding: 10px 16px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   border-bottom: 0.5px solid rgba(255, 255, 255, 0.05);
 }
 
 .clp-mark {
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   background: #14181f;
   border: 0.5px solid rgba(255, 255, 255, 0.08);
   border-radius: 7px;
@@ -63,7 +63,7 @@ body.ob-hidden { display: none; }
 
 .clp-name {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   letter-spacing: 3px;
   color: #f4a261;
@@ -73,20 +73,20 @@ body.ob-hidden { display: none; }
 
 .clp-ver {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 10px;
+  font-size: 9px;
   color: rgba(255, 255, 255, 0.45);
-  letter-spacing: 1px;
-  padding: 2px 7px;
+  letter-spacing: 0.9px;
+  padding: 2px 6px;
   background: rgba(255, 255, 255, 0.04);
   border: 0.5px solid rgba(255, 255, 255, 0.08);
   border-radius: 4px;
 }
 
 .clp-sub {
-  font-size: 9px;
+  font-size: 8px;
   color: rgba(255, 255, 255, 0.4);
-  letter-spacing: 1.4px;
-  margin-top: 5px;
+  letter-spacing: 1.2px;
+  margin-top: 3px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
@@ -94,10 +94,10 @@ body.ob-hidden { display: none; }
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   background: rgba(93, 202, 165, 0.1);
   border: 0.5px solid rgba(93, 202, 165, 0.3);
-  padding: 5px 11px;
+  padding: 4px 9px;
   border-radius: 999px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 10px;
@@ -119,8 +119,8 @@ body.ob-hidden { display: none; }
 }
 
 .clp-icon {
-  width: 30px;
-  height: 30px;
+  width: 26px;
+  height: 26px;
   display: grid;
   place-items: center;
   align-self: center;
@@ -140,15 +140,15 @@ body.ob-hidden { display: none; }
 
 .clp-tabs {
   display: flex;
-  padding: 0 18px;
+  padding: 0 16px;
   border-bottom: 0.5px solid rgba(255, 255, 255, 0.05);
   background: #0f1218;
 }
 
 .clp-tab {
   appearance: none;
-  padding: 10px 0 9px;
-  margin-right: 22px;
+  padding: 8px 0 7px;
+  margin-right: 18px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 11px;
   letter-spacing: 1.4px;
@@ -180,7 +180,7 @@ body.ob-hidden { display: none; }
 }
 
 .clp-body2 {
-  padding: 14px 18px;
+  padding: 10px 16px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -191,11 +191,11 @@ body.ob-hidden { display: none; }
 .clp-tele {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
+  gap: 6px;
 }
 
 .clp-tcell {
-  padding: 10px 12px;
+  padding: 8px 10px;
   background: #11141a;
   border: 0.5px solid rgba(255, 255, 255, 0.06);
   border-radius: 7px;
@@ -214,9 +214,9 @@ body.ob-hidden { display: none; }
 }
 
 .clp-tv {
-  font-size: 13px;
+  font-size: 12px;
   color: #e8e9ec;
-  margin-top: 4px;
+  margin-top: 3px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   display: flex;
   align-items: center;
@@ -227,9 +227,9 @@ body.ob-hidden { display: none; }
 }
 
 .clp-tx {
-  font-size: 9.5px;
+  font-size: 9px;
   color: rgba(255, 255, 255, 0.4);
-  margin-top: 3px;
+  margin-top: 2px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing: 0.3px;
   overflow: hidden;
@@ -266,7 +266,7 @@ body.ob-hidden { display: none; }
   background: #11141a;
   border: 0.5px solid rgba(255, 255, 255, 0.06);
   border-radius: 8px;
-  padding: 12px 14px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -279,7 +279,7 @@ body.ob-hidden { display: none; }
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 11px;
+  margin-bottom: 8px;
   font-size: 10.5px;
   color: rgba(255, 255, 255, 0.55);
   letter-spacing: 1.4px;
@@ -309,7 +309,7 @@ body.ob-hidden { display: none; }
 .clp-feed {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 5px;
 }
 
 .clp-feed--log {
@@ -330,8 +330,8 @@ body.ob-hidden { display: none; }
 
 .clp-ev {
   display: grid;
-  grid-template-columns: 8px 72px minmax(0, 1fr) minmax(124px, auto);
-  gap: 10px;
+  grid-template-columns: 8px 66px minmax(0, 1fr) minmax(116px, auto);
+  gap: 8px;
   align-items: center;
   font-size: 11px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -364,7 +364,7 @@ body.ob-hidden { display: none; }
 
 .clp-hb {
   margin-top: auto;
-  padding-top: 11px;
+  padding-top: 8px;
   border-top: 0.5px solid rgba(255, 255, 255, 0.05);
   display: flex;
   align-items: center;
@@ -431,7 +431,7 @@ body.ob-hidden { display: none; }
 .clp-summary-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .clp-summary-row {
@@ -439,7 +439,7 @@ body.ob-hidden { display: none; }
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 8px 10px;
+  padding: 6px 8px;
   background: #0d1015;
   border: 0.5px solid rgba(255,255,255,.05);
   border-radius: 6px;
@@ -464,14 +464,14 @@ body.ob-hidden { display: none; }
 .clp-summary-v.muted { color: rgba(255,255,255,.42); }
 
 .clp-reactivity-panel {
-  margin-top: 10px;
-  padding-top: 11px;
+  margin-top: 8px;
+  padding-top: 8px;
   border-top: 0.5px solid rgba(255,255,255,.05);
 }
 
 .clp-reactivity-k {
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   font-size: 9px;
   color: rgba(255,255,255,.42);
   letter-spacing: 1.2px;
@@ -481,13 +481,13 @@ body.ob-hidden { display: none; }
 
 .clp-react-track {
   display: flex;
-  gap: 6px;
-  margin-bottom: 8px;
+  gap: 5px;
+  margin-bottom: 6px;
 }
 
 .clp-rstep {
   flex: 1;
-  padding: 7px 4px;
+  padding: 6px 3px;
   text-align: center;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 10px;
@@ -509,8 +509,8 @@ body.ob-hidden { display: none; }
 .clp-rrow {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 9px 10px;
+  gap: 8px;
+  padding: 7px 8px;
   background: #0d1015;
   border: 0.5px solid rgba(255,255,255,.05);
   border-radius: 6px;
