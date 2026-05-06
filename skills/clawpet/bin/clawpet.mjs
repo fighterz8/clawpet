@@ -452,6 +452,16 @@ async function cmdReact(positional, flags) {
       if (!flags.quiet) console.log(JSON.stringify({ ok: true, suppressed: true, reason: "expression level is 'off'" }));
       process.exit(0);
     }
+
+    const hasCustomBubble = typeof flags.bubble === "string" && flags.bubble.trim().length > 0;
+
+    // Routine prompt-start and routine completion should belong to system signal
+    // unless OpenClaw was given an explicitly interpretive/custom line.
+    if ((eventName === "user-message" || eventName === "done") && !hasCustomBubble) {
+      if (!flags.quiet) console.log(JSON.stringify({ ok: true, suppressed: true, reason: `${eventName} expression requires custom contextual text` }));
+      process.exit(0);
+    }
+
     // OpenClaw expression should complement the daemon, not duplicate it.
     // low: state-only signal; medium: short distinct preset; high: caller text allowed.
     if (expressionLevel === "low") bubble = "";
