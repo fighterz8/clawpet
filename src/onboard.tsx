@@ -273,7 +273,7 @@ function App() {
   const runtimeOnline = Boolean(health?.ok);
   const openClawConnected = Boolean(status?.connected);
   const hasOpenClawActivity = Boolean(status?.lastEventAt);
-  const openClawReady = openClawConnected || hasOpenClawActivity;
+  const openClawReady = hasOpenClawActivity;
   const displayHost = health?.displayHost || "gladriel:8737";
   const hostArg = displayHost.includes(":") ? displayHost : `${displayHost}:8737`;
   const avatarId = status?.avatar?.avatarId ?? bundleManifest?.name ?? "unknown";
@@ -291,7 +291,13 @@ function App() {
     : `clawpet wizard openclaw --code <code> --host ${hostArg}`;
   const expiresIn = pair.expiresAt ? Math.max(0, Math.round((pair.expiresAt - Date.now()) / 1000)) : null;
   const lastEventAge = formatAge(status?.lastEventAt ?? null);
-  const chipLabel = openClawReady ? `LINKED · ${lastEventAge?.toUpperCase() ?? "LIVE"}` : runtimeOnline ? "WAITING" : "OFFLINE";
+  const chipLabel = openClawReady
+    ? `ACTIVE · ${lastEventAge?.toUpperCase() ?? "LIVE"}`
+    : openClawConnected
+      ? "PAIRED · WAITING"
+      : runtimeOnline
+        ? "WAITING"
+        : "OFFLINE";
   const heartbeatModeClass = openClawReady ? "clp-ekg clp-ekg--live" : "clp-ekg clp-ekg--flat";
   const activityBadge = status?.pairedOpenClaw?.displayName || status?.pairedOpenClaw?.instanceId || "live daemon";
 
@@ -384,7 +390,7 @@ function App() {
                         )}
                       </svg>
                     </span>
-                    <span className="clp-hb-s">{openClawReady ? "live" : "flat"}</span>
+                    <span className="clp-hb-s">{openClawReady ? "live" : openClawConnected ? "paired" : "flat"}</span>
                   </div>
                 </div>
 

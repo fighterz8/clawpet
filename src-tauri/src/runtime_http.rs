@@ -13,6 +13,8 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
+use time::{format_description::well_known::Rfc3339, OffsetDateTime};
+
 #[derive(Clone, Serialize)]
 struct AvatarStatus {
     #[serde(rename = "avatarId")]
@@ -152,7 +154,9 @@ fn now_ms() -> u128 {
         .as_millis()
 }
 fn now_iso() -> String {
-    format!("{}", now_ms())
+    OffsetDateTime::now_utc()
+        .format(&Rfc3339)
+        .unwrap_or_else(|_| format!("{}", now_ms()))
 }
 fn random_string(n: usize) -> String {
     rand::thread_rng()
@@ -413,7 +417,7 @@ pub fn start_runtime_server() {
                 runtime_id: "clawpet-tauri-runtime".into(),
                 device_name: "Clawpet Desktop".into(),
                 mode: "desktop-app".into(),
-                connected: true,
+                connected: false,
                 avatar: AvatarStatus {
                     avatar_id: initial_avatar_id,
                     state: "idle".into(),
@@ -576,6 +580,7 @@ fn route(
         }
         s.token = random_string(64);
         persist_token(&s.token);
+        s.status.connected = true;
         s.pair_mode = None;
         return response(200, json!({ "ok": true, "token": s.token }));
     }
@@ -738,6 +743,7 @@ fn route(
             .clone()
             .or(message.clone())
             .unwrap_or_else(|| s.raw_state.clone());
+        s.status.connected = true;
         s.status.avatar.state = s.raw_state.clone();
         s.status.avatar.bubble = s.raw_bubble.clone();
         s.status.last_event_at = Some(received_at.clone());
