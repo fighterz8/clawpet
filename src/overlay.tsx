@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { type AvatarState } from "./contracts/avatarEvent";
 import { loadAvatarBundle, type ResolvedAvatarBundle } from "./avatars/bundle";
 import "./styles.css";
@@ -80,8 +81,25 @@ function OverlayApp() {
 
   // Load an initial bundle immediately; status polling below keeps it current.
   useEffect(() => {
+    document.documentElement.classList.add("clawpet-overlay");
+    document.body.classList.add("clawpet-overlay");
     void refreshBundle();
+    return () => {
+      document.documentElement.classList.remove("clawpet-overlay");
+      document.body.classList.remove("clawpet-overlay");
+    };
   }, []);
+
+  async function startWindowDrag(event: React.PointerEvent) {
+    if (event.button !== 0) return;
+    const target = event.target as HTMLElement | null;
+    if (target?.closest("[data-no-window-drag]")) return;
+    try {
+      await getCurrentWindow().startDragging();
+    } catch {
+      // Browser preview / non-Tauri contexts do not expose native dragging.
+    }
+  }
 
   useEffect(() => {
     async function refresh() {
@@ -122,9 +140,9 @@ function OverlayApp() {
       : "Runtime offline";
 
   return (
-    <main className="overlay-shell" data-tauri-drag-region>
+    <main className="overlay-shell" data-tauri-drag-region onPointerDown={(event) => void startWindowDrag(event)}>
       <div className={`overlay-floating overlay-floating--${linkState}`} data-tauri-drag-region>
-        <div className={`overlay-link-dot overlay-link-dot--${linkState}`} title={linkLabel} aria-label={linkLabel} />
+        <div className={`overlay-link-dot overlay-link-dot--${linkState}`} title={linkLabel} aria-label={linkLabel} data-no-window-drag />
         <BundleAvatar state={state} bundle={bundle} />
         {online && message && <div className="overlay-floating__bubble">{message}</div>}
         {!online && <div className="overlay-floating__bubble overlay-floating__bubble--warn">Start runtime: npm run runtime:dev</div>}

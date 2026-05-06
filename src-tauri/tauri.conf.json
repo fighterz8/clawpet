@@ -44,6 +44,7 @@
         "fullscreen": false,
         "decorations": false,
         "transparent": true,
+        "backgroundColor": "#00000000",
         "alwaysOnTop": true,
         "skipTaskbar": true,
         "shadow": false,
@@ -53,6 +54,7 @@
     "security": {
       "csp": null
     },
+    "macOSPrivateApi": true,
     "trayIcon": {
       "id": "main",
       "iconPath": "icons/32x32.png",
