@@ -39,6 +39,35 @@ struct Status {
     last_event_at: Option<String>,
 }
 
+#[derive(Clone, Serialize)]
+struct EventSource {
+    #[serde(rename = "displayName")]
+    display_name: Option<String>,
+    #[serde(rename = "instanceId")]
+    instance_id: Option<String>,
+}
+
+#[derive(Clone, Serialize)]
+struct EventPayload {
+    #[serde(rename = "eventId")]
+    event_id: String,
+    #[serde(rename = "sentAt")]
+    sent_at: String,
+    state: String,
+    message: Option<String>,
+    bubble: Option<String>,
+    source: EventSource,
+}
+
+#[derive(Clone, Serialize)]
+struct EventEntry {
+    event: EventPayload,
+    #[serde(rename = "receivedAt")]
+    received_at: String,
+    #[serde(rename = "latencyMs")]
+    latency_ms: Option<u128>,
+}
+
 #[derive(Clone)]
 struct PairMode {
     code: String,
@@ -55,6 +84,7 @@ struct RuntimeState {
     raw_state: String,
     raw_bubble: String,
     last_event_at_ms: Option<u128>,
+    events: Vec<EventEntry>,
 }
 
 #[derive(Deserialize)]
@@ -302,6 +332,7 @@ pub fn start_runtime_server() {
             raw_state: "idle".into(),
             raw_bubble: "idle".into(),
             last_event_at_ms: None,
+            events: Vec::new(),
         }));
 
         let listener = match TcpListener::bind("0.0.0.0:8737") {
@@ -460,6 +491,11 @@ fn route(
         return response(200, serde_json::to_value(&s.status).unwrap());
     }
 
+    if method == "GET" && path == "/events" {
+        let s = state.lock().unwrap();
+        return response(200, json!({ "events": s.events }));
+    }
+
     if method == "GET" && path == "/avatar-bundle/current/avatar.json" {
         let s = state.lock().unwrap();
         if let Some(m) = &s.bundle_manifest {
@@ -582,15 +618,41 @@ fn route(
             Err(_) => return response(400, json!({"ok":false,"errors":["invalid avatar event"]})),
         };
         let mut s = state.lock().unwrap();
+        let received_at = now_iso();
+        let event_id = format!("evt_{}", now_ms());
         s.raw_state = ev.state;
-        s.raw_bubble = ev
-            .bubble
-            .or(ev.message)
+        let bubble = ev.bubble;
+        let message = ev.message;
+        s.raw_bubble = bubble
+            .clone()
+            .or(message.clone())
             .unwrap_or_else(|| s.raw_state.clone());
         s.status.avatar.state = s.raw_state.clone();
         s.status.avatar.bubble = s.raw_bubble.clone();
-        s.status.last_event_at = Some(now_iso());
+        s.status.last_event_at = Some(received_at.clone());
         s.last_event_at_ms = Some(now_ms());
+        let state_name = s.raw_state.clone();
+        s.events.insert(
+            0,
+            EventEntry {
+                event: EventPayload {
+                    event_id,
+                    sent_at: received_at.clone(),
+                    state: state_name,
+                    message,
+                    bubble,
+                    source: EventSource {
+                        display_name: Some("OpenClaw".into()),
+                        instance_id: None,
+                    },
+                },
+                received_at,
+                latency_ms: Some(0),
+            },
+        );
+        if s.events.len() > 50 {
+            s.events.truncate(50);
+        }
         return response(200, json!({ "ok": true, "status": s.status }));
     }
 
