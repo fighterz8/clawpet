@@ -257,13 +257,6 @@ function App() {
   const expiresIn = pair.expiresAt ? Math.max(0, Math.round((pair.expiresAt - Date.now()) / 1000)) : null;
   const lastEventAge = formatAge(status?.lastEventAt ?? null);
   const chipLabel = openClawReady ? `LINKED · ${lastEventAge?.toUpperCase() ?? "LIVE"}` : runtimeOnline ? "WAITING" : "OFFLINE";
-  const firstUsefulAction = !runtimeOnline
-    ? "Runtime offline — check the local app or dev runtime."
-    : !openClawReady
-      ? "Generate a pair code only if the pet stays yellow or silent."
-      : pair.active
-        ? `Pair window open${expiresIn !== null ? ` · ${expiresIn}s left` : ""}.`
-        : "No action needed.";
   const heartbeatModeClass = openClawReady ? "clp-ekg clp-ekg--live" : "clp-ekg clp-ekg--flat";
   const activityBadge = status?.pairedOpenClaw?.displayName || status?.pairedOpenClaw?.instanceId || "live daemon";
 
@@ -393,10 +386,6 @@ function App() {
                       <span className="clp-summary-k">Reactivity</span>
                       <strong className="clp-summary-v muted">not surfaced yet</strong>
                     </div>
-                  </div>
-                  <div className="clp-health-note">
-                    <span className="clp-health-note-k">Next action</span>
-                    <p>{firstUsefulAction}</p>
                   </div>
                   {runtimeError && <div className="clp-error-inline">{runtimeError}</div>}
                 </div>
