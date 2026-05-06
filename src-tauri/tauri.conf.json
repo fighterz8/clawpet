@@ -12,13 +12,13 @@
   "app": {
     "windows": [
       {
-        "title": "Clawpet Setup",
+        "title": "Clawpet",
         "label": "main",
         "url": "/onboard.html",
-        "width": 560,
-        "height": 720,
-        "minWidth": 520,
-        "minHeight": 640,
+        "width": 540,
+        "height": 640,
+        "minWidth": 500,
+        "minHeight": 600,
         "resizable": true,
         "maximizable": false,
         "fullscreen": false,
