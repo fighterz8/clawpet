@@ -30,9 +30,27 @@ type ClawpetStatus = {
     avatarId?: string;
     bundleVersion?: string;
   };
+  pairedOpenClaw?: {
+    instanceId?: string;
+    displayName?: string;
+  };
 };
 
 type BundleManifest = { name?: string; version?: string; states?: Record<string, unknown> };
+type AvatarState = "idle" | "thinking" | "focused" | "happy" | "alert" | "sleepy";
+type RuntimeEventEntry = {
+  event: {
+    eventId: string;
+    sentAt: string;
+    state: AvatarState;
+    message?: string;
+    bubble?: string;
+    source?: { displayName?: string; instanceId?: string };
+  };
+  receivedAt: string;
+  latencyMs: number | null;
+};
+
 type TabKey = "dashboard" | "pair";
 
 async function fetchJson(url: string, init?: RequestInit) {
@@ -93,11 +111,43 @@ function PixelMark() {
   );
 }
 
+function formatClock(value?: string | null) {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" });
+}
+
+function formatAge(value?: string | null) {
+  if (!value) return null;
+  const ms = Date.now() - new Date(value).getTime();
+  if (!Number.isFinite(ms) || ms < 0) return null;
+  if (ms < 60_000) return `${Math.max(1, Math.round(ms / 1000))}s`;
+  if (ms < 60 * 60_000) return `${Math.round(ms / 60_000)}m`;
+  return `${Math.round(ms / (60 * 60_000))}h`;
+}
+
+function summarizeEvent(entry: RuntimeEventEntry) {
+  const bubble = entry.event.bubble?.trim();
+  const message = entry.event.message?.trim();
+  if (bubble) return bubble;
+  if (message) return message;
+  return `state → ${entry.event.state}`;
+}
+
+function eventMeta(entry: RuntimeEventEntry) {
+  const state = entry.event.state;
+  const source = entry.event.source?.displayName || entry.event.source?.instanceId || "OpenClaw";
+  if (entry.event.message || entry.event.bubble) return `${state} emit · ${source}`;
+  return `${state} update · ${source}`;
+}
+
 function App() {
   const [health, setHealth] = useState<RuntimeStatus | null>(null);
   const [runtimeError, setRuntimeError] = useState<string | null>(null);
   const [pair, setPair] = useState<PairMode>({ active: false });
   const [status, setStatus] = useState<ClawpetStatus | null>(null);
+  const [events, setEvents] = useState<RuntimeEventEntry[]>([]);
   const [bundleManifest, setBundleManifest] = useState<BundleManifest | null>(null);
   const [busy, setBusy] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -121,6 +171,12 @@ function App() {
         // ignore
       }
       try {
+        const e = (await fetchJson(`${RUNTIME_URL}/events`)) as { events: RuntimeEventEntry[] };
+        setEvents(Array.isArray(e.events) ? e.events.slice(0, 8) : []);
+      } catch {
+        setEvents([]);
+      }
+      try {
         const m = (await fetchJson(`${RUNTIME_URL}/avatar-bundle/current/avatar.json`)) as BundleManifest;
         setBundleManifest(m);
       } catch {
@@ -129,6 +185,7 @@ function App() {
     } catch (e) {
       setHealth(null);
       setStatus(null);
+      setEvents([]);
       setRuntimeError(e instanceof Error ? e.message : String(e));
     }
   }
@@ -185,8 +242,7 @@ function App() {
   const displayHost = health?.displayHost || "gladriel:8737";
   const hostArg = displayHost.includes(":") ? displayHost : `${displayHost}:8737`;
   const avatarId = status?.avatar?.avatarId ?? bundleManifest?.name ?? "unknown";
-  const avatarState = status?.avatar?.state ?? "idle";
-  const avatarBubble = status?.avatar?.bubble ?? "—";
+  const avatarState = (status?.avatar?.state as AvatarState | undefined) ?? "idle";
   const bundleVersion = status?.avatar?.bundleVersion ?? bundleManifest?.version ?? "—";
   const runtimeLabel =
     health?.runtime === "tauri-internal"
@@ -199,24 +255,17 @@ function App() {
     ? `clawpet wizard openclaw --code ${pair.code} --host ${hostArg}`
     : `clawpet wizard openclaw --code <code> --host ${hostArg}`;
   const expiresIn = pair.expiresAt ? Math.max(0, Math.round((pair.expiresAt - Date.now()) / 1000)) : null;
-  const lastEventAge = useMemo(() => {
-    if (!status?.lastEventAt) return "none";
-    const n = Number(status.lastEventAt);
-    const ms = Number.isFinite(n) ? Date.now() - n : Date.now() - Date.parse(status.lastEventAt);
-    if (!Number.isFinite(ms) || ms < 0) return "unknown";
-    if (ms < 60_000) return `${Math.max(1, Math.round(ms / 1000))}s`;
-    if (ms < 60 * 60_000) return `${Math.round(ms / 60_000)}m`;
-    return `${Math.round(ms / (60 * 60_000))}h`;
-  }, [status?.lastEventAt]);
-  const lastEventStamp = useMemo(() => {
-    if (!status?.lastEventAt) return "none yet";
-    const n = Number(status.lastEventAt);
-    const date = new Date(Number.isFinite(n) ? n : Date.parse(status.lastEventAt));
-    if (Number.isNaN(date.getTime())) return "unknown";
-    return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" });
-  }, [status?.lastEventAt]);
-  const chipLabel = openClawReady ? `LINKED · ${lastEventAge.toUpperCase()}` : runtimeOnline ? "WAITING" : "OFFLINE";
-  const stateDotClass = `clp-edot s-${["idle", "happy", "focused", "thinking", "alert"].includes(avatarState) ? avatarState : "idle"}`;
+  const lastEventAge = formatAge(status?.lastEventAt ?? null);
+  const chipLabel = openClawReady ? `LINKED · ${lastEventAge?.toUpperCase() ?? "LIVE"}` : runtimeOnline ? "WAITING" : "OFFLINE";
+  const firstUsefulAction = !runtimeOnline
+    ? "Runtime offline — check the local app or dev runtime."
+    : !openClawReady
+      ? "Generate a pair code only if the pet stays yellow or silent."
+      : pair.active
+        ? `Pair window open${expiresIn !== null ? ` · ${expiresIn}s left` : ""}.`
+        : "No action needed.";
+  const heartbeatModeClass = openClawReady ? "clp-ekg clp-ekg--live" : "clp-ekg clp-ekg--flat";
+  const activityBadge = status?.pairedOpenClaw?.displayName || status?.pairedOpenClaw?.instanceId || "live daemon";
 
   return (
     <main className="clp-shell">
@@ -273,7 +322,7 @@ function App() {
                 <div className="clp-tcell s">
                   <div className="clp-tl">State</div>
                   <div className="clp-tv"><span className="clp-sdot" />{avatarState}</div>
-                  <div className="clp-tx">since {lastEventStamp}</div>
+                  <div className="clp-tx">updated {formatClock(status?.lastEventAt ?? null)}</div>
                 </div>
                 <div className="clp-tcell">
                   <div className="clp-tl">Host</div>
@@ -283,65 +332,73 @@ function App() {
                 <div className="clp-tcell">
                   <div className="clp-tl">Runtime</div>
                   <div className="clp-tv">{runtimeLabel}</div>
-                  <div className="clp-tx">last event {lastEventAge} ago</div>
+                  <div className="clp-tx">{events.length} recent events buffered</div>
                 </div>
               </div>
 
               <div className="clp-grid">
-                <div className="clp-card">
+                <div className="clp-card clp-card--activity">
                   <div className="clp-cardh">
                     <span>Activity</span>
-                    <span className="clp-cardm"><span className="clp-cardm-d" />live · daemon</span>
+                    <span className="clp-cardm"><span className="clp-cardm-d" />{activityBadge}</span>
                   </div>
-                  <div className="clp-feed">
-                    <div className="clp-ev"><span className={stateDotClass} /><span className="clp-et">{lastEventStamp}</span><span className="clp-em">{openClawReady ? `→ ${avatarState}` : "waiting"}</span><span className="clp-ed">{openClawConnected ? "OpenClaw connected" : runtimeOnline ? "runtime online" : "runtime offline"}</span></div>
-                    <div className="clp-ev"><span className="clp-edot s-happy" /><span className="clp-et">bubble</span><span className="clp-em">{avatarBubble || "—"}</span><span className="clp-ed">latest bubble</span></div>
-                    <div className="clp-ev"><span className="clp-edot s-focused" /><span className="clp-et">bundle</span><span className="clp-em">{bundleVersion}</span><span className="clp-ed">current runtime pack</span></div>
-                    <div className="clp-ev"><span className="clp-edot s-thinking" /><span className="clp-et">host</span><span className="clp-em">{displayHost}</span><span className="clp-ed">display target</span></div>
-                    <div className="clp-ev"><span className="clp-edot s-alert" /><span className="clp-et">health</span><span className="clp-em">{runtimeOnline ? "ok" : "offline"}</span><span className="clp-ed">{runtimeError ?? "no runtime errors"}</span></div>
+                  <div className="clp-feed clp-feed--log">
+                    {events.length > 0 ? (
+                      events.map((entry) => (
+                        <div className="clp-ev" key={entry.event.eventId}>
+                          <span className={`clp-edot s-${entry.event.state}`} />
+                          <span className="clp-et">{formatClock(entry.receivedAt)}</span>
+                          <span className="clp-em">{summarizeEvent(entry)}</span>
+                          <span className="clp-ed">{eventMeta(entry)}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="clp-empty-log">No daemon events yet. Once OpenClaw emits avatar activity, it will stream here.</div>
+                    )}
                   </div>
-                  <div className="clp-hb">
-                    <span className="clp-hb-l">heartbeat</span>
-                    <span className="clp-hb-d" />
-                    <span className="clp-hb-s">{openClawReady ? "alive" : "idle"}</span>
-                    <span className="clp-hb-sep">·</span>
-                    <span className="clp-hb-x">last {lastEventAge} ago</span>
-                    <span className="clp-hb-sep">·</span>
-                    <span className="clp-hb-x">poll 1.5s</span>
+                  <div className="clp-hb clp-hb--signal">
+                    <span className="clp-hb-l">signal</span>
+                    <span className={heartbeatModeClass} aria-hidden="true">
+                      <svg viewBox="0 0 120 16" preserveAspectRatio="none">
+                        {openClawReady ? (
+                          <polyline points="0,9 12,9 18,9 24,4 30,14 38,2 46,9 60,9 68,9 74,5 80,12 88,3 96,9 120,9" />
+                        ) : (
+                          <polyline points="0,9 120,9" />
+                        )}
+                      </svg>
+                    </span>
+                    <span className="clp-hb-s">{openClawReady ? "live" : "flat"}</span>
                   </div>
                 </div>
 
-                <div className="clp-card">
+                <div className="clp-card clp-card--summary">
                   <div className="clp-cardh">
-                    <span>Connection</span>
-                    <span className="clp-cardm">live</span>
+                    <span>Health summary</span>
+                    <span className="clp-cardm">purposeful</span>
                   </div>
-                  <div className="clp-react-l">Status</div>
-                  <div className="clp-react-track">
-                    <div className={!runtimeOnline ? "clp-rstep active" : "clp-rstep"}>offline</div>
-                    <div className={runtimeOnline && !openClawConnected ? "clp-rstep active" : "clp-rstep"}>runtime</div>
-                    <div className={openClawConnected ? "clp-rstep active" : "clp-rstep"}>linked</div>
-                    <div className={hasOpenClawActivity ? "clp-rstep active" : "clp-rstep"}>active</div>
+                  <div className="clp-summary-list">
+                    <div className="clp-summary-row">
+                      <span className="clp-summary-k">Runtime</span>
+                      <strong className={runtimeOnline ? "clp-summary-v ok" : "clp-summary-v warn"}>{runtimeOnline ? "online" : "offline"}</strong>
+                    </div>
+                    <div className="clp-summary-row">
+                      <span className="clp-summary-k">OpenClaw</span>
+                      <strong className={openClawReady ? "clp-summary-v ok" : "clp-summary-v warn"}>{openClawReady ? "linked" : "waiting"}</strong>
+                    </div>
+                    <div className="clp-summary-row">
+                      <span className="clp-summary-k">Pair window</span>
+                      <strong className={pair.active ? "clp-summary-v ok" : "clp-summary-v"}>{pair.active && expiresIn !== null ? `${expiresIn}s left` : "inactive"}</strong>
+                    </div>
+                    <div className="clp-summary-row">
+                      <span className="clp-summary-k">Reactivity</span>
+                      <strong className="clp-summary-v muted">not surfaced yet</strong>
+                    </div>
                   </div>
-                  <div className="clp-rrow">
-                    <span className={runtimeOnline ? "clp-tg on" : "clp-tg"}><span className="clp-tg-p" /></span>
-                    <span>runtime reachable</span>
-                    <span className="clp-rrow-x">{runtimeOnline ? "on" : "off"}</span>
+                  <div className="clp-health-note">
+                    <span className="clp-health-note-k">Next action</span>
+                    <p>{firstUsefulAction}</p>
                   </div>
-                  <div className="clp-rrow">
-                    <span className={openClawConnected ? "clp-tg on" : "clp-tg"}><span className="clp-tg-p" /></span>
-                    <span>OpenClaw linked</span>
-                    <span className="clp-rrow-x">{openClawConnected ? "on" : "off"}</span>
-                  </div>
-                  <div className="clp-rrow">
-                    <span className={pair.active ? "clp-tg on" : "clp-tg"}><span className="clp-tg-p" /></span>
-                    <span>pair window active</span>
-                    <span className="clp-rrow-x">{pair.active && expiresIn !== null ? `${expiresIn}s` : "off"}</span>
-                  </div>
-                  <div className="clp-rcost">
-                    <span>openclaw auth</span>
-                    <span><b>{openClawReady ? "ready" : "waiting"}</b></span>
-                  </div>
+                  {runtimeError && <div className="clp-error-inline">{runtimeError}</div>}
                 </div>
               </div>
             </>
@@ -418,8 +475,6 @@ function App() {
               </div>
             </>
           )}
-
-          {runtimeError && <div className="clp-error">{runtimeError}</div>}
         </div>
       </section>
     </main>
