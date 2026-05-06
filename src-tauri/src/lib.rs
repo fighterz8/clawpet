@@ -1,10 +1,12 @@
 mod runtime_http;
 
-use std::{process::Child, sync::Mutex};
+use std::{fs, path::PathBuf, process::Child, sync::Mutex};
 
 #[cfg(debug_assertions)]
 use std::process::{Command, Stdio};
 
+use serde::Serialize;
+use serde_json::{json, Value};
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconEvent},
@@ -12,6 +14,93 @@ use tauri::{
 };
 
 struct RuntimeChild(Mutex<Option<Child>>);
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ReactivitySettings {
+    available: bool,
+    activity: Option<String>,
+    heartbeat_reactions: Option<bool>,
+    activity_levels: Vec<&'static str>,
+    error: Option<String>,
+}
+
+fn clawpet_config_path() -> Option<PathBuf> {
+    let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"))?;
+    Some(PathBuf::from(home).join(".openclaw").join("clawpet").join("config.json"))
+}
+
+fn read_clawpet_config_json() -> Result<Value, String> {
+    let path = clawpet_config_path().ok_or_else(|| "home directory not available".to_string())?;
+    let content = fs::read_to_string(&path)
+        .map_err(|e| format!("failed reading {}: {e}", path.display()))?;
+    serde_json::from_str(&content)
+        .map_err(|e| format!("failed parsing {}: {e}", path.display()))
+}
+
+fn write_clawpet_config_json(value: &Value) -> Result<(), String> {
+    let path = clawpet_config_path().ok_or_else(|| "home directory not available".to_string())?;
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)
+            .map_err(|e| format!("failed creating {}: {e}", parent.display()))?;
+    }
+    let content = serde_json::to_string_pretty(value)
+        .map_err(|e| format!("failed serializing config: {e}"))?;
+    fs::write(&path, content).map_err(|e| format!("failed writing {}: {e}", path.display()))
+}
+
+#[tauri::command(rename_all = "camelCase")]
+fn get_reactivity_settings() -> ReactivitySettings {
+    let levels = vec!["off", "minimal", "balanced", "expressive", "maximum"];
+    match read_clawpet_config_json() {
+        Ok(value) => ReactivitySettings {
+            available: true,
+            activity: value
+                .get("activity")
+                .and_then(|v| v.as_str())
+                .map(str::to_owned),
+            heartbeat_reactions: value.get("heartbeatReactions").and_then(|v| v.as_bool()),
+            activity_levels: levels,
+            error: None,
+        },
+        Err(error) => ReactivitySettings {
+            available: false,
+            activity: None,
+            heartbeat_reactions: None,
+            activity_levels: levels,
+            error: Some(error),
+        },
+    }
+}
+
+#[tauri::command(rename_all = "camelCase")]
+fn set_reactivity_settings(activity: Option<String>, heartbeat_reactions: Option<bool>) -> Result<ReactivitySettings, String> {
+    let allowed = ["off", "minimal", "balanced", "expressive", "maximum"];
+    if let Some(ref level) = activity {
+        if !allowed.contains(&level.as_str()) {
+            return Err(format!("unsupported activity level: {level}"));
+        }
+    }
+
+    let mut value = match read_clawpet_config_json() {
+        Ok(v) => v,
+        Err(_) => json!({}),
+    };
+
+    let obj = value
+        .as_object_mut()
+        .ok_or_else(|| "config root is not an object".to_string())?;
+
+    if let Some(level) = activity {
+        obj.insert("activity".to_string(), Value::String(level));
+    }
+    if let Some(enabled) = heartbeat_reactions {
+        obj.insert("heartbeatReactions".to_string(), Value::Bool(enabled));
+    }
+
+    write_clawpet_config_json(&value)?;
+    Ok(get_reactivity_settings())
+}
 
 #[cfg(debug_assertions)]
 fn spawn_dev_runtime() -> Option<Child> {
@@ -45,6 +134,7 @@ fn spawn_dev_runtime() -> Option<Child> {
 pub fn run() {
     tauri::Builder::default()
         .manage(RuntimeChild(Mutex::new(None)))
+        .invoke_handler(tauri::generate_handler![get_reactivity_settings, set_reactivity_settings])
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { invoke } from "@tauri-apps/api/core";
 import "./styles.css";
 import "./onboard.css";
 
@@ -49,6 +50,14 @@ type RuntimeEventEntry = {
   };
   receivedAt: string;
   latencyMs: number | null;
+};
+
+type ReactivitySettings = {
+  available: boolean;
+  activity?: string | null;
+  heartbeatReactions?: boolean | null;
+  activityLevels: string[];
+  error?: string | null;
 };
 
 type TabKey = "dashboard" | "pair";
@@ -149,6 +158,8 @@ function App() {
   const [status, setStatus] = useState<ClawpetStatus | null>(null);
   const [events, setEvents] = useState<RuntimeEventEntry[]>([]);
   const [bundleManifest, setBundleManifest] = useState<BundleManifest | null>(null);
+  const [reactivity, setReactivity] = useState<ReactivitySettings | null>(null);
+  const [reactivityBusy, setReactivityBusy] = useState(false);
   const [busy, setBusy] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab] = useState<TabKey>("dashboard");
@@ -182,11 +193,36 @@ function App() {
       } catch {
         setBundleManifest(null);
       }
+      try {
+        const r = await invoke<ReactivitySettings>("get_reactivity_settings");
+        setReactivity(r);
+      } catch (e) {
+        setReactivity({
+          available: false,
+          activityLevels: ["off", "minimal", "balanced", "expressive", "maximum"],
+          error: e instanceof Error ? e.message : String(e),
+        });
+      }
     } catch (e) {
       setHealth(null);
       setStatus(null);
       setEvents([]);
       setRuntimeError(e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  async function saveReactivity(next: { activity?: string; heartbeatReactions?: boolean }) {
+    setReactivityBusy(true);
+    try {
+      const result = await invoke<ReactivitySettings>("set_reactivity_settings", {
+        activity: next.activity ?? null,
+        heartbeatReactions: next.heartbeatReactions ?? null,
+      });
+      setReactivity(result);
+    } catch (e) {
+      setRuntimeError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setReactivityBusy(false);
     }
   }
 
@@ -259,6 +295,9 @@ function App() {
   const chipLabel = openClawReady ? `LINKED · ${lastEventAge?.toUpperCase() ?? "LIVE"}` : runtimeOnline ? "WAITING" : "OFFLINE";
   const heartbeatModeClass = openClawReady ? "clp-ekg clp-ekg--live" : "clp-ekg clp-ekg--flat";
   const activityBadge = status?.pairedOpenClaw?.displayName || status?.pairedOpenClaw?.instanceId || "live daemon";
+  const activityLevels = reactivity?.activityLevels?.length
+    ? reactivity.activityLevels
+    : ["off", "minimal", "balanced", "expressive", "maximum"];
 
   return (
     <main className="clp-shell">
@@ -367,7 +406,7 @@ function App() {
                 <div className="clp-card clp-card--summary">
                   <div className="clp-cardh">
                     <span>Health summary</span>
-                    <span className="clp-cardm">purposeful</span>
+                    <span className="clp-cardm">reactivity wired</span>
                   </div>
                   <div className="clp-summary-list">
                     <div className="clp-summary-row">
@@ -384,8 +423,37 @@ function App() {
                     </div>
                     <div className="clp-summary-row">
                       <span className="clp-summary-k">Reactivity</span>
-                      <strong className="clp-summary-v muted">not surfaced yet</strong>
+                      <strong className={reactivity?.available ? "clp-summary-v ok" : "clp-summary-v muted"}>
+                        {reactivity?.available ? reactivity.activity ?? "balanced" : "unavailable"}
+                      </strong>
                     </div>
+                  </div>
+                  <div className="clp-reactivity-panel">
+                    <span className="clp-reactivity-k">Activity level</span>
+                    <div className="clp-react-track">
+                      {activityLevels.map((level) => (
+                        <button
+                          key={level}
+                          className={reactivity?.activity === level ? "clp-rstep active" : "clp-rstep"}
+                          disabled={!reactivity?.available || reactivityBusy}
+                          onClick={() => void saveReactivity({ activity: level })}
+                        >
+                          {level === "expressive" ? "expr" : level === "minimal" ? "min" : level}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      className="clp-rrow clp-rrow--button"
+                      disabled={!reactivity?.available || reactivityBusy}
+                      onClick={() =>
+                        void saveReactivity({ heartbeatReactions: !(reactivity?.heartbeatReactions ?? false) })
+                      }
+                    >
+                      <span className={reactivity?.heartbeatReactions ? "clp-tg on" : "clp-tg"}><span className="clp-tg-p" /></span>
+                      <span>heartbeat reactions</span>
+                      <span className="clp-rrow-x">{reactivity?.heartbeatReactions ? "on" : "off"}</span>
+                    </button>
+                    {reactivity?.error ? <div className="clp-error-inline">{reactivity.error}</div> : null}
                   </div>
                   {runtimeError && <div className="clp-error-inline">{runtimeError}</div>}
                 </div>
@@ -395,15 +463,6 @@ function App() {
 
           {tab === "pair" && (
             <>
-              <div className="clp-banner">
-                <span className="clp-banner-k">{openClawReady ? "Linked" : "Pairing"}</span>
-                <span>
-                  {openClawReady
-                    ? "Re-pair only if the pet is yellow, silent, or tokens were rotated."
-                    : "Generate a pair code to authorize this OpenClaw machine."}
-                </span>
-              </div>
-
               <div className="clp-card">
                 <div className="clp-cardh">
                   <span>Pair code</span>
