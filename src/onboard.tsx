@@ -155,14 +155,15 @@ function eventOrigin(entry: RuntimeEventEntry) {
   const source = `${display} ${instance}`;
 
   // Activity log taxonomy:
-  // - daemon voice: deterministic JSONL/tool/session mirror from the OpenClaw daemon.
+  // - system signal: zero-token local/daemon plumbing such as app/runtime events
+  //   or the daemon's JSONL/tool/session mirror.
   // - OpenClaw expression: optional autonomous/contextual expression layer.
   // - user-requested: explicit routines or one-off manual emits requested by Nick.
-  if (source.includes("daemon") || source.includes("jsonl")) return "daemon voice";
+  if (source.includes("daemon") || source.includes("jsonl")) return "system signal · daemon";
   if (source.includes("expression")) return "OpenClaw expression";
   if (source.includes("user-requested") || source.includes("manual")) return "user-requested";
   if (source.includes("openclaw")) return "OpenClaw expression";
-  return "runtime";
+  return "system signal · runtime";
 }
 
 function eventMeta(entry: RuntimeEventEntry) {
@@ -383,10 +384,10 @@ function App() {
                     )}
                   </div>
                   <div className="clp-source-legend" aria-label="Activity log source definitions">
-                    <div><strong>daemon voice</strong><span>JSONL/tool/session mirror from OpenClaw. Zero-token ambient work signals.</span></div>
+                    <div><strong>system signal</strong><span>Zero-token local/runtime or daemon plumbing. Sub-label shows daemon vs runtime.</span></div>
                     <div><strong>OpenClaw expression</strong><span>Optional autonomous/contextual avatar remarks controlled by expression level.</span></div>
                     <div><strong>user-requested</strong><span>Explicit manual emits or routines Nick asked Dawn to perform.</span></div>
-                    <div><strong>runtime</strong><span>Local Clawpet app/runtime startup, demo, validation, or internal events.</span></div>
+                    <div><strong>rule of thumb</strong><span>If it was not requested or expressive, treat it as system signal noise/work telemetry.</span></div>
                   </div>
                 </div>
 
