@@ -147,10 +147,29 @@ irm https://raw.githubusercontent.com/fighterz8/clawpet/main/scripts/install-win
 
 ### Run from source
 
+Run these from the cloned repo directory that contains `package.json`:
+
 ```bash
 cd ~/clawpet
 npm ci
 npm run desktop:dev
+```
+
+`clawpet` is the pairing/control CLI, not an npm-script wrapper. Use `npm run desktop:dev`, not `clawpet run desktop:dev`.
+
+If `npm` reports `Could not read package.json`, you are in the wrong directory. `cd ~/clawpet` or re-run the installer.
+
+If Tauri reports `failed to run 'cargo metadata' ... No such file or directory`, Rust/Cargo is missing from this shell. Install Rust, then reopen the terminal or source Cargo's env file:
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+source "$HOME/.cargo/env"
+```
+
+On macOS, also install Apple command line tools if prompted:
+
+```bash
+xcode-select --install
 ```
 
 The current desktop app path starts the local runtime from the app.

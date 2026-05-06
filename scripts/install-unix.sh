@@ -55,19 +55,17 @@ cyan "Start the guided display-machine setup:"
 echo "  cd $REPO_DIR"
 echo "  clawpet wizard display"
 echo
-cyan "Or try demo mode first (no OpenClaw pairing required):"
+cyan "Run the desktop app from source:"
 echo "  cd $REPO_DIR"
-echo "  npm run runtime:demo"
-echo "  # in a second terminal:"
-echo "  cd $REPO_DIR && npm run desktop:dev"
+echo "  npm run desktop:dev"
 echo
 cyan "Cross-machine pairing flow:"
-echo "  # on this display machine, start the runtime:"
-echo "  cd $REPO_DIR && npm run runtime:tailscale"
-echo "  # in another terminal on this display machine:"
-echo "  cd $REPO_DIR && clawpet pair-mode"
+echo "  # on this display machine, open the app and click Show pair code when needed:"
+echo "  cd $REPO_DIR && npm run desktop:dev"
 echo "  # on the OpenClaw machine, claim the shown code:"
 yellow "  clawpet pair --code <6-digit-code> --host $DISPLAY_HOST:8737"
+echo
+yellow "Note: use npm run desktop:dev, not 'clawpet run desktop:dev'."
 echo
 if [[ "$(uname -s)" == "Linux" ]]; then
   yellow "On Linux, you may also need:"
