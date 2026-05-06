@@ -243,32 +243,32 @@ function OnboardApp() {
                   ? "OpenClaw has already sent live activity."
                   : "Connection is established; first activity should arrive soon."
                 : runtimeOnline
-                  ? "Use the pair tab only when needed."
+                  ? "Use the pair panel only when needed."
                   : "In dev, run npm run runtime:tailscale if it does not come up."}
             </span>
           </div>
+          <section className="ob-summary-grid">
+            <MiniStat label="Runtime" value={runtimeOwnerLabel} />
+            <MiniStat label="Avatar" value={runtimeAvatarId} />
+            <MiniStat label="State" value={avatarState} />
+            <MiniStat label="Last event" value={lastEventAge ?? "none yet"} />
+          </section>
         </section>
 
-        <section className="ob-summary-grid">
-          <MiniStat label="Runtime" value={runtimeOwnerLabel} />
-          <MiniStat label="Avatar" value={runtimeAvatarId} />
-          <MiniStat label="State" value={avatarState} />
-          <MiniStat label="Last event" value={lastEventAge ?? "none yet"} />
-        </section>
+        <section className="ob-panel-shell">
+          <nav className="ob-tabs" aria-label="Clawpet sections">
+            <button className={tab === "home" ? "ob-tab ob-tab--active" : "ob-tab"} onClick={() => setTab("home")}>
+              Home
+            </button>
+            <button className={tab === "pair" ? "ob-tab ob-tab--active" : "ob-tab"} onClick={() => setTab("pair")}>
+              Pair
+            </button>
+            <button className={tab === "details" ? "ob-tab ob-tab--active" : "ob-tab"} onClick={() => setTab("details")}>
+              Details
+            </button>
+          </nav>
 
-        <nav className="ob-tabs" aria-label="Clawpet sections">
-          <button className={tab === "home" ? "ob-tab ob-tab--active" : "ob-tab"} onClick={() => setTab("home")}>
-            Home
-          </button>
-          <button className={tab === "pair" ? "ob-tab ob-tab--active" : "ob-tab"} onClick={() => setTab("pair")}>
-            Pair
-          </button>
-          <button className={tab === "details" ? "ob-tab ob-tab--active" : "ob-tab"} onClick={() => setTab("details")}>
-            Details
-          </button>
-        </nav>
-
-        <section className="ob-panel">
+          <section className="ob-panel">
           {tab === "home" && (
             <div className="ob-tab-panel">
               <div className="ob-panel-grid ob-panel-grid--home">
@@ -375,6 +375,7 @@ function OnboardApp() {
           )}
 
           {runtimeError && <p className="ob-error">{runtimeError}</p>}
+          </section>
         </section>
       </section>
     </main>
