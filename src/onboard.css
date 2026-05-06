@@ -523,7 +523,7 @@ body.ob-hidden { display: none; }
   background: #0d1015;
   border: 0.5px solid rgba(255,255,255,.05);
   border-radius: 5px;
-  cursor: pointer;
+  cursor: default;
 }
 
 .clp-rstep.active {
@@ -543,12 +543,6 @@ body.ob-hidden { display: none; }
   color: rgba(232,233,236,.88);
 }
 
-.clp-rrow--button {
-  width: 100%;
-  text-align: left;
-  cursor: pointer;
-}
-
 .clp-rrow-x {
   margin-left: auto;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -557,10 +551,11 @@ body.ob-hidden { display: none; }
   color: rgba(255,255,255,.48);
 }
 
-.clp-rstep:disabled,
-.clp-rrow--button:disabled {
-  opacity: .55;
-  cursor: not-allowed;
+.clp-reactivity-note {
+  margin-top: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  color: rgba(255,255,255,.46);
 }
 
 .clp-tg {

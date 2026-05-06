@@ -85,6 +85,21 @@ struct RuntimeState {
     raw_bubble: String,
     last_event_at_ms: Option<u128>,
     events: Vec<EventEntry>,
+    reactivity: ReactivityMirror,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+struct ReactivityMirror {
+    available: bool,
+    activity: Option<String>,
+    #[serde(rename = "heartbeatReactions")]
+    heartbeat_reactions: Option<bool>,
+    #[serde(rename = "activityLevels")]
+    activity_levels: Vec<String>,
+    writable: bool,
+    #[serde(rename = "managedBy")]
+    managed_by: String,
+    error: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -153,6 +168,54 @@ fn runtime_bundle_dir() -> Option<PathBuf> {
             .join("runtime-bundles")
             .join("current"),
     )
+}
+
+fn reactivity_path() -> Option<PathBuf> {
+    let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"))?;
+    Some(
+        PathBuf::from(home)
+            .join(".openclaw")
+            .join("clawpet")
+            .join("runtime-reactivity.json"),
+    )
+}
+
+fn default_reactivity(error: Option<String>) -> ReactivityMirror {
+    ReactivityMirror {
+        available: false,
+        activity: None,
+        heartbeat_reactions: None,
+        activity_levels: vec!["off", "minimal", "balanced", "expressive", "maximum"]
+            .into_iter()
+            .map(str::to_string)
+            .collect(),
+        writable: false,
+        managed_by: "openclaw-host".into(),
+        error,
+    }
+}
+
+fn load_reactivity() -> ReactivityMirror {
+    let Some(path) = reactivity_path() else {
+        return default_reactivity(Some("home directory not available".into()));
+    };
+    let Ok(text) = fs::read_to_string(&path) else {
+        return default_reactivity(Some("waiting for paired OpenClaw host sync".into()));
+    };
+    serde_json::from_str(&text)
+        .unwrap_or_else(|_| default_reactivity(Some("invalid reactivity mirror".into())))
+}
+
+fn persist_reactivity(reactivity: &ReactivityMirror) {
+    let Some(path) = reactivity_path() else {
+        return;
+    };
+    if let Some(parent) = path.parent() {
+        let _ = fs::create_dir_all(parent);
+    }
+    if let Ok(text) = serde_json::to_string_pretty(reactivity) {
+        let _ = fs::write(path, text);
+    }
 }
 
 fn load_persisted_bundle() -> (Option<serde_json::Value>, HashMap<String, Vec<u8>>) {
@@ -333,6 +396,7 @@ pub fn start_runtime_server() {
             raw_bubble: "idle".into(),
             last_event_at_ms: None,
             events: Vec::new(),
+            reactivity: load_reactivity(),
         }));
 
         let listener = match TcpListener::bind("0.0.0.0:8737") {
@@ -496,6 +560,11 @@ fn route(
         return response(200, json!({ "events": s.events }));
     }
 
+    if method == "GET" && path == "/reactivity" {
+        let s = state.lock().unwrap();
+        return response(200, serde_json::to_value(&s.reactivity).unwrap());
+    }
+
     if method == "GET" && path == "/avatar-bundle/current/avatar.json" {
         let s = state.lock().unwrap();
         if let Some(m) = &s.bundle_manifest {
@@ -552,6 +621,9 @@ fn route(
     }
 
     if method == "POST" && path == "/admin/avatar-bundle" {
+        if !authorized(headers, &state) {
+            return response(401, json!({"ok":false,"errors":["authentication required"]}));
+        }
         let upload = match serde_json::from_str::<AvatarBundleUpload>(body) {
             Ok(u) => u,
             Err(_) => {
@@ -613,6 +685,9 @@ fn route(
     }
 
     if method == "POST" && path == "/avatar/state" {
+        if !authorized(headers, &state) {
+            return response(401, json!({"ok":false,"errors":["authentication required"]}));
+        }
         let ev = match serde_json::from_str::<AvatarEvent>(body) {
             Ok(e) => e,
             Err(_) => return response(400, json!({"ok":false,"errors":["invalid avatar event"]})),
@@ -654,6 +729,32 @@ fn route(
             s.events.truncate(50);
         }
         return response(200, json!({ "ok": true, "status": s.status }));
+    }
+
+    if method == "POST" && path == "/admin/reactivity" {
+        if !authorized(headers, &state) {
+            return response(401, json!({"ok":false,"errors":["authentication required"]}));
+        }
+        let incoming = match serde_json::from_str::<ReactivityMirror>(body) {
+            Ok(value) => value,
+            Err(_) => return response(400, json!({"ok":false,"errors":["invalid reactivity payload"]})),
+        };
+        let mut s = state.lock().unwrap();
+        s.reactivity = ReactivityMirror {
+            available: incoming.available,
+            activity: incoming.activity,
+            heartbeat_reactions: incoming.heartbeat_reactions,
+            activity_levels: if incoming.activity_levels.is_empty() {
+                default_reactivity(None).activity_levels
+            } else {
+                incoming.activity_levels
+            },
+            writable: false,
+            managed_by: "openclaw-host".into(),
+            error: incoming.error,
+        };
+        persist_reactivity(&s.reactivity);
+        return response(200, serde_json::to_value(&s.reactivity).unwrap());
     }
 
     response(404, json!({"ok":false,"errors":["not found"]}))

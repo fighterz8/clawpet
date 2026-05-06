@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { invoke } from "@tauri-apps/api/core";
 import "./styles.css";
 import "./onboard.css";
 
@@ -57,6 +56,8 @@ type ReactivitySettings = {
   activity?: string | null;
   heartbeatReactions?: boolean | null;
   activityLevels: string[];
+  writable?: boolean;
+  managedBy?: string | null;
   error?: string | null;
 };
 
@@ -159,7 +160,6 @@ function App() {
   const [events, setEvents] = useState<RuntimeEventEntry[]>([]);
   const [bundleManifest, setBundleManifest] = useState<BundleManifest | null>(null);
   const [reactivity, setReactivity] = useState<ReactivitySettings | null>(null);
-  const [reactivityBusy, setReactivityBusy] = useState(false);
   const [busy, setBusy] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab] = useState<TabKey>("dashboard");
@@ -194,7 +194,7 @@ function App() {
         setBundleManifest(null);
       }
       try {
-        const r = await invoke<ReactivitySettings>("get_reactivity_settings");
+        const r = (await fetchJson(`${RUNTIME_URL}/reactivity`)) as ReactivitySettings;
         setReactivity(r);
       } catch (e) {
         setReactivity({
@@ -208,21 +208,6 @@ function App() {
       setStatus(null);
       setEvents([]);
       setRuntimeError(e instanceof Error ? e.message : String(e));
-    }
-  }
-
-  async function saveReactivity(next: { activity?: string; heartbeatReactions?: boolean }) {
-    setReactivityBusy(true);
-    try {
-      const result = await invoke<ReactivitySettings>("set_reactivity_settings", {
-        activity: next.activity ?? null,
-        heartbeatReactions: next.heartbeatReactions ?? null,
-      });
-      setReactivity(result);
-    } catch (e) {
-      setRuntimeError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setReactivityBusy(false);
     }
   }
 
@@ -424,7 +409,7 @@ function App() {
                     <div className="clp-summary-row">
                       <span className="clp-summary-k">Reactivity</span>
                       <strong className={reactivity?.available ? "clp-summary-v ok" : "clp-summary-v muted"}>
-                        {reactivity?.available ? reactivity.activity ?? "balanced" : "unavailable"}
+                        {reactivity?.available ? reactivity.activity ?? "balanced" : "waiting"}
                       </strong>
                     </div>
                   </div>
@@ -432,27 +417,23 @@ function App() {
                     <span className="clp-reactivity-k">Activity level</span>
                     <div className="clp-react-track">
                       {activityLevels.map((level) => (
-                        <button
+                        <div
                           key={level}
                           className={reactivity?.activity === level ? "clp-rstep active" : "clp-rstep"}
-                          disabled={!reactivity?.available || reactivityBusy}
-                          onClick={() => void saveReactivity({ activity: level })}
+                          aria-disabled="true"
                         >
                           {level === "expressive" ? "expr" : level === "minimal" ? "min" : level}
-                        </button>
+                        </div>
                       ))}
                     </div>
-                    <button
-                      className="clp-rrow clp-rrow--button"
-                      disabled={!reactivity?.available || reactivityBusy}
-                      onClick={() =>
-                        void saveReactivity({ heartbeatReactions: !(reactivity?.heartbeatReactions ?? false) })
-                      }
-                    >
+                    <div className="clp-rrow">
                       <span className={reactivity?.heartbeatReactions ? "clp-tg on" : "clp-tg"}><span className="clp-tg-p" /></span>
                       <span>heartbeat reactions</span>
                       <span className="clp-rrow-x">{reactivity?.heartbeatReactions ? "on" : "off"}</span>
-                    </button>
+                    </div>
+                    <div className="clp-reactivity-note">
+                      Managed by paired OpenClaw host{reactivity?.managedBy ? ` · ${reactivity.managedBy}` : ""}
+                    </div>
                     {reactivity?.error ? <div className="clp-error-inline">{reactivity.error}</div> : null}
                   </div>
                   {runtimeError && <div className="clp-error-inline">{runtimeError}</div>}

@@ -49,6 +49,28 @@ function saveConfig(cfg) {
   writeFileSync(CONFIG_PATH, JSON.stringify(cfg, null, 2) + "\n", { mode: 0o600 });
 }
 
+async function syncReactivityMirror() {
+  const url = resolveRuntimeUrl();
+  const token = resolveRuntimeToken();
+  if (!url || !token) return { ok: false, skipped: true, reason: "runtime not paired yet" };
+  const payload = {
+    available: true,
+    activity: resolveActivity(),
+    heartbeatReactions: resolveHeartbeatReactions(),
+    activityLevels: ACTIVITY_LEVELS,
+    writable: false,
+    managedBy: "openclaw-host",
+    error: null,
+  };
+  try {
+    const r = await http("POST", `${url}/admin/reactivity`, payload);
+    if (!r.ok) return { ok: false, status: r.status, body: r.body };
+    return { ok: true, body: r.body };
+  } catch (error) {
+    return { ok: false, error: String(error?.message ?? error) };
+  }
+}
+
 function resolveRuntimeUrl() {
   if (process.env.CLAWPET_RUNTIME_URL) return process.env.CLAWPET_RUNTIME_URL.replace(/\/$/, "");
   const cfg = loadConfig();
@@ -361,7 +383,7 @@ async function cmdReact(positional, flags) {
   } catch (e) { fail(`runtime unreachable at ${url}: ${e.message}`, 2); }
 }
 
-function cmdHeartbeats(positional, _flags) {
+async function cmdHeartbeats(positional, _flags) {
   const [arg] = positional;
   if (!arg) {
     console.log(JSON.stringify({ heartbeatReactions: resolveHeartbeatReactions(), configPath: CONFIG_PATH }, null, 2));
@@ -375,10 +397,12 @@ function cmdHeartbeats(positional, _flags) {
   const cfg = loadConfig();
   cfg.heartbeatReactions = enabled;
   saveConfig(cfg);
+  const mirror = await syncReactivityMirror();
   console.log(JSON.stringify({ ok: true, heartbeatReactions: enabled, configPath: CONFIG_PATH }, null, 2));
+  if (!mirror.ok && !mirror.skipped) console.error(`clawpet: warning: failed syncing reactivity mirror (${mirror.status ?? mirror.error ?? "unknown error"})`);
 }
 
-function cmdActivity(positional, _flags) {
+async function cmdActivity(positional, _flags) {
   const [level] = positional;
   if (!level) {
     console.log(JSON.stringify({ activity: resolveActivity(), levels: ACTIVITY_LEVELS, configPath: CONFIG_PATH }, null, 2));
@@ -389,7 +413,9 @@ function cmdActivity(positional, _flags) {
   const previous = cfg.activity || DEFAULT_ACTIVITY;
   cfg.activity = level;
   saveConfig(cfg);
+  const mirror = await syncReactivityMirror();
   console.log(JSON.stringify({ ok: true, previous, current: level, configPath: CONFIG_PATH }, null, 2));
+  if (!mirror.ok && !mirror.skipped) console.error(`clawpet: warning: failed syncing reactivity mirror (${mirror.status ?? mirror.error ?? "unknown error"})`);
 }
 
 async function cmdRotateToken() {
@@ -433,6 +459,7 @@ async function cmdPair(flags) {
       cfg.runtimeUrl = url;
       cfg.runtimeToken = r.body.token;
       saveConfig(cfg);
+      await syncReactivityMirror();
       console.log(JSON.stringify({
         ok: true,
         configPath: CONFIG_PATH,
@@ -456,6 +483,7 @@ async function cmdPair(flags) {
   if (typeof flags.token === "string" && flags.token) cfg.runtimeToken = flags.token;
   if (flags["clear-token"]) delete cfg.runtimeToken;
   saveConfig(cfg);
+  await syncReactivityMirror();
   console.log(JSON.stringify({
     ok: true,
     configPath: CONFIG_PATH,
@@ -690,8 +718,8 @@ switch (cmd) {
   case "status": await cmdStatus(); break;
   case "send": await cmdSend(positional, flags); break;
   case "react": await cmdReact(positional, flags); break;
-  case "activity": cmdActivity(positional, flags); break;
-  case "heartbeat-reactions": case "heartbeats": cmdHeartbeats(positional, flags); break;
+  case "activity": await cmdActivity(positional, flags); break;
+  case "heartbeat-reactions": case "heartbeats": await cmdHeartbeats(positional, flags); break;
   case "pair": await cmdPair(flags); break;
   case "pair-mode": await cmdPairMode(positional, flags); break;
   case "rotate-token": case "rotate": await cmdRotateToken(); break;
