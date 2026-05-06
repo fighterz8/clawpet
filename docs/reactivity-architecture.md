@@ -152,7 +152,7 @@ Use a second dedicated setting:
 
 Without separation, the system becomes confusing:
 
-- daemon emits look like model-driven personality
+- daemon voice events look like model-driven personality
 - model-driven commentary duplicates status messages
 - users cannot tell what costs tokens
 - `activity level` becomes overloaded and unclear
@@ -375,17 +375,18 @@ Keep as separate toggle.
 
 Show source clearly:
 
-- `daemon emit`
-- `manual emit`
-- `expression emit`
-- `runtime emit`
+- `daemon voice` — JSONL/tool/session mirror from the sidecar daemon
+- `OpenClaw expression` — optional autonomous/contextual expression layer
+- `user-requested` — explicit one-off/manual/routine emits requested by the user
+- `runtime` — local runtime/demo/internal events
 
 Optional future detail:
 
-- `daemon · read`
-- `daemon · exec`
-- `expression · progress`
-- `expression · blocker`
+- `daemon voice · read`
+- `daemon voice · exec`
+- `OpenClaw expression · progress`
+- `OpenClaw expression · blocker`
+- `user-requested · celebration routine`
 
 That will make cost/source much easier to understand.
 

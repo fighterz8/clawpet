@@ -348,14 +348,21 @@ function resolveEmitSource(mode = "send") {
   if (source === "daemon") {
     return {
       kind: "openclaw",
-      displayName: mode === "react" ? "openclaw-daemon" : "openclaw-daemon-direct",
-      instanceId: "openclaw-daemon",
+      displayName: "daemon voice",
+      instanceId: "clawpet-daemon-voice",
+    };
+  }
+  if (source === "expression" || mode === "react") {
+    return {
+      kind: "openclaw",
+      displayName: "OpenClaw expression",
+      instanceId: "clawpet-openclaw-expression",
     };
   }
   return {
     kind: "openclaw",
-    displayName: mode === "react" ? "openclaw-expression" : "openclaw-manual",
-    instanceId: mode === "react" ? "openclaw-expression" : "openclaw-manual",
+    displayName: "user-requested manual emit",
+    instanceId: "clawpet-user-requested-manual",
   };
 }
 
@@ -427,7 +434,7 @@ async function cmdReact(positional, flags) {
   }
 
   const source = resolveEmitSource("react");
-  const isDaemonEmit = source.instanceId === "openclaw-daemon";
+  const isDaemonEmit = source.instanceId === "clawpet-daemon-voice";
   let bubble = typeof flags.bubble === "string" ? flags.bubble : def.bubble;
 
   if (!isDaemonEmit) {

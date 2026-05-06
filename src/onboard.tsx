@@ -154,11 +154,16 @@ function eventOrigin(entry: RuntimeEventEntry) {
   const display = entry.event.source?.displayName?.toLowerCase() ?? "";
   const instance = entry.event.source?.instanceId?.toLowerCase() ?? "";
   const source = `${display} ${instance}`;
-  if (source.includes("daemon-direct") || source.includes("openclaw-daemon")) return "daemon emit";
-  if (source.includes("manual") || source.includes("direct")) return "manual emit";
-  if (source.includes("expression")) return "openclaw emit";
-  if (source.includes("openclaw")) return "openclaw emit";
-  return "runtime emit";
+
+  // Activity log taxonomy:
+  // - daemon voice: deterministic JSONL/tool/session mirror from the OpenClaw daemon.
+  // - OpenClaw expression: optional autonomous/contextual expression layer.
+  // - user-requested: explicit routines or one-off manual emits requested by Nick.
+  if (source.includes("daemon") || source.includes("jsonl")) return "daemon voice";
+  if (source.includes("expression")) return "OpenClaw expression";
+  if (source.includes("user-requested") || source.includes("manual")) return "user-requested";
+  if (source.includes("openclaw")) return "OpenClaw expression";
+  return "runtime";
 }
 
 function eventMeta(entry: RuntimeEventEntry) {
@@ -299,7 +304,7 @@ function App() {
         ? "WAITING"
         : "OFFLINE";
   const heartbeatModeClass = openClawReady ? "clp-ekg clp-ekg--live" : "clp-ekg clp-ekg--flat";
-  const activityBadge = status?.pairedOpenClaw?.displayName || status?.pairedOpenClaw?.instanceId || "live daemon";
+  const activityBadge = "daemon voice · expression · user-requested";
 
   return (
     <main className="clp-shell">
