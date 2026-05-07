@@ -25,5 +25,5 @@ base64 = "0.22"
 hostname = "0.4"
 log = "0.4"
 time = { version = "0.3", features = ["formatting"] }
-tauri = { version = "2.11.0", features = ["tray-icon", "macos-private-api"] }
+tauri = { version = "2.11.1", features = ["tray-icon", "macos-private-api"] }
 tauri-plugin-log = "2"
