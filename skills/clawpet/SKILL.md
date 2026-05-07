@@ -58,6 +58,29 @@ clawpet status
 clawpet send happy "Clawpet is connected" --bubble "Connected" --quiet
 ```
 
+## Expression setup and control
+
+Expression is currently a simple OpenClaw-side gate:
+
+```bash
+clawpet expression-level off
+clawpet expression-level on
+```
+
+When expression is `off`, OpenClaw should only send system signal/user-requested emits. When expression is `on`, OpenClaw may occasionally generate contextual avatar expressions according to the user's configured profile, triggers, cooldown, and context sources.
+
+Use `docs/openclaw-expression-system.md` in the repo as the working design reference when implementing or refining expression behavior. The intended setup flow is:
+
+1. Ask whether expression should be enabled.
+2. Choose a personality profile, initially `quiet`, `warm`, or `mischief`.
+3. Choose event triggers such as blocker, error recovery, long task, verification success, or meaningful completion.
+4. Choose cooldown/quiet-hours behavior.
+5. Ask whether optional context sources such as OpenClaw dreams/memory may be used if available.
+6. Save the resulting config on the OpenClaw host.
+7. Run a short calibration sequence so the user can approve the feel.
+
+Do not let the desktop runtime invent personality or expression policy. It displays what the OpenClaw host decides.
+
 ## Daemon-first behavior
 
 The daemon is the production path. It tails OpenClaw's structured session JSONL at `~/.openclaw/agents/main/sessions/*.jsonl` and mirrors real activity to the runtime with **zero LLM-token cost**.
