@@ -5,18 +5,18 @@ import "./styles.css";
 // Make the html/body transparent immediately when running as the desktop overlay,
 // so the Tauri window can show through before React paints anything.
 if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("overlay") === "1") {
-  document.documentElement.classList.add("clawpet-overlay");
-  document.body.classList.add("clawpet-overlay");
+  document.documentElement.classList.add("clawpals-overlay");
+  document.body.classList.add("clawpals-overlay");
 }
 
-import { AVATAR_EVENT_VERSION, avatarStates, resolveBubbleText, type AvatarState, type AvatarStateEvent, type ClawpetStatus } from "./contracts/avatarEvent";
+import { AVATAR_EVENT_VERSION, avatarStates, resolveBubbleText, type AvatarState, type AvatarStateEvent, type ClawpalsStatus } from "./contracts/avatarEvent";
 import { loadAvatarBundle, type ResolvedAvatarBundle } from "./avatars/bundle";
 
 // Avatar bundle URL resolution order:
-//   1. Vite-time env override (VITE_CLAWPET_AVATAR_BUNDLE)
+//   1. Vite-time env override (VITE_CLAWPALS_AVATAR_BUNDLE)
 //   2. /status from the runtime (avatar.avatarId)
 //   3. dawn-v0
-const BUILD_TIME_AVATAR = (import.meta as { env?: Record<string, string> }).env?.VITE_CLAWPET_AVATAR_BUNDLE;
+const BUILD_TIME_AVATAR = (import.meta as { env?: Record<string, string> }).env?.VITE_CLAWPALS_AVATAR_BUNDLE;
 const DEFAULT_AVATAR_BUNDLE_URL = `/avatars/${BUILD_TIME_AVATAR || "dawn-v0"}`;
 
 function BundleAvatar({ state, bundle }: { state: AvatarState; bundle: ResolvedAvatarBundle | null }) {
@@ -27,7 +27,7 @@ function BundleAvatar({ state, bundle }: { state: AvatarState; bundle: ResolvedA
   return (
     <img
       src={src}
-      alt={`Clawpet ${state}`}
+      alt={`Clawpals ${state}`}
       className={`bundle-avatar bundle-avatar--anim-${animation}`}
       draggable={false}
     />
@@ -92,7 +92,7 @@ const stateCopy: Record<PetState, { label: string; message: string; api: string 
 
 const states = [...avatarStates];
 
-function ClawpetAvatar({ state }: { state: PetState }) {
+function ClawpalsAvatar({ state }: { state: PetState }) {
   const face = useMemo(() => {
     if (state === "happy") return "ᵔᴥᵔ";
     if (state === "alert") return "•̀ᴥ•́";
@@ -103,7 +103,7 @@ function ClawpetAvatar({ state }: { state: PetState }) {
   }, [state]);
 
   return (
-    <div className={`avatar avatar--${state}`} aria-label={`Clawpet avatar state: ${state}`}>
+    <div className={`avatar avatar--${state}`} aria-label={`Clawpals avatar state: ${state}`}>
       <div className="avatar__glow" />
       <div className="avatar__body">
         <div className="avatar__horn avatar__horn--left" />
@@ -126,7 +126,7 @@ function buildBrowserEvent(state: PetState, message: string): AvatarStateEvent {
     source: {
       kind: "openclaw",
       instanceId: "browser-console",
-      displayName: "Clawpet local console",
+      displayName: "Clawpals local console",
     },
     target: {
       deviceId: "local-runtime",
@@ -140,7 +140,7 @@ function buildBrowserEvent(state: PetState, message: string): AvatarStateEvent {
 }
 
 function RuntimeConsole({ onPreviewState }: { onPreviewState: (state: PetState) => void }) {
-  const [status, setStatus] = useState<ClawpetStatus | null>(null);
+  const [status, setStatus] = useState<ClawpalsStatus | null>(null);
   const [events, setEvents] = useState<RuntimeEventLogEntry[]>([]);
   const [online, setOnline] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -153,7 +153,7 @@ function RuntimeConsole({ onPreviewState }: { onPreviewState: (state: PetState) 
         fetch(`${RUNTIME_URL}/events`),
       ]);
       if (!statusResponse.ok) throw new Error(`status returned ${statusResponse.status}`);
-      const nextStatus = await statusResponse.json() as ClawpetStatus;
+      const nextStatus = await statusResponse.json() as ClawpalsStatus;
       const eventBody = await eventsResponse.json() as { events?: RuntimeEventLogEntry[] };
       setStatus(nextStatus);
       setEvents(eventBody.events ?? []);
@@ -202,7 +202,7 @@ function RuntimeConsole({ onPreviewState }: { onPreviewState: (state: PetState) 
           <p className="eyebrow">Local runtime console</p>
           <h2>Validate the avatar connection from your browser.</h2>
           <p>
-            This panel talks to the local Clawpet runtime at <code>{RUNTIME_URL}</code>. Start it with <code>npm run runtime:dev</code>.
+            This panel talks to the local Clawpals runtime at <code>{RUNTIME_URL}</code>. Start it with <code>npm run runtime:dev</code>.
           </p>
         </div>
         <div className={`status-pill ${online ? "status-pill--online" : "status-pill--offline"}`}>
@@ -274,7 +274,7 @@ function OverlayApp() {
           fetch(`${RUNTIME_URL}/events`),
         ]);
         if (!statusResponse.ok) throw new Error(`status returned ${statusResponse.status}`);
-        const nextStatus = await statusResponse.json() as ClawpetStatus;
+        const nextStatus = await statusResponse.json() as ClawpalsStatus;
         const eventBody = await eventsResponse.json().catch(() => ({ events: [] })) as { events?: RuntimeEventLogEntry[] };
         const latestEvent = eventBody.events?.[0]?.event;
         const bubbleText = latestEvent
@@ -319,20 +319,20 @@ function App() {
       <section className="hero">
         <div className="hero__copy">
           <p className="eyebrow">OpenClaw ambient avatar runtime</p>
-          <h1>Clawpet gives your local AI assistant a visible presence.</h1>
+          <h1>Clawpals gives your local AI assistant a visible presence.</h1>
           <p className="lede">
             A local-first companion overlay concept for OpenClaw: avatar bundles, state-driven emotions,
             lightweight animations, and short useful status messages.
           </p>
           <div className="hero__actions">
             <a href="#console">Local console</a>
-            <a href="https://github.com/fighterz8/clawpet/blob/main/docs/avatar-event-contract.md">Event contract</a>
-            <a href="https://github.com/fighterz8/clawpet">GitHub</a>
+            <a href="https://github.com/fighterz8/clawpals/blob/main/docs/avatar-event-contract.md">Event contract</a>
+            <a href="https://github.com/fighterz8/clawpals">GitHub</a>
           </div>
         </div>
         <div className="pet-card">
           <div className="bubble">{current.message}</div>
-          <ClawpetAvatar state={state} />
+          <ClawpalsAvatar state={state} />
           <div className="state-grid">
             {states.map((s) => (
               <button key={s} className={s === state ? "active" : ""} onClick={() => setState(s)}>
@@ -349,7 +349,7 @@ function App() {
         <article className="panel">
           <h2>Why it exists</h2>
           <p>
-            AI agents often run invisibly in chats, logs, and background jobs. Clawpet explores a lighter
+            AI agents often run invisibly in chats, logs, and background jobs. Clawpals explores a lighter
             status layer: a small companion that shows when the agent is idle, working, blocked, or done.
           </p>
         </article>
@@ -373,16 +373,16 @@ function App() {
       <section className="architecture">
         <div>
           <p className="eyebrow">Remote-first architecture</p>
-          <h2>Clawpet should live on the machine you actually use.</h2>
+          <h2>Clawpals should live on the machine you actually use.</h2>
           <p>
-            Many OpenClaw users host their assistant on a server or spare machine. Clawpet is designed so the
+            Many OpenClaw users host their assistant on a server or spare machine. Clawpals is designed so the
             desktop avatar can run on your main computer while OpenClaw runs somewhere else.
           </p>
         </div>
         <div className="flow" aria-label="Remote connection diagram">
           <div className="flow__node">OpenClaw host</div>
           <div className="flow__edge">HTTPS / WebSocket</div>
-          <div className="flow__node flow__node--relay">Clawpet relay or direct tunnel</div>
+          <div className="flow__node flow__node--relay">Clawpals relay or direct tunnel</div>
           <div className="flow__edge">paired outbound connection</div>
           <div className="flow__node">Desktop avatar</div>
         </div>

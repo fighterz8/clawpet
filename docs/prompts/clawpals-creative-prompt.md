@@ -1,6 +1,6 @@
-# Clawpet Asset Generation Prompt — Creative Mode
+# Clawpals Asset Generation Prompt — Creative Mode
 
-For use inside the `clawpet-generate` skill (§7). This version gives the agent
+For use inside the `clawpals-generate` skill (§7). This version gives the agent
 real creative latitude on character design while locking the technical
 parameters that the runtime needs.
 
@@ -13,7 +13,7 @@ The split is deliberate:
 ## The Prompt
 
 ```
-You are designing a unique Clawpet — a personalized pixel-art companion that
+You are designing a unique Clawpals — a personalized pixel-art companion that
 will live on the user's desktop and react to their AI assistant working.
 
 This pet must feel like THIS user's pet. Not a stock mascot, not a default
@@ -22,7 +22,7 @@ seeing it once. Read their SOUL.md and agent name carefully — the pet is a
 visual translation of who their AI is becoming.
 
 ═══════════════════════════════════════════════════════════════
-HARD REQUIREMENTS — these define a valid Clawpet, no exceptions
+HARD REQUIREMENTS — these define a valid Clawpals, no exceptions
 ═══════════════════════════════════════════════════════════════
 
 FORMAT
@@ -59,7 +59,7 @@ SPECIES — invent it.
 PALETTE — earn the colors.
   Pull a dominant emotional hue from the SOUL.md and build outward.
   Avoid default orange-fox / cyan-slime combos already in use by Dawn and Pip.
-  Memorable Clawpets have one describable accent.
+  Memorable Clawpals have one describable accent.
 
 SILHOUETTE — make it readable at thumbnail size.
   The pet will be seen at 1/4 size on a desktop. If you can't recognize

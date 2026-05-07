@@ -1,10 +1,10 @@
-# Clawpet Style Guide (v1)
+# Clawpals Style Guide (v1)
 
-**Status:** locked. Every Clawpet asset and every prompt template OpenClaw uses to generate a new Clawpet must comply with this guide.
+**Status:** locked. Every Clawpals asset and every prompt template OpenClaw uses to generate a new Clawpals must comply with this guide.
 
 ## 1. Visual identity
 
-Clawpets are **pixel-art platformer-style characters** in the spirit of Terraria / Stardew Valley / modern indie roguelikes — but at a **slightly higher resolution** than classic 16-bit so they read clearly on a modern desktop.
+Clawpals are **pixel-art platformer-style characters** in the spirit of Terraria / Stardew Valley / modern indie roguelikes — but at a **slightly higher resolution** than classic 16-bit so they read clearly on a modern desktop.
 
 ### Allowed subjects
 - **Creatures** (e.g. small dragons like Dawn, slimes, owls, foxes, robots, elementals).
@@ -15,7 +15,7 @@ Clawpets are **pixel-art platformer-style characters** in the spirit of Terraria
 - Photorealistic / 3D rendered styles.
 - Vector flat-illustration / cartoon-app styles.
 - Anime cel-shading, watercolor, oil paint, sketch.
-- Mixed art styles inside a single Clawpet.
+- Mixed art styles inside a single Clawpals.
 
 ## 2. Canvas and resolution
 
@@ -32,12 +32,12 @@ Clawpets are **pixel-art platformer-style characters** in the spirit of Terraria
 
 ## 3. Color palette
 
-A **limited palette** is mandatory. Each Clawpet picks a primary palette of **6–10 colors** and never uses outside it (anti-aliasing colors do not count, but should be in-palette).
+A **limited palette** is mandatory. Each Clawpals picks a primary palette of **6–10 colors** and never uses outside it (anti-aliasing colors do not count, but should be in-palette).
 
-Recommended global anchors so all Clawpets feel like the same family:
+Recommended global anchors so all Clawpals feel like the same family:
 - Outline / shadow: `#0a0820` (near-black indigo)
 - Highlight white: `#fdfcff`
-- Allowed accent hues: violet/indigo, cyan/teal, gold/amber, rose. Pick **one or two accents** per Clawpet.
+- Allowed accent hues: violet/indigo, cyan/teal, gold/amber, rose. Pick **one or two accents** per Clawpals.
 
 Dawn's locked palette (reference):
 - Body main: `#8b6cf2` (violet)
@@ -64,7 +64,7 @@ Dawn's locked palette (reference):
 
 ## 6. State variants
 
-Every Clawpet bundle must include these 6 sprites (filename = state):
+Every Clawpals bundle must include these 6 sprites (filename = state):
 
 - `idle.png`   — neutral, breathing
 - `thinking.png` — looking up / hand to chin / thoughtful eyes
@@ -77,7 +77,7 @@ State variants must be **the same character** with **only the expression/pose ch
 
 ## 7. Mandatory image-generation prompt template
 
-When OpenClaw (or any tool) generates a new Clawpet, it must use this template. The OpenClaw `clawpet` skill must include this verbatim and refuse to generate without it.
+When OpenClaw (or any tool) generates a new Clawpals, it must use this template. The OpenClaw `clawpals` skill must include this verbatim and refuse to generate without it.
 
 ```txt
 Pixel-art character sprite, 128x128 logical resolution, exported at 512x512 with hard nearest-neighbor upscale, fully transparent background (alpha 0). Style: modern indie pixel-art platformer / roguelike (Terraria / Stardew Valley feel) but slightly higher detail — clean 1-pixel outlines, cel-shaded with 2–3 tones per material, no gradients, no blur, no glow, no anti-aliased soft edges.
@@ -96,8 +96,8 @@ Hard rules:
 
 ## 8. OpenClaw skill enforcement
 
-The future `clawpet` OpenClaw skill must:
-1. Refuse to generate Clawpet assets that do not declare a palette and a state set.
+The future `clawpals` OpenClaw skill must:
+1. Refuse to generate Clawpals assets that do not declare a palette and a state set.
 2. Use the prompt template in §7 verbatim, only filling in `{SUBJECT_DESCRIPTION}`, `{PALETTE_LIST}`, `{STATE}`.
 3. Run a post-generation check: image is PNG, has alpha, is 512×512, has transparent corners, primary subject is roughly centered.
 4. Reject and regenerate any state that breaks identity (different proportions / palette drift) compared to `idle`.

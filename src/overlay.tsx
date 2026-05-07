@@ -5,7 +5,7 @@ import { type AvatarState } from "./contracts/avatarEvent";
 import { loadAvatarBundle, type ResolvedAvatarBundle } from "./avatars/bundle";
 import "./styles.css";
 
-const BUILD_TIME_AVATAR = (import.meta as { env?: Record<string, string> }).env?.VITE_CLAWPET_AVATAR_BUNDLE;
+const BUILD_TIME_AVATAR = (import.meta as { env?: Record<string, string> }).env?.VITE_CLAWPALS_AVATAR_BUNDLE;
 const RUNTIME_URL = "http://127.0.0.1:8737";
 
 function BundleAvatar({ state, bundle }: { state: AvatarState; bundle: ResolvedAvatarBundle | null }) {
@@ -81,12 +81,12 @@ function OverlayApp() {
 
   // Load an initial bundle immediately; status polling below keeps it current.
   useEffect(() => {
-    document.documentElement.classList.add("clawpet-overlay");
-    document.body.classList.add("clawpet-overlay");
+    document.documentElement.classList.add("clawpals-overlay");
+    document.body.classList.add("clawpals-overlay");
     void refreshBundle();
     return () => {
-      document.documentElement.classList.remove("clawpet-overlay");
-      document.body.classList.remove("clawpet-overlay");
+      document.documentElement.classList.remove("clawpals-overlay");
+      document.body.classList.remove("clawpals-overlay");
     };
   }, []);
 

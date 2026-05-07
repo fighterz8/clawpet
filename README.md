@@ -1,4 +1,4 @@
-# Clawpet
+# Clawpals
 
 <p align="center">
   <strong>A pixel-art desktop companion for OpenClaw.</strong><br/>
@@ -6,9 +6,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/fighterz8/clawpet/releases/latest">Latest Release</a>
+  <a href="https://github.com/fighterz8/clawpals/releases/latest">Latest Release</a>
   ·
-  <a href="https://github.com/fighterz8/clawpet/actions/workflows/desktop-build.yml">Build Workflow</a>
+  <a href="https://github.com/fighterz8/clawpals/actions/workflows/desktop-build.yml">Build Workflow</a>
   ·
   <a href="docs/roadmap.md">Roadmap</a>
   ·
@@ -23,9 +23,9 @@
 </p>
 
 > [!IMPORTANT]
-> **Clawpet is still early.** The desktop app, pairing flow, live daemon reactivity, animated bundles, and local-only avatar pipeline are working, but the product is still evolving quickly.
+> **Clawpals is still early.** The desktop app, pairing flow, live daemon reactivity, animated bundles, and local-only avatar pipeline are working, but the product is still evolving quickly.
 >
-> - **Bring your own OpenClaw.** Clawpet is not a hosted assistant.
+> - **Bring your own OpenClaw.** Clawpals is not a hosted assistant.
 > - **Cross-machine setups are currently Tailscale-first.**
 > - **Windows release signing is in progress.** Stable release links exist now; a proper artifact-signing certificate rollout is underway.
 > - **Custom avatar generation still needs QA.** The new coherency pipeline helps, but generation/repair quality is not yet perfect.
@@ -50,13 +50,13 @@
   </table>
 </div>
 
-Clawpet is meant to feel ambient, not noisy: glanceable status, tiny emotions, and just enough presence to know your assistant is alive and working.
+Clawpals is meant to feel ambient, not noisy: glanceable status, tiny emotions, and just enough presence to know your assistant is alive and working.
 
 ## Why this exists
 
 Most assistants live in chat. When they are working on something, you are often just waiting.
 
-Clawpet gives OpenClaw a small desktop body so you can tell, at a glance, whether it is:
+Clawpals gives OpenClaw a small desktop body so you can tell, at a glance, whether it is:
 - idle
 - thinking
 - focused
@@ -66,9 +66,9 @@ Clawpet gives OpenClaw a small desktop body so you can tell, at a glance, whethe
 
 The goal is not to make a dashboard. The goal is to make your agent feel present without turning your desktop into spam.
 
-## What Clawpet actually is
+## What Clawpals actually is
 
-Clawpet has three main parts:
+Clawpals has three main parts:
 
 1. **A native desktop app** built with Tauri.
 2. **A local runtime** that owns current avatar state and pairing/auth.
@@ -97,7 +97,7 @@ That means:
 ### Stable release downloads
 
 Download the latest packaged app here:
-- <https://github.com/fighterz8/clawpet/releases/latest>
+- <https://github.com/fighterz8/clawpals/releases/latest>
 
 Tagged builds (`v*`) publish desktop installers/packages to GitHub Releases automatically.
 
@@ -137,12 +137,12 @@ Without the desktop app running on the display machine, OpenClaw has nothing to 
 
 ```bash
 # macOS / Linux
-curl -fsSL https://raw.githubusercontent.com/fighterz8/clawpet/main/scripts/install-unix.sh | bash
+curl -fsSL https://raw.githubusercontent.com/fighterz8/clawpals/main/scripts/install-unix.sh | bash
 ```
 
 ```powershell
 # Windows PowerShell
-irm https://raw.githubusercontent.com/fighterz8/clawpet/main/scripts/install-windows.ps1 | iex
+irm https://raw.githubusercontent.com/fighterz8/clawpals/main/scripts/install-windows.ps1 | iex
 ```
 
 ### Run from source
@@ -150,14 +150,14 @@ irm https://raw.githubusercontent.com/fighterz8/clawpet/main/scripts/install-win
 Run these from the cloned repo directory that contains `package.json`:
 
 ```bash
-cd ~/clawpet
+cd ~/clawpals
 npm ci
 npm run desktop:dev
 ```
 
-`clawpet` is the pairing/control CLI, not an npm-script wrapper. Use `npm run desktop:dev`, not `clawpet run desktop:dev`.
+`clawpals` is the pairing/control CLI, not an npm-script wrapper. Use `npm run desktop:dev`, not `clawpals run desktop:dev`.
 
-If `npm` reports `Could not read package.json`, you are in the wrong directory. `cd ~/clawpet` or re-run the installer.
+If `npm` reports `Could not read package.json`, you are in the wrong directory. `cd ~/clawpals` or re-run the installer.
 
 If Tauri reports `failed to run 'cargo metadata' ... No such file or directory`, Rust/Cargo is missing from this shell. Install Rust, then reopen the terminal or source Cargo's env file:
 
@@ -177,7 +177,7 @@ The current desktop app path starts the local runtime from the app.
 For older/dev runtime testing:
 
 ```bash
-CLAWPET_USE_NODE_RUNTIME=1 npm run desktop:dev
+CLAWPALS_USE_NODE_RUNTIME=1 npm run desktop:dev
 ```
 
 Or directly:
@@ -188,11 +188,11 @@ npm run runtime:dev
 
 ## Pairing flow
 
-Clawpet is designed to feel more like pairing a local media device than hand-editing config files.
+Clawpals is designed to feel more like pairing a local media device than hand-editing config files.
 
 ### Typical flow
 
-1. Open Clawpet on the display machine.
+1. Open Clawpals on the display machine.
 2. If it needs pairing, click **Show pair code**.
 3. Give that code and host to OpenClaw.
 4. OpenClaw claims the code, stores the token, and verifies the runtime.
@@ -201,23 +201,23 @@ Clawpet is designed to feel more like pairing a local media device than hand-edi
 ### Example command from OpenClaw
 
 ```bash
-clawpet wizard openclaw --code 472091 --host <desktop-host>.<tailnet>.ts.net:8737
+clawpals wizard openclaw --code 472091 --host <desktop-host>.<tailnet>.ts.net:8737
 ```
 
 Manual equivalent:
 
 ```bash
-clawpet pair --code 472091 --host <desktop-host>.<tailnet>.ts.net:8737
-clawpet activity balanced
-clawpet heartbeat-reactions off
-clawpet daemon enable
+clawpals pair --code 472091 --host <desktop-host>.<tailnet>.ts.net:8737
+clawpals activity balanced
+clawpals heartbeat-reactions off
+clawpals daemon enable
 ```
 
 ### Verify pairing
 
 ```bash
-clawpet status
-clawpet send happy "It works" --bubble "Hello! 🐲"
+clawpals status
+clawpals send happy "It works" --bubble "Hello! 🐲"
 ```
 
 > [!NOTE]
@@ -228,10 +228,10 @@ clawpet send happy "It works" --bubble "Hello! 🐲"
 The preferred path is the daemon. It tails OpenClaw session JSONL and mirrors real activity with zero model calls.
 
 ```bash
-clawpet daemon enable
-clawpet daemon status
-clawpet daemon stop
-clawpet daemon disable
+clawpals daemon enable
+clawpals daemon status
+clawpals daemon stop
+clawpals daemon disable
 ```
 
 Typical mappings:
@@ -244,13 +244,13 @@ Typical mappings:
 LLM-triggered flavor emits still exist:
 
 ```bash
-clawpet react <event>
-clawpet send <state> [message] --bubble <text>
+clawpals react <event>
+clawpals send <state> [message] --bubble <text>
 ```
 
 ## Activity levels
 
-Clawpet behavior is gated by a persisted activity setting so the assistant cannot casually over-animate or over-message past the user’s chosen level.
+Clawpals behavior is gated by a persisted activity setting so the assistant cannot casually over-animate or over-message past the user’s chosen level.
 
 Levels:
 - `off`
@@ -262,15 +262,15 @@ Levels:
 Example:
 
 ```bash
-clawpet activity expressive
-clawpet heartbeat-reactions on
+clawpals activity expressive
+clawpals heartbeat-reactions on
 ```
 
 ## Privacy, security, and scope
 
 ### Privacy posture
 
-- Clawpet is designed to be **local-first**.
+- Clawpals is designed to be **local-first**.
 - There is **no required cloud relay** for the core product.
 - Cross-machine projection is currently **Tailscale-first**.
 - Tokens are persisted locally after pairing.
@@ -284,7 +284,7 @@ clawpet heartbeat-reactions on
 
 ### Scope disclaimer
 
-Clawpet is not trying to be:
+Clawpals is not trying to be:
 - an always-on surveillance tool
 - a cloud-dependent status product
 - a replacement for OpenClaw itself
@@ -306,7 +306,7 @@ These exist to show:
 
 ## Local-only avatar generation pipeline
 
-Clawpet now supports a stronger OpenClaw-side avatar workflow:
+Clawpals now supports a stronger OpenClaw-side avatar workflow:
 - generate source frames locally
 - build a bundle locally
 - run coherency QA
@@ -318,7 +318,7 @@ This keeps custom avatar work off the display machine and makes iteration much m
 See:
 - [`docs/pipeline/avatar-generation-pipeline.md`](docs/pipeline/avatar-generation-pipeline.md)
 - [`docs/pipeline/avatar-coherency-qa.md`](docs/pipeline/avatar-coherency-qa.md)
-- [`docs/clawpet-style-guide.md`](docs/clawpet-style-guide.md)
+- [`docs/clawpals-style-guide.md`](docs/clawpals-style-guide.md)
 
 > [!CAUTION]
 > Generated avatars are still an active R&D area. The new pipeline is much better than the earlier manual flow, but frame coherency and repair quality are still improving.
@@ -385,7 +385,7 @@ Tokens persist on both sides after successful pairing.
 ## Documentation
 
 - [`docs/v0.5-brief.md`](docs/v0.5-brief.md)
-- [`docs/clawpet-style-guide.md`](docs/clawpet-style-guide.md)
+- [`docs/clawpals-style-guide.md`](docs/clawpals-style-guide.md)
 - [`docs/avatar-bundle-spec.md`](docs/avatar-bundle-spec.md)
 - [`docs/avatar-event-contract.md`](docs/avatar-event-contract.md)
 - [`docs/pipeline/avatar-generation-pipeline.md`](docs/pipeline/avatar-generation-pipeline.md)
@@ -396,7 +396,7 @@ Tokens persist on both sides after successful pairing.
 
 ## Honest about the project
 
-Clawpet is a portfolio piece, a personal tool, and a product experiment.
+Clawpals is a portfolio piece, a personal tool, and a product experiment.
 
 The hard part has not been the tray icon or the HTTP routes. The hard part has been making generated characters feel like one coherent little creature instead of several almost-matching redraws. That is still where a lot of the project’s ambition lives.
 

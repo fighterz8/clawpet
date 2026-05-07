@@ -2,7 +2,7 @@
   "schemaVersion": "0.5.0",
   "name": "Lantern Moth",
   "version": "0.2.0-animated",
-  "description": "A soft lantern-moth Clawpet showcase character with real motion loops across all six states.",
+  "description": "A soft lantern-moth Clawpals showcase character with real motion loops across all six states.",
   "defaultState": "idle",
   "states": {
     "idle": {

@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "Clawpet",
+  "productName": "Clawpals",
   "version": "0.2.0",
-  "identifier": "ai.openclaw.clawpet",
+  "identifier": "ai.openclaw.clawpals",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173/onboard.html",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Clawpet",
+        "title": "Clawpals",
         "label": "main",
         "url": "/onboard.html",
         "width": 820,
@@ -30,7 +30,7 @@
         "center": true
       },
       {
-        "title": "Clawpet",
+        "title": "Clawpals",
         "label": "pet",
         "url": "/overlay.html",
         "width": 360,
@@ -58,7 +58,7 @@
     "trayIcon": {
       "id": "main",
       "iconPath": "icons/32x32.png",
-      "tooltip": "Clawpet",
+      "tooltip": "Clawpals",
       "menuOnLeftClick": false
     }
   },

@@ -2,7 +2,7 @@
 
 ## v0.2.0 - 2026-05-06
 
-Clawpet moves from a basic paired desktop companion toward a clearer, more legible OpenClaw-side control surface.
+Clawpals moves from a basic paired desktop companion toward a clearer, more legible OpenClaw-side control surface.
 
 ### Added
 - Split reactivity into distinct **daemon voice** and **OpenClaw expression** controls.

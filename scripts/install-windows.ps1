@@ -1,7 +1,7 @@
-# Clawpet target install (Windows / PowerShell)
+# Clawpals target install (Windows / PowerShell)
 #
 # Usage (run on the machine that should display the desktop avatar):
-#   irm https://raw.githubusercontent.com/fighterz8/clawpet/main/scripts/install-windows.ps1 | iex
+#   irm https://raw.githubusercontent.com/fighterz8/clawpals/main/scripts/install-windows.ps1 | iex
 
 $ErrorActionPreference = "Stop"
 
@@ -11,7 +11,7 @@ function Need-Cmd($cmd, $hint) {
   }
 }
 
-Write-Host "==> Clawpet target installer (Windows)" -ForegroundColor Cyan
+Write-Host "==> Clawpals target installer (Windows)" -ForegroundColor Cyan
 
 Need-Cmd "git" "Install Git for Windows from https://git-scm.com/downloads."
 Need-Cmd "node" "Install Node.js LTS from https://nodejs.org. Need >= 20."
@@ -29,10 +29,10 @@ if (-not (where.exe link.exe 2>$null)) {
   exit 0
 }
 
-$repoDir = Join-Path $HOME "clawpet"
+$repoDir = Join-Path $HOME "clawpals"
 if (-not (Test-Path $repoDir)) {
-  Write-Host "==> Cloning Clawpet into $repoDir" -ForegroundColor Cyan
-  git clone https://github.com/fighterz8/clawpet.git $repoDir
+  Write-Host "==> Cloning Clawpals into $repoDir" -ForegroundColor Cyan
+  git clone https://github.com/fighterz8/clawpals.git $repoDir
 } else {
   Write-Host "==> Updating existing repo at $repoDir" -ForegroundColor Cyan
   git -C $repoDir fetch origin main
@@ -42,19 +42,19 @@ if (-not (Test-Path $repoDir)) {
   } else {
     git -C $repoDir pull --ff-only
     if ($LASTEXITCODE -ne 0) {
-      Write-Error "Existing Clawpet repo has local changes or diverged history. Commit/stash changes or set CLAWPET_REPO_DIR to a fresh install path."
+      Write-Error "Existing Clawpals repo has local changes or diverged history. Commit/stash changes or set CLAWPALS_REPO_DIR to a fresh install path."
       exit 1
     }
   }
 }
 
 Push-Location $repoDir
-Write-Host "==> Installing npm deps and linking clawpet command..." -ForegroundColor Cyan
+Write-Host "==> Installing npm deps and linking clawpals command..." -ForegroundColor Cyan
 npm install
 npm link
 Pop-Location
 
-$stateDir = Join-Path $HOME ".openclaw\clawpet"
+$stateDir = Join-Path $HOME ".openclaw\clawpals"
 New-Item -ItemType Directory -Force -Path $stateDir | Out-Null
 
 $displayHost = "<desktop-host>.<tailnet>.ts.net"
@@ -64,11 +64,11 @@ try {
 } catch { }
 
 Write-Host ""
-Write-Host "==> Clawpet installed." -ForegroundColor Green
+Write-Host "==> Clawpals installed." -ForegroundColor Green
 Write-Host ""
 Write-Host "Start the guided display-machine setup:" -ForegroundColor Cyan
 Write-Host "  cd $repoDir"
-Write-Host "  clawpet wizard display"
+Write-Host "  clawpals wizard display"
 Write-Host ""
 Write-Host "Or try demo mode first (no OpenClaw pairing required):" -ForegroundColor Cyan
 Write-Host "  cd $repoDir"
@@ -80,6 +80,6 @@ Write-Host "  # on this display machine, start the runtime:"
 Write-Host "  cd $repoDir"
 Write-Host "  Start-Process powershell -ArgumentList '-NoExit','-Command','npm run runtime:tailscale'"
 Write-Host "  # then open pair mode on this display machine:"
-Write-Host "  clawpet pair-mode"
+Write-Host "  clawpals pair-mode"
 Write-Host "  # on the OpenClaw machine, claim the shown code:"
-Write-Host "  clawpet pair --code <6-digit-code> --host ${displayHost}:8737" -ForegroundColor Yellow
+Write-Host "  clawpals pair --code <6-digit-code> --host ${displayHost}:8737" -ForegroundColor Yellow

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Clawpet target install (macOS / Linux)
+# Clawpals target install (macOS / Linux)
 #
 # Usage (run on the machine that should display the desktop avatar):
-#   curl -fsSL https://raw.githubusercontent.com/fighterz8/clawpet/main/scripts/install-unix.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/fighterz8/clawpals/main/scripts/install-unix.sh | bash
 
 set -euo pipefail
 
@@ -11,7 +11,7 @@ cyan()  { printf "\033[1;36m%s\033[0m\n" "$*"; }
 yellow(){ printf "\033[1;33m%s\033[0m\n" "$*"; }
 err()   { printf "\033[1;31merror:\033[0m %s\n" "$*" >&2; exit 1; }
 
-cyan "==> Clawpet target installer"
+cyan "==> Clawpals target installer"
 
 command -v git  >/dev/null || err "git is required."
 command -v node >/dev/null || err "Node.js (>=20) is required."
@@ -24,26 +24,26 @@ if ! command -v cargo >/dev/null; then
   source "$HOME/.cargo/env"
 fi
 
-REPO_DIR="${CLAWPET_REPO_DIR:-$HOME/clawpet}"
+REPO_DIR="${CLAWPALS_REPO_DIR:-$HOME/clawpals}"
 if [[ ! -d "$REPO_DIR" ]]; then
-  cyan "==> Cloning Clawpet into $REPO_DIR"
-  git clone https://github.com/fighterz8/clawpet.git "$REPO_DIR"
+  cyan "==> Cloning Clawpals into $REPO_DIR"
+  git clone https://github.com/fighterz8/clawpals.git "$REPO_DIR"
 else
   cyan "==> Updating existing repo at $REPO_DIR"
   git -C "$REPO_DIR" fetch origin main
   if [[ -z "$(git -C "$REPO_DIR" status --porcelain)" ]]; then
     git -C "$REPO_DIR" reset --hard origin/main
   else
-    git -C "$REPO_DIR" pull --ff-only || err "Existing Clawpet repo has local changes or diverged history. Commit/stash changes or set CLAWPET_REPO_DIR to a fresh install path."
+    git -C "$REPO_DIR" pull --ff-only || err "Existing Clawpals repo has local changes or diverged history. Commit/stash changes or set CLAWPALS_REPO_DIR to a fresh install path."
   fi
 fi
 
-cyan "==> Installing npm deps and linking clawpet command..."
+cyan "==> Installing npm deps and linking clawpals command..."
 ( cd "$REPO_DIR" && npm install && npm link )
 
 # Ensure runtime state directory exists; the runtime owns token creation.
-mkdir -p "$HOME/.openclaw/clawpet"
-chmod 700 "$HOME/.openclaw/clawpet"
+mkdir -p "$HOME/.openclaw/clawpals"
+chmod 700 "$HOME/.openclaw/clawpals"
 
 DISPLAY_HOST="<desktop-host>.<tailnet>.ts.net"
 if command -v tailscale >/dev/null; then
@@ -54,11 +54,11 @@ if command -v tailscale >/dev/null; then
   fi
 fi
 
-green "==> Clawpet installed."
+green "==> Clawpals installed."
 echo
 cyan "Start the guided display-machine setup:"
 echo "  cd $REPO_DIR"
-echo "  clawpet wizard display"
+echo "  clawpals wizard display"
 echo
 cyan "Run the desktop app from source:"
 echo "  cd $REPO_DIR"
@@ -68,9 +68,9 @@ cyan "Cross-machine pairing flow:"
 echo "  # on this display machine, open the app and click Show pair code when needed:"
 echo "  cd $REPO_DIR && npm run desktop:dev"
 echo "  # on the OpenClaw machine, claim the shown code:"
-yellow "  clawpet pair --code <6-digit-code> --host $DISPLAY_HOST:8737"
+yellow "  clawpals pair --code <6-digit-code> --host $DISPLAY_HOST:8737"
 echo
-yellow "Note: use npm run desktop:dev, not 'clawpet run desktop:dev'."
+yellow "Note: use npm run desktop:dev, not 'clawpals run desktop:dev'."
 echo
 if [[ "$(uname -s)" == "Linux" ]]; then
   yellow "On Linux, you may also need:"

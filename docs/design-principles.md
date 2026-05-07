@@ -1,4 +1,4 @@
-# Clawpet Design Principles
+# Clawpals Design Principles
 
 ## Local-first
 
@@ -6,7 +6,7 @@ The runtime should work locally without requiring a cloud service. Cloud-hosted 
 
 ## Lightweight
 
-Clawpet should feel smaller than a dashboard. It should use minimal CPU/RAM, avoid heavy animation systems in the MVP, and be easy to hide or quit.
+Clawpals should feel smaller than a dashboard. It should use minimal CPU/RAM, avoid heavy animation systems in the MVP, and be easy to hide or quit.
 
 ## Non-intrusive
 

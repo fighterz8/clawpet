@@ -27,8 +27,8 @@ body:has(.overlay-shell) {
   overflow: hidden;
 }
 
-html.clawpet-overlay,
-body.clawpet-overlay {
+html.clawpals-overlay,
+body.clawpals-overlay {
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;

@@ -4,7 +4,7 @@ This document covers the practical path from stable Windows downloads to lower-f
 
 ## What stable links solve
 
-Using GitHub Releases gives Clawpet:
+Using GitHub Releases gives Clawpals:
 - stable download URLs
 - versioned installers
 - a normal release page instead of ephemeral Actions artifacts
@@ -15,7 +15,7 @@ This improves distribution, but it does **not** fully remove Windows security pr
 
 Windows trust improves when the installer is **code-signed**.
 
-For Clawpet, the immediate target is signing:
+For Clawpals, the immediate target is signing:
 - `src-tauri/target/release/bundle/msi/*.msi`
 - `src-tauri/target/release/bundle/nsis/*.exe`
 
@@ -54,7 +54,7 @@ That is more operationally heavy, so it is not the first move unless distributio
 On a trusted machine:
 
 ```bash
-base64 -w 0 clawpet-codesign.pfx > clawpet-codesign.pfx.base64
+base64 -w 0 clawpals-codesign.pfx > clawpals-codesign.pfx.base64
 ```
 
 Then store the file contents as the GitHub Actions secret:

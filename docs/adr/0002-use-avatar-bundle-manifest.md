@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-Clawpet should allow OpenClaw and users to create or modify avatars without changing runtime code. The runtime needs a predictable way to load assets, states, and animation presets.
+Clawpals should allow OpenClaw and users to create or modify avatars without changing runtime code. The runtime needs a predictable way to load assets, states, and animation presets.
 
 ## Decision
 

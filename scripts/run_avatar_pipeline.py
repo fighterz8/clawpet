@@ -14,7 +14,7 @@ from PIL import Image
 
 REQUIRED_STATES = ["idle", "thinking", "focused", "happy", "alert", "sleepy"]
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_CLAWPET_CLI = Path.home() / ".openclaw/workspace/skills/clawpet/bin/clawpet.mjs"
+DEFAULT_CLAWPALS_CLI = Path.home() / ".openclaw/workspace/skills/clawpals/bin/clawpals.mjs"
 DEFAULT_BUILD_SCRIPT = ROOT / "scripts/build_avatar_bundle.py"
 DEFAULT_STAGE_ROOT = ROOT / ".avatar-pipeline"
 BG_RULE = {"g_min": 200, "r_max": 80, "b_max": 150}
@@ -350,14 +350,14 @@ def action_build(manifest: dict[str, Any], paths: PipelinePaths) -> None:
     print(f"Preview gif: {paths.preview_gif}")
 
 
-def clawpet_cmd(*parts: str) -> list[str]:
-    return ["node", str(DEFAULT_CLAWPET_CLI), *parts]
+def clawpals_cmd(*parts: str) -> list[str]:
+    return ["node", str(DEFAULT_CLAWPALS_CLI), *parts]
 
 
 def action_push(manifest: dict[str, Any], paths: PipelinePaths) -> None:
     if not (paths.bundle_dir / "avatar.json").exists():
         action_build(manifest, paths)
-    run_command(clawpet_cmd("avatar", "push", str(paths.bundle_dir)), cwd=ROOT)
+    run_command(clawpals_cmd("avatar", "push", str(paths.bundle_dir)), cwd=ROOT)
     print(f"Pushed bundle to runtime target '{manifest['targetRuntime']}': {paths.bundle_dir}")
 
 
@@ -369,12 +369,12 @@ def parse_status_output(raw: str) -> dict[str, Any]:
         obj, next_index = decoder.raw_decode(raw, index)
         if isinstance(obj, dict): parsed.append(obj)
         index = next_index
-    if not parsed: raise PipelineError("Unable to parse clawpet status output as JSON")
+    if not parsed: raise PipelineError("Unable to parse clawpals status output as JSON")
     return parsed[-1]
 
 
 def action_verify(manifest: dict[str, Any], paths: PipelinePaths) -> None:
-    result = run_command(clawpet_cmd("status"), cwd=ROOT, capture=True)
+    result = run_command(clawpals_cmd("status"), cwd=ROOT, capture=True)
     status = parse_status_output(result.stdout)
     avatar = status.get("avatar", {})
     if avatar.get("avatarId") != manifest["name"]:
@@ -394,7 +394,7 @@ def action_run(manifest: dict[str, Any], paths: PipelinePaths) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Run the Clawpet avatar bundle pipeline from a JSON manifest.")
+    parser = argparse.ArgumentParser(description="Run the Clawpals avatar bundle pipeline from a JSON manifest.")
     parser.add_argument("action", choices=["scaffold", "emit-prompts", "coherency-report", "validate", "build", "push", "verify", "run"])
     parser.add_argument("manifest", type=Path, help="Path to an avatar job manifest JSON file")
     return parser

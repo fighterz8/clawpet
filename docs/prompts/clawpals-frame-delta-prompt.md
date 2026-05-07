@@ -1,4 +1,4 @@
-# Clawpet Frame-Delta Prompt Template
+# Clawpals Frame-Delta Prompt Template
 
 This is the prompt the agent uses **per frame**, after the character's species,
 palette, silhouette, and pose framing have been locked.
@@ -16,7 +16,7 @@ Ask for the smallest possible change that reads as life.
 ```
 FRAME GENERATION — STRICT CONSISTENCY MODE
 
-You are generating frame <N> of <M> for the <state> state of the Clawpet
+You are generating frame <N> of <M> for the <state> state of the Clawpals
 named <pet_name>. Frame 0 for this state already exists. Produce frame <N>
 as a micro-variation of that state anchor, not a redraw.
 

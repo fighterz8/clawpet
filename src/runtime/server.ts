@@ -7,18 +7,18 @@ import { createRuntimeApp } from "./app";
 import { RuntimeStateStore } from "./stateStore";
 import { AvatarBundleStore } from "./avatarBundleStore";
 
-const port = Number(process.env.CLAWPET_RUNTIME_PORT ?? 8737);
-const hostname = process.env.CLAWPET_RUNTIME_HOST ?? "127.0.0.1";
-const avatarId = process.env.CLAWPET_AVATAR_BUNDLE ?? "dawn-v0";
-const demoMode = process.env.CLAWPET_DEMO === "1" || process.env.CLAWPET_DEMO?.toLowerCase() === "true";
+const port = Number(process.env.CLAWPALS_RUNTIME_PORT ?? 8737);
+const hostname = process.env.CLAWPALS_RUNTIME_HOST ?? "127.0.0.1";
+const avatarId = process.env.CLAWPALS_AVATAR_BUNDLE ?? "dawn-v0";
+const demoMode = process.env.CLAWPALS_DEMO === "1" || process.env.CLAWPALS_DEMO?.toLowerCase() === "true";
 
 const isLoopback = hostname === "127.0.0.1" || hostname === "::1" || hostname === "localhost";
 
-const tokenFile = join(homedir(), ".openclaw", "clawpet", "runtime-token");
-const bundleDir = join(homedir(), ".openclaw", "clawpet", "runtime-bundles");
+const tokenFile = join(homedir(), ".openclaw", "clawpals", "runtime-token");
+const bundleDir = join(homedir(), ".openclaw", "clawpals", "runtime-bundles");
 
 function loadOrCreateToken(): string {
-  if (process.env.CLAWPET_RUNTIME_TOKEN) return process.env.CLAWPET_RUNTIME_TOKEN.trim();
+  if (process.env.CLAWPALS_RUNTIME_TOKEN) return process.env.CLAWPALS_RUNTIME_TOKEN.trim();
   if (existsSync(tokenFile)) {
     const t = readFileSync(tokenFile, "utf8").trim();
     if (t) return t;
@@ -30,14 +30,14 @@ function loadOrCreateToken(): string {
 }
 
 // Auth policy:
-// - Loopback bind: token optional (set CLAWPET_RUNTIME_TOKEN to enforce; otherwise convenience over network exposure).
+// - Loopback bind: token optional (set CLAWPALS_RUNTIME_TOKEN to enforce; otherwise convenience over network exposure).
 // - Non-loopback bind (LAN/Tailscale/0.0.0.0): token REQUIRED. Auto-generated and persisted if absent.
 let authToken: string | undefined;
 if (!isLoopback) authToken = loadOrCreateToken();
-else if (process.env.CLAWPET_RUNTIME_TOKEN) authToken = process.env.CLAWPET_RUNTIME_TOKEN.trim();
+else if (process.env.CLAWPALS_RUNTIME_TOKEN) authToken = process.env.CLAWPALS_RUNTIME_TOKEN.trim();
 
-const allowCorsOrigin = process.env.CLAWPET_RUNTIME_CORS
-  ? process.env.CLAWPET_RUNTIME_CORS.split(",").map((s) => s.trim()).filter(Boolean)
+const allowCorsOrigin = process.env.CLAWPALS_RUNTIME_CORS
+  ? process.env.CLAWPALS_RUNTIME_CORS.split(",").map((s) => s.trim()).filter(Boolean)
   : undefined;
 
 const avatarBundleStore = new AvatarBundleStore(bundleDir);
@@ -61,7 +61,7 @@ if (demoMode) {
       version: "0.1.0",
       eventId: `demo-${Date.now()}`,
       sentAt: new Date().toISOString(),
-      source: { kind: "openclaw", displayName: "Clawpet demo" },
+      source: { kind: "openclaw", displayName: "Clawpals demo" },
       state: next.state,
       bubble: next.bubble,
     });
@@ -74,7 +74,7 @@ serve({
     authToken,
     allowCorsOrigin,
     avatarBundleStore,
-    displayHost: process.env.CLAWPET_DISPLAY_HOST || osHostname(),
+    displayHost: process.env.CLAWPALS_DISPLAY_HOST || osHostname(),
     onTokenRotated: (newToken) => {
       try {
         mkdirSync(dirname(tokenFile), { recursive: true });
@@ -89,14 +89,14 @@ serve({
   hostname,
 });
 
-console.log(`Clawpet runtime listening on http://${hostname}:${port}`);
-console.log(`Avatar: ${uploadedManifest ? `${uploadedManifest.name} ${uploadedManifest.version} (uploaded from OpenClaw)` : `${avatarId} (override with CLAWPET_AVATAR_BUNDLE)`}`);
+console.log(`Clawpals runtime listening on http://${hostname}:${port}`);
+console.log(`Avatar: ${uploadedManifest ? `${uploadedManifest.name} ${uploadedManifest.version} (uploaded from OpenClaw)` : `${avatarId} (override with CLAWPALS_AVATAR_BUNDLE)`}`);
 console.log(`Runtime bundle store: ${bundleDir}`);
-if (demoMode) console.log("Demo mode: cycling avatar states every 6s (CLAWPET_DEMO=1)");
+if (demoMode) console.log("Demo mode: cycling avatar states every 6s (CLAWPALS_DEMO=1)");
 if (authToken) {
   console.log(`Auth: Bearer token required. Token file: ${tokenFile}`);
   console.log(`To pair from another machine, run on that machine:`);
-  console.log(`  clawpet pair --url http://${hostname === "0.0.0.0" ? "<this-host>" : hostname}:${port} --token ${authToken}`);
+  console.log(`  clawpals pair --url http://${hostname === "0.0.0.0" ? "<this-host>" : hostname}:${port} --token ${authToken}`);
 } else {
-  console.log("Auth: disabled (loopback bind). Set CLAWPET_RUNTIME_TOKEN to require a token even on loopback.");
+  console.log("Auth: disabled (loopback bind). Set CLAWPALS_RUNTIME_TOKEN to require a token even on loopback.");
 }

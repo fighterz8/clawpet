@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-Clawpet's eventual target is a local desktop overlay controlled by OpenClaw. However, the project also needs to be easy to share publicly on GitHub, LinkedIn, and X before the local runtime is ready.
+Clawpals's eventual target is a local desktop overlay controlled by OpenClaw. However, the project also needs to be easy to share publicly on GitHub, LinkedIn, and X before the local runtime is ready.
 
 Nick's main machine does not directly access the OpenClaw workspace, so GitHub/Vercel-hosted files are preferable for early review.
 

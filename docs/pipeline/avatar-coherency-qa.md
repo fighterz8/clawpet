@@ -1,6 +1,6 @@
 # Avatar Coherency QA
 
-Generated Clawpet avatars should feel like **one character moving**, not several similar redraws.
+Generated Clawpals avatars should feel like **one character moving**, not several similar redraws.
 
 ## Contract
 

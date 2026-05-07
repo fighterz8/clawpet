@@ -21,7 +21,7 @@ type PairMode = {
   runtimeUrl?: string;
 };
 
-type ClawpetStatus = {
+type ClawpalsStatus = {
   connected?: boolean;
   lastEventAt?: string | null;
   avatar?: {
@@ -161,7 +161,7 @@ function eventOrigin(entry: RuntimeEventEntry) {
   const display = entry.event.source?.displayName?.toLowerCase() ?? "";
   const instance = entry.event.source?.instanceId?.toLowerCase() ?? "";
   const source = `${display} ${instance}`;
-  if (instance === "clawpet-user-requested" || display === "user-requested") return "user-requested";
+  if (instance === "clawpals-user-requested" || display === "user-requested") return "user-requested";
   if (source.includes("expression") || source.includes("openclaw")) return "OpenClaw expression";
   return "system signal";
 }
@@ -180,7 +180,7 @@ function App() {
   const [health, setHealth] = useState<RuntimeStatus | null>(null);
   const [runtimeError, setRuntimeError] = useState<string | null>(null);
   const [pair, setPair] = useState<PairMode>({ active: false });
-  const [status, setStatus] = useState<ClawpetStatus | null>(null);
+  const [status, setStatus] = useState<ClawpalsStatus | null>(null);
   const [events, setEvents] = useState<RuntimeEventEntry[]>([]);
   const [bundleManifest, setBundleManifest] = useState<BundleManifest | null>(null);
   const [reactivity, setReactivity] = useState<ReactivitySettings | null>(null);
@@ -200,7 +200,7 @@ function App() {
         // ignore
       }
       try {
-        const s = (await fetchJson(`${RUNTIME_URL}/status`)) as ClawpetStatus;
+        const s = (await fetchJson(`${RUNTIME_URL}/status`)) as ClawpalsStatus;
         setStatus(s);
       } catch {
         // ignore
@@ -296,8 +296,8 @@ function App() {
         : health?.runtime ?? "runtime";
   const groupedCode = pair.code ? `${pair.code.slice(0, 3)}   ${pair.code.slice(3)}` : "— — —   — — —";
   const openClawCommand = pair.code
-    ? `clawpet wizard openclaw --code ${pair.code} --host ${hostArg}`
-    : `clawpet wizard openclaw --code <code> --host ${hostArg}`;
+    ? `clawpals wizard openclaw --code ${pair.code} --host ${hostArg}`
+    : `clawpals wizard openclaw --code <code> --host ${hostArg}`;
   const expiresIn = pair.expiresAt ? Math.max(0, Math.round((pair.expiresAt - Date.now()) / 1000)) : null;
   const lastEventAge = formatAge(status?.lastEventAt ?? null);
   const chipLabel = openClawReady
@@ -319,7 +319,7 @@ function App() {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `clawpet-activity-log-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
+    anchor.download = `clawpals-activity-log-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
     anchor.click();
     URL.revokeObjectURL(url);
   }
@@ -333,7 +333,7 @@ function App() {
           </div>
           <div>
             <div className="clp-brand">
-              <span className="clp-name">clawpet</span>
+              <span className="clp-name">clawpals</span>
               <span className="clp-ver">v0.2.0</span>
             </div>
             <div className="clp-sub">VALIDATION CONSOLE FOR OPENCLAW</div>
@@ -457,7 +457,7 @@ function App() {
                 </div>
               </div>
               <div className="clp-cmd-row clp-cmd-row--stack">
-                <div className="clp-cmd">$ clawpet wizard openclaw --code {pair.code ?? "<code>"} --host {hostArg}</div>
+                <div className="clp-cmd">$ clawpals wizard openclaw --code {pair.code ?? "<code>"} --host {hostArg}</div>
                 <CopyButton text={openClawCommand} disabled={!pair.code} />
               </div>
               <div className="clp-cmd-help">Sends the bearer token back over the same connection. Pair window auto-closes on success.</div>
@@ -486,7 +486,7 @@ function App() {
                 )}
               </div>
               <div className="clp-source-legend" aria-label="Activity log source definitions">
-                <div><strong>system signal</strong><span>Default zero-token OpenClaw/Clawpet work telemetry. Replaces daemon/runtime labels in the visible log.</span></div>
+                <div><strong>system signal</strong><span>Default zero-token OpenClaw/Clawpals work telemetry. Replaces daemon/runtime labels in the visible log.</span></div>
                 <div><strong>OpenClaw expression</strong><span>Optional autonomous/contextual avatar remarks controlled by expression on/off.</span></div>
                 <div><strong>user-requested</strong><span>Explicit manual emits or routines the user asked the pet to perform.</span></div>
                 <div><strong>rule of thumb</strong><span>The log should mostly be system signal unless expression is enabled or the user explicitly asks for a routine.</span></div>

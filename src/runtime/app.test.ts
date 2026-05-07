@@ -33,12 +33,12 @@ describe("runtime API", () => {
 
     const health = await app.request("/health");
     expect(health.status).toBe(200);
-    expect(await health.json()).toMatchObject({ ok: true, service: "clawpet-runtime" });
+    expect(await health.json()).toMatchObject({ ok: true, service: "clawpals-runtime" });
 
     const status = await app.request("/status");
     expect(status.status).toBe(200);
     expect(await status.json()).toMatchObject({
-      type: "clawpet.status",
+      type: "clawpals.status",
       connected: true,
       avatar: { avatarId: "dawn-v0", state: "idle" },
     });
@@ -228,7 +228,7 @@ describe("runtime API", () => {
         state: "thinking",
         bubble: "Reading…",
         sentAt: new Date(nowMs).toISOString(),
-        source: { kind: "openclaw", instanceId: "clawpet-daemon-voice", displayName: "daemon voice" },
+        source: { kind: "openclaw", instanceId: "clawpals-daemon-voice", displayName: "daemon voice" },
         metadata: { sourceClass: "system signal", lingerMs: 2000 },
       }),
     });
@@ -275,7 +275,7 @@ describe("runtime API", () => {
         state: "happy",
         bubble: "Done!",
         sentAt: new Date(nowMs).toISOString(),
-        source: { kind: "openclaw", instanceId: "clawpet-user-requested", displayName: "user-requested" },
+        source: { kind: "openclaw", instanceId: "clawpals-user-requested", displayName: "user-requested" },
         metadata: { sourceClass: "user-requested", lingerMs: 12000 },
       }),
     });
@@ -453,7 +453,7 @@ describe("runtime API", () => {
   });
 
   it("accepts and serves OpenClaw-pushed avatar bundles", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "clawpet-bundle-test-"));
+    const dir = mkdtempSync(join(tmpdir(), "clawpals-bundle-test-"));
     const bundleStore = new AvatarBundleStore(dir);
     const app = createRuntimeApp({ avatarBundleStore: bundleStore });
     const manifest = JSON.parse(readFileSync("public/avatars/dawn-v0/avatar.json", "utf8"));
@@ -486,7 +486,7 @@ describe("runtime API", () => {
   });
 
   it("accepts and serves frame-based avatar bundles", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "clawpet-frame-bundle-test-"));
+    const dir = mkdtempSync(join(tmpdir(), "clawpals-frame-bundle-test-"));
     const bundleStore = new AvatarBundleStore(dir);
     const app = createRuntimeApp({ avatarBundleStore: bundleStore });
     const png = readFileSync("public/avatars/dawn-v0/assets/idle.png").toString("base64");

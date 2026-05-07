@@ -37,8 +37,8 @@ export type AvatarStateEvent = {
   metadata?: Record<string, string | number | boolean | null>;
 };
 
-export type ClawpetStatus = {
-  type: "clawpet.status";
+export type ClawpalsStatus = {
+  type: "clawpals.status";
   version: typeof AVATAR_EVENT_VERSION;
   runtimeId: string;
   deviceName: string;

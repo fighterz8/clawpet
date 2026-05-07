@@ -59,7 +59,7 @@ export async function sendTestEvent(options: SendTestEventOptions) {
       body: JSON.stringify(event),
     });
   } catch (error) {
-    throw new Error(`Could not reach Clawpet runtime at ${runtimeUrl}. Is npm run runtime:dev running? (${String(error)})`);
+    throw new Error(`Could not reach Clawpals runtime at ${runtimeUrl}. Is npm run runtime:dev running? (${String(error)})`);
   }
 
   const body = await response.json().catch(() => null);

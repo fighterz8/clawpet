@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-// Clawpet daemon — tails the active OpenClaw session JSONL and dispatches
+// Clawpals daemon — tails the active OpenClaw session JSONL and dispatches
 // avatar reactions in real time. Zero LLM-token cost: runs as a sidecar.
 //
 // Subscribes to: user messages, assistant tool calls, assistant final answers.
-// Dispatches: clawpet react <event> --bubble … --quiet
+// Dispatches: clawpals react <event> --bubble … --quiet
 //
-// Activity-level gating happens inside `clawpet react` itself, so this daemon
-// just fires events; the user's `clawpet activity <level>` decides what lands.
+// Activity-level gating happens inside `clawpals react` itself, so this daemon
+// just fires events; the user's `clawpals activity <level>` decides what lands.
 
 import { spawn, spawnSync } from "node:child_process";
 import { readFileSync, statSync, existsSync, openSync, readSync, closeSync, writeFileSync, mkdirSync, appendFileSync, unlinkSync, readdirSync } from "node:fs";
@@ -15,12 +15,12 @@ import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
-const CLI = join(dirname(__filename), "clawpet.mjs");
+const CLI = join(dirname(__filename), "clawpals.mjs");
 
-const STATE_DIR = join(homedir(), ".openclaw", "clawpet");
+const STATE_DIR = join(homedir(), ".openclaw", "clawpals");
 const PID_FILE = join(STATE_DIR, "daemon.pid");
 const LOG_FILE = join(STATE_DIR, "daemon.log");
-const SESSIONS_DIR = process.env.CLAWPET_SESSIONS_DIR ||
+const SESSIONS_DIR = process.env.CLAWPALS_SESSIONS_DIR ||
   join(homedir(), ".openclaw", "agents", "main", "sessions");
 
 const POLL_MS = 400;       // how often to check for new bytes
@@ -84,12 +84,12 @@ function log(line) {
 let lastDispatchAt = 0;
 const DISPATCH_THROTTLE_MS = 100; // snappy first-prompt/tool reaction without spam
 
-function callClawpet(args) {
-  // Fire-and-forget; keep stdout/stderr quiet. clawpet CLI has --quiet.
+function callClawpals(args) {
+  // Fire-and-forget; keep stdout/stderr quiet. clawpals CLI has --quiet.
   const proc = spawn(process.execPath, [CLI, ...args], {
     detached: false,
     stdio: ["ignore", "ignore", "ignore"],
-    env: { ...process.env, CLAWPET_EMIT_SOURCE: "daemon" },
+    env: { ...process.env, CLAWPALS_EMIT_SOURCE: "daemon" },
   });
   proc.on("error", () => {}); // swallow
 }
@@ -102,10 +102,10 @@ function readConfig() {
 function readActivity() {
   try {
     const cfg = readConfig();
-    const v = process.env.CLAWPET_ACTIVITY || cfg.activity || "balanced";
+    const v = process.env.CLAWPALS_ACTIVITY || cfg.activity || "balanced";
     return ["off", "minimal", "balanced", "expressive", "maximum"].includes(v) ? v : "balanced";
   } catch {
-    return process.env.CLAWPET_ACTIVITY || "balanced";
+    return process.env.CLAWPALS_ACTIVITY || "balanced";
   }
 }
 
@@ -122,7 +122,7 @@ function mapActivityToDaemonVoice(activity) {
 
 function readDaemonVoice() {
   const cfg = readConfig();
-  const env = process.env.CLAWPET_DAEMON_VOICE;
+  const env = process.env.CLAWPALS_DAEMON_VOICE;
   if (env && DAEMON_VOICE_LEVELS.includes(env)) return env;
   if (cfg.daemonVoice && DAEMON_VOICE_LEVELS.includes(cfg.daemonVoice)) return cfg.daemonVoice;
   return mapActivityToDaemonVoice(readActivity());
@@ -144,7 +144,7 @@ function reconcileDesiredAvatar(force = false) {
   const currentVersion = body?.avatar?.bundleVersion;
   if (currentId === cfg.lastAvatarId && currentVersion === cfg.lastBundleVersion) return;
   log(`avatar reconcile: runtime has ${currentId || "unknown"} ${currentVersion || "unknown"}; pushing desired ${cfg.lastAvatarId || "unknown"} ${cfg.lastBundleVersion || "unknown"}`);
-  callClawpet(["avatar", "push", dir]);
+  callClawpals(["avatar", "push", dir]);
 }
 
 let lastBubbleByEvent = new Map();
@@ -161,7 +161,7 @@ function dispatchDaemonEvent(eventName, seedSuffix = "") {
   const bubble = pickPhrase(pool, `${eventName}:${seedSuffix || now}`, lastPhrase);
   if (!bubble) return;
   lastBubbleByEvent.set(eventName, bubble);
-  callClawpet(["send", cfg.state, bubble, "--bubble", bubble, "--quiet"]);
+  callClawpals(["send", cfg.state, bubble, "--bubble", bubble, "--quiet"]);
   log(`${eventName} -> ${cfg.state} "${bubble}" (${daemonVoice})`);
 }
 

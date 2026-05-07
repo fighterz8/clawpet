@@ -1,6 +1,6 @@
-import { AVATAR_EVENT_VERSION, resolveBubbleText, type AvatarState, type AvatarStateEvent, type ClawpetStatus } from "../contracts/avatarEvent";
+import { AVATAR_EVENT_VERSION, resolveBubbleText, type AvatarState, type AvatarStateEvent, type ClawpalsStatus } from "../contracts/avatarEvent";
 
-export type RuntimeMode = ClawpetStatus["mode"];
+export type RuntimeMode = ClawpalsStatus["mode"];
 export type RuntimeEventSourceClass = "system signal" | "OpenClaw expression" | "user-requested";
 export type RuntimeEventOutcome = "shown" | "replaced" | "suppressed" | "skipped";
 
@@ -77,7 +77,7 @@ function inferSourceClass(event: AvatarStateEvent): RuntimeEventSourceClass {
   const instance = event.source.instanceId?.toLowerCase() ?? "";
   const joined = `${display} ${instance}`;
 
-  if (instance === "clawpet-user-requested" || display === "user-requested") return "user-requested";
+  if (instance === "clawpals-user-requested" || display === "user-requested") return "user-requested";
   if (joined.includes("expression") || joined.includes("openclaw")) return "OpenClaw expression";
   return "system signal";
 }
@@ -98,7 +98,7 @@ export class RuntimeStateStore {
   private lastEventAt?: string;
   private lastEventAtMs?: number;
   private lastLatencyMs?: number;
-  private pairedOpenClaw?: ClawpetStatus["pairedOpenClaw"];
+  private pairedOpenClaw?: ClawpalsStatus["pairedOpenClaw"];
   private events: RuntimeEventLogEntry[] = [];
   private readonly terminalLingerMs: number;
   private readonly activeLingerMs: number;
@@ -112,8 +112,8 @@ export class RuntimeStateStore {
   private lastExpressionFingerprintAtMs?: number;
 
   constructor(options: RuntimeStateStoreOptions = {}) {
-    this.runtimeId = options.runtimeId ?? "clawpet-local-runtime";
-    this.deviceName = options.deviceName ?? "Local Clawpet";
+    this.runtimeId = options.runtimeId ?? "clawpals-local-runtime";
+    this.deviceName = options.deviceName ?? "Local Clawpals";
     this.mode = options.mode ?? "local";
     this.avatarId = options.avatarId ?? "dawn-v0";
     this.bundleVersion = options.bundleVersion ?? "0.1.0";
@@ -281,9 +281,9 @@ export class RuntimeStateStore {
     this.bundleVersion = bundleVersion;
   }
 
-  getStatus(): ClawpetStatus {
+  getStatus(): ClawpalsStatus {
     return {
-      type: "clawpet.status",
+      type: "clawpals.status",
       version: AVATAR_EVENT_VERSION,
       runtimeId: this.runtimeId,
       deviceName: this.deviceName,

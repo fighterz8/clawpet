@@ -8,31 +8,31 @@ Accepted
 
 Many OpenClaw users run their OpenClaw instance on a separate machine from the desktop they actively use. Examples include a Linux server, home lab box, VPS, Mac node, or always-on host.
 
-Clawpet's value is highest when the avatar exists on the user's primary desktop, even if OpenClaw is running somewhere else.
+Clawpals's value is highest when the avatar exists on the user's primary desktop, even if OpenClaw is running somewhere else.
 
 A same-machine-only localhost API would be useful for early testing, but it would not satisfy the real target use case.
 
 ## Decision
 
-Design Clawpet around a connection abstraction that supports both local and remote control modes.
+Design Clawpals around a connection abstraction that supports both local and remote control modes.
 
 Initial modes:
 
 1. **Local mode**
-   - OpenClaw and Clawpet run on the same machine.
-   - OpenClaw sends events to a localhost API exposed by Clawpet.
+   - OpenClaw and Clawpals run on the same machine.
+   - OpenClaw sends events to a localhost API exposed by Clawpals.
 
 2. **Remote mode**
-   - Clawpet runs on the user's active desktop.
+   - Clawpals runs on the user's active desktop.
    - OpenClaw runs on another machine.
-   - Clawpet receives state updates through a paired remote connection.
+   - Clawpals receives state updates through a paired remote connection.
 
 Remote mode should not require users to open inbound firewall ports on their desktop. The desktop client should prefer outbound connections.
 
 ## Preferred remote architecture
 
 ```txt
-OpenClaw host  <── outbound HTTPS/WebSocket ──>  Clawpet relay  <── outbound WebSocket ──>  Clawpet desktop client
+OpenClaw host  <── outbound HTTPS/WebSocket ──>  Clawpals relay  <── outbound WebSocket ──>  Clawpals desktop client
 ```
 
 The relay passes small avatar events such as:
@@ -47,7 +47,7 @@ The relay passes small avatar events such as:
 
 ## Pairing model
 
-Clawpet desktop client should support a pairing flow:
+Clawpals desktop client should support a pairing flow:
 
 - generate pairing code or QR code
 - identify device name, e.g. `nick-main-pc`
@@ -74,7 +74,7 @@ Potentially elegant later, but too dependent on OpenClaw internals for the early
 Positive:
 
 - Matches real OpenClaw usage patterns.
-- Makes Clawpet useful on the user's main desktop.
+- Makes Clawpals useful on the user's main desktop.
 - Creates a stronger public systems-design story.
 - Allows local mode and remote mode to share the same event contract.
 

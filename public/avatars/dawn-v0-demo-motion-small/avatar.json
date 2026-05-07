@@ -6,8 +6,8 @@
   "defaultState": "idle",
   "seed": {
     "sourcePrompts": [
-      "docs/prompts/clawpet-creative-prompt.md",
-      "docs/prompts/clawpet-frame-delta-prompt.md"
+      "docs/prompts/clawpals-creative-prompt.md",
+      "docs/prompts/clawpals-frame-delta-prompt.md"
     ],
     "lockedCharacter": "Dawn blue baby AGI dragon familiar",
     "motionPrinciple": "small frame deltas: bob, blink, bubbles, flicks, bounce, spark, sleepy Z"

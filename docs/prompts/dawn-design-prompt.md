@@ -1,4 +1,4 @@
-# Dawn-Specific Clawpet Design Prompt
+# Dawn-Specific Clawpals Design Prompt
 
 Use this instead of the generic creative prompt when generating **Dawn**. Dawn is an established character with a locked identity: a small dragon companion for the assistant Dawn. The goal is not to reinvent her species. The goal is to redesign her sprite so she is **easy to animate cleanly** and still unmistakably Dawn.
 

@@ -23,17 +23,17 @@ const PRESET_SHOWCASE = [
 
 const DOWNLOADS = {
   windows: {
-    href: "https://github.com/fighterz8/clawpet/releases/latest",
+    href: "https://github.com/fighterz8/clawpals/releases/latest",
     label: "Download Windows (.msi preferred)",
     artifact: "latest GitHub Release · prefer .msi, use .exe if needed",
   },
   macos: {
-    href: "https://github.com/fighterz8/clawpet/releases/latest",
+    href: "https://github.com/fighterz8/clawpals/releases/latest",
     label: "Download macOS (.dmg)",
     artifact: "latest GitHub Release",
   },
   linux: {
-    href: "https://github.com/fighterz8/clawpet/releases/latest",
+    href: "https://github.com/fighterz8/clawpals/releases/latest",
     label: "Download Linux (.AppImage/.deb/.rpm)",
     artifact: "latest GitHub Release",
   },
@@ -129,13 +129,13 @@ function Landing() {
       <header className="lp-nav">
         <div className="lp-nav__brand">
           <span className="lp-nav__mark">🐲</span>
-          <span>Clawpet</span>
+          <span>Clawpals</span>
         </div>
         <nav>
           <a href="#how">How it works</a>
           <a href="#install">Install</a>
           <a href="#avatars">Avatars</a>
-          <a href="https://github.com/fighterz8/clawpet" target="_blank" rel="noreferrer">GitHub ↗</a>
+          <a href="https://github.com/fighterz8/clawpals" target="_blank" rel="noreferrer">GitHub ↗</a>
         </nav>
       </header>
 
@@ -152,7 +152,7 @@ function Landing() {
           </p>
           <div className="lp-cta">
             <a className="lp-btn lp-btn--primary" href="#install">Try it in 3 minutes</a>
-            <a className="lp-btn lp-btn--ghost" href="https://github.com/fighterz8/clawpet" target="_blank" rel="noreferrer">View on GitHub</a>
+            <a className="lp-btn lp-btn--ghost" href="https://github.com/fighterz8/clawpals" target="_blank" rel="noreferrer">View on GitHub</a>
           </div>
           <p className="lp-foot-hint">Local-first · Tailscale-first for cross-machine setups · MIT</p>
         </Reveal>
@@ -172,7 +172,7 @@ function Landing() {
           <Reveal delay={80}><article className="lp-card">
             <div className="lp-card__num">01</div>
             <h3>Local runtime</h3>
-            <p>A tiny Hono server on <code>127.0.0.1:8737</code> holds your Clawpet's state. Bearer auth and loopback trust.</p>
+            <p>A tiny Hono server on <code>127.0.0.1:8737</code> holds your Clawpals's state. Bearer auth and loopback trust.</p>
           </article></Reveal>
           <Reveal delay={160}><article className="lp-card">
             <div className="lp-card__num">02</div>
@@ -190,7 +190,7 @@ function Landing() {
       <section className="lp-section lp-section--dual">
         <Reveal>
           <p className="lp-eyebrow">Activity, your call</p>
-          <h2 className="lp-h2">You decide how chatty your Clawpet is.</h2>
+          <h2 className="lp-h2">You decide how chatty your Clawpals is.</h2>
           <p className="lp-body">
             Five levels — <code>off</code>, <code>minimal</code>, <code>balanced</code>, <code>expressive</code>, <code>maximum</code> — set with one CLI command and persisted on disk.
             The skill itself enforces the gate, so the model can't accidentally spam emits past the level you chose.
@@ -204,11 +204,11 @@ function Landing() {
         <Reveal delay={120}>
           <div className="lp-codeblock">
             <span className="lp-codeblock__title">Tune anytime</span>
-            <pre>{`clawpet activity expressive
-clawpet heartbeat-reactions on
+            <pre>{`clawpals activity expressive
+clawpals heartbeat-reactions on
 
 # don't like it? dial back:
-clawpet activity balanced`}</pre>
+clawpals activity balanced`}</pre>
           </div>
         </Reveal>
       </section>
@@ -236,7 +236,7 @@ clawpet activity balanced`}</pre>
       <section className="lp-section lp-section--install" id="install">
         <Reveal>
           <p className="lp-eyebrow">Get started</p>
-          <h2 className="lp-h2">Download Clawpet for your desktop.</h2>
+          <h2 className="lp-h2">Download Clawpals for your desktop.</h2>
         </Reveal>
         <div className="lp-install-grid">
           <Reveal delay={80}>
@@ -251,20 +251,20 @@ clawpet activity balanced`}</pre>
               <p className="lp-install-os">Linux</p>
               <a className="lp-btn lp-btn--ghost" href={DOWNLOADS.linux.href} target="_blank" rel="noreferrer">{DOWNLOADS.linux.label}</a>
               <p className="lp-install-artifact">{DOWNLOADS.linux.artifact}</p>
-              <p className="lp-install-note">Download the native Clawpet desktop app for your OS from the latest GitHub Release. On Windows, start with the <strong>.msi</strong> installer first; use the <strong>.exe</strong> only if you specifically want the NSIS build. This is the local app that creates the tray icon, starts the runtime on your display machine, shows the pair code, and gives OpenClaw something real to connect to and control.</p>
+              <p className="lp-install-note">Download the native Clawpals desktop app for your OS from the latest GitHub Release. On Windows, start with the <strong>.msi</strong> installer first; use the <strong>.exe</strong> only if you specifically want the NSIS build. This is the local app that creates the tray icon, starts the runtime on your display machine, shows the pair code, and gives OpenClaw something real to connect to and control.</p>
             </div>
           </Reveal>
           <Reveal delay={160}>
             <div className="lp-install-card">
-              <h3>2. Open Clawpet</h3>
+              <h3>2. Open Clawpals</h3>
               <p className="lp-install-note">Launch the desktop app on the machine where the avatar should appear. The app starts the local runtime, shows connection status, and gives you a pair code if needed.</p>
             </div>
           </Reveal>
           <Reveal delay={240}>
             <div className="lp-install-card">
               <h3>3. Let OpenClaw take over</h3>
-              <CopyButton label="OpenClaw" text="clawpet pair --code 472091 --host <tailscale-host>:8737" />
-              <CopyButton label="OpenClaw" text='clawpet send happy "It works" --bubble "Hello! 🐲"' />
+              <CopyButton label="OpenClaw" text="clawpals pair --code 472091 --host <tailscale-host>:8737" />
+              <CopyButton label="OpenClaw" text='clawpals send happy "It works" --bubble "Hello! 🐲"' />
               <p className="lp-install-note">After pairing, OpenClaw can reconnect, react, change activity level, and push avatar bundles.</p>
             </div>
           </Reveal>
@@ -296,14 +296,14 @@ clawpet activity balanced`}</pre>
         <Reveal>
           <h2 className="lp-h2">Open source. Local-first. A little weird in the best way.</h2>
           <div className="lp-cta">
-            <a className="lp-btn lp-btn--primary" href="https://github.com/fighterz8/clawpet" target="_blank" rel="noreferrer">⭐ Star on GitHub</a>
+            <a className="lp-btn lp-btn--primary" href="https://github.com/fighterz8/clawpals" target="_blank" rel="noreferrer">⭐ Star on GitHub</a>
             <a className="lp-btn lp-btn--ghost" href="#install">Install now</a>
           </div>
         </Reveal>
       </section>
 
       <footer className="lp-footer">
-        <span>© {year} Clawpet · MIT</span>
+        <span>© {year} Clawpals · MIT</span>
         <span>Built with OpenClaw 🐲</span>
       </footer>
     </div>

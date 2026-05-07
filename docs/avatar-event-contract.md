@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The avatar event contract defines the small JSON messages OpenClaw sends to Clawpet. The same contract should work for local mode, remote relay mode, and direct tunnel mode.
+The avatar event contract defines the small JSON messages OpenClaw sends to Clawpals. The same contract should work for local mode, remote relay mode, and direct tunnel mode.
 
 Events are UI/status messages only. They must never execute code.
 
@@ -82,13 +82,13 @@ Future states may be added, but runtimes must safely fall back to `idle` or `ale
 
 ## Runtime status response
 
-A Clawpet runtime should be able to report status:
+A Clawpals runtime should be able to report status:
 
 ```json
 {
-  "type": "clawpet.status",
+  "type": "clawpals.status",
   "version": "0.1.0",
-  "runtimeId": "clawpet-nick-main-pc",
+  "runtimeId": "clawpals-nick-main-pc",
   "deviceName": "Nick Main PC",
   "mode": "local",
   "connected": true,

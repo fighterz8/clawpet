@@ -2,13 +2,13 @@
 
 ## Product priority
 
-Clawpet is not primarily a hosted dashboard. The core product is a desktop avatar runtime that can connect to an OpenClaw instance, including an OpenClaw host running on another machine.
+Clawpals is not primarily a hosted dashboard. The core product is a desktop avatar runtime that can connect to an OpenClaw instance, including an OpenClaw host running on another machine.
 
 Priority order:
 
 1. Desktop avatar exists on the user's active machine.
 2. Avatar connects to OpenClaw in local and remote-host setups.
-3. OpenClaw skill can install, configure, pair, test, and control Clawpet.
+3. OpenClaw skill can install, configure, pair, test, and control Clawpals.
 4. Tests verify connection, security, latency, runtime behavior, and skill behavior.
 5. Local dashboard/admin console supports validation and manual adjustments.
 6. Avatar visual design and fine-grained customization improve after the runtime is reliable.
@@ -17,13 +17,13 @@ Priority order:
 
 ```txt
 OpenClaw host
-  └─ clawpet skill
-      ├─ install/check Clawpet
+  └─ clawpals skill
+      ├─ install/check Clawpals
       ├─ pair desktop client
       ├─ send state/message events
       └─ validate connection
 
-Clawpet desktop app
+Clawpals desktop app
   ├─ transparent avatar overlay
   ├─ local dashboard/admin console
   ├─ avatar bundle loader
@@ -82,13 +82,13 @@ It should not become the main production dashboard for normal use.
 
 ## OpenClaw self-install goal
 
-Long term, OpenClaw should be able to install or guide installation of Clawpet onto a compatible machine and then project its avatar there.
+Long term, OpenClaw should be able to install or guide installation of Clawpals onto a compatible machine and then project its avatar there.
 
 Future OpenClaw skill capabilities:
 
-- detect whether Clawpet is installed
-- install or update Clawpet where supported
-- launch Clawpet
+- detect whether Clawpals is installed
+- install or update Clawpals where supported
+- launch Clawpals
 - pair with a desktop client
 - send test event
 - report status/latency/security diagnostics
@@ -128,10 +128,10 @@ Status: started.
 
 ### Phase 3 — OpenClaw skill skeleton
 
-- `clawpet status`
-- `clawpet send-test`
-- `clawpet pair`
-- `clawpet diagnose`
+- `clawpals status`
+- `clawpals send-test`
+- `clawpals pair`
+- `clawpals diagnose`
 - install/update plan documented before automation
 
 ### Phase 4 — remote connection MVP

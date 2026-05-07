@@ -56,7 +56,7 @@ pub fn run() {
 
             runtime_http::start_runtime_server();
 
-            if std::env::var("CLAWPET_USE_NODE_RUNTIME").ok().as_deref() == Some("1") {
+            if std::env::var("CLAWPALS_USE_NODE_RUNTIME").ok().as_deref() == Some("1") {
                 if let Some(child) = spawn_dev_runtime() {
                     if let Some(state) = app.try_state::<RuntimeChild>() {
                         if let Ok(mut slot) = state.0.lock() {
@@ -69,7 +69,7 @@ pub fn run() {
             let show_hide =
                 MenuItem::with_id(app, "show_hide", "Show / Hide Pet", true, None::<&str>)?;
             let setup = MenuItem::with_id(app, "setup", "Show Setup", true, None::<&str>)?;
-            let quit = MenuItem::with_id(app, "quit", "Quit Clawpet", true, None::<&str>)?;
+            let quit = MenuItem::with_id(app, "quit", "Quit Clawpals", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&show_hide, &setup, &quit])?;
 
             if let Some(tray) = app.tray_by_id("main") {
@@ -96,7 +96,7 @@ pub fn run() {
         })
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                // Closing a window should tuck Clawpet back into the tray rather than
+                // Closing a window should tuck Clawpals back into the tray rather than
                 // quitting the whole app. The setup/control surface (`main`) was
                 // mistakenly being re-shown immediately, which made it feel impossible
                 // to close. Hide both windows here; tray quit remains the true exit.

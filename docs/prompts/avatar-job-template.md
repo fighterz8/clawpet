@@ -1,6 +1,6 @@
 # Avatar Job Template
 
-Use this as the structured design brief for a new Clawpet pipeline job.
+Use this as the structured design brief for a new Clawpals pipeline job.
 
 ## Locked character brief
 
@@ -52,4 +52,4 @@ For each state, prepare:
 - **local-only jobs:** stage under `~/.../local_avatars/<job-id>/`
 - **repo jobs:** stage under `public/avatars/<job-id>/` and `public/previews/`
 - Build with `scripts/run_avatar_pipeline.py`
-- Push with the existing paired Clawpet runtime connection
+- Push with the existing paired Clawpals runtime connection

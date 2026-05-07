@@ -10,10 +10,10 @@ const root = join(here, "..");
 const args = new Set(process.argv.slice(2));
 const env = { ...process.env };
 
-if (args.has("--demo")) env.CLAWPET_DEMO = "1";
+if (args.has("--demo")) env.CLAWPALS_DEMO = "1";
 if (args.has("--tailscale") || args.has("--host-all")) {
-  env.CLAWPET_RUNTIME_HOST = env.CLAWPET_RUNTIME_HOST || "0.0.0.0";
-  env.CLAWPET_RUNTIME_PORT = env.CLAWPET_RUNTIME_PORT || "8737";
+  env.CLAWPALS_RUNTIME_HOST = env.CLAWPALS_RUNTIME_HOST || "0.0.0.0";
+  env.CLAWPALS_RUNTIME_PORT = env.CLAWPALS_RUNTIME_PORT || "8737";
 }
 
 const tsxBin = process.platform === "win32"
@@ -32,7 +32,7 @@ const child = spawn(command, commandArgs, {
 });
 
 child.on("error", (error) => {
-  console.error("Failed to start Clawpet runtime child process.");
+  console.error("Failed to start Clawpals runtime child process.");
   console.error(`command: ${command} ${commandArgs.join(" ")}`);
   console.error(`cwd: ${root}`);
   console.error(error);

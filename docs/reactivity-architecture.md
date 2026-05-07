@@ -1,8 +1,8 @@
-# Clawpet Reactivity Architecture
+# Clawpals Reactivity Architecture
 
 ## Goal
 
-Split Clawpet reactivity into **two separate systems** so the avatar feels alive without muddling cheap daemon mirroring with contextual/model-driven expression.
+Split Clawpals reactivity into **two separate systems** so the avatar feels alive without muddling cheap daemon mirroring with contextual/model-driven expression.
 
 ---
 
@@ -159,7 +159,7 @@ Without separation, the system becomes confusing:
 
 Clean split:
 
-- **system signal** = zero-token non-expressive OpenClaw/Clawpet work telemetry. This includes daemon JSONL/tool/session mirroring and local runtime plumbing, but the user-facing log should not present either daemon or runtime as separate voices.
+- **system signal** = zero-token non-expressive OpenClaw/Clawpals work telemetry. This includes daemon JSONL/tool/session mirroring and local runtime plumbing, but the user-facing log should not present either daemon or runtime as separate voices.
 - **OpenClaw expression** = optional autonomous/contextual avatar remarks controlled by expression level. These may use tokens and should stop completely when expression is off.
 - **user-requested** = explicit manual emits or routines Nick asked for, such as “celebrate when we finish a task.” These should appear only because the user requested them.
 
@@ -442,4 +442,4 @@ The right distinction is:
 - **daemon**: `what OpenClaw is doing`
 - **expression**: `what the avatar thinks about what is happening`
 
-If we preserve that line, Clawpet can feel alive without becoming noisy, confusing, or accidentally expensive.
+If we preserve that line, Clawpals can feel alive without becoming noisy, confusing, or accidentally expensive.

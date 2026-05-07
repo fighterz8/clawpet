@@ -9,15 +9,15 @@ npm exec tauri build    # full Linux bundle build
 
 On Linux this produces:
 
-- `src-tauri/target/release/bundle/deb/Clawpet_0.2.0_amd64.deb`
-- `src-tauri/target/release/bundle/rpm/Clawpet-0.2.0-1.x86_64.rpm`
-- `src-tauri/target/release/bundle/appimage/Clawpet_0.2.0_amd64.AppImage`
+- `src-tauri/target/release/bundle/deb/Clawpals_0.2.0_amd64.deb`
+- `src-tauri/target/release/bundle/rpm/Clawpals-0.2.0-1.x86_64.rpm`
+- `src-tauri/target/release/bundle/appimage/Clawpals_0.2.0_amd64.AppImage`
 
 Smoke checks used on the OpenClaw Linux host:
 
 ```bash
 timeout 8s xvfb-run -a src-tauri/target/release/app
-timeout 8s xvfb-run -a src-tauri/target/release/bundle/appimage/Clawpet_0.2.0_amd64.AppImage
+timeout 8s xvfb-run -a src-tauri/target/release/bundle/appimage/Clawpals_0.2.0_amd64.AppImage
 ```
 
 Latest smoke after runtime-ownership/reconnect/status-dot work: 2026-05-05.
@@ -25,7 +25,7 @@ Latest smoke after runtime-ownership/reconnect/status-dot work: 2026-05-05.
 Expected result in headless smoke mode:
 
 - process starts successfully
-- internal runtime logs `Clawpet internal runtime listening on 0.0.0.0:8737`
+- internal runtime logs `Clawpals internal runtime listening on 0.0.0.0:8737`
 - timeout exits with code `124` because the app stays running
 - EGL/DRI warnings under Xvfb are acceptable for this smoke test
 - setup/overlay bundle includes the current reconnect diagnostics and green/yellow/red status-dot semantics

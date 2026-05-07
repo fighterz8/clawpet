@@ -170,7 +170,7 @@ fn random_code() -> String {
 }
 
 fn display_host() -> String {
-    std::env::var("CLAWPET_DISPLAY_HOST")
+    std::env::var("CLAWPALS_DISPLAY_HOST")
         .or_else(|_| std::env::var("COMPUTERNAME"))
         .or_else(|_| std::env::var("HOSTNAME"))
         .or_else(|_| hostname::get().map(|s| s.to_string_lossy().into_owned()))
@@ -185,7 +185,7 @@ fn token_path() -> Option<PathBuf> {
     Some(
         PathBuf::from(home)
             .join(".openclaw")
-            .join("clawpet")
+            .join("clawpals")
             .join("runtime-token"),
     )
 }
@@ -195,7 +195,7 @@ fn runtime_bundle_dir() -> Option<PathBuf> {
     Some(
         PathBuf::from(home)
             .join(".openclaw")
-            .join("clawpet")
+            .join("clawpals")
             .join("runtime-bundles")
             .join("current"),
     )
@@ -206,7 +206,7 @@ fn reactivity_path() -> Option<PathBuf> {
     Some(
         PathBuf::from(home)
             .join(".openclaw")
-            .join("clawpet")
+            .join("clawpals")
             .join("runtime-reactivity.json"),
     )
 }
@@ -416,10 +416,10 @@ pub fn start_runtime_server() {
             .to_string();
         let state = Arc::new(Mutex::new(RuntimeState {
             status: Status {
-                kind: "clawpet.status".into(),
+                kind: "clawpals.status".into(),
                 version: "0.1.0".into(),
-                runtime_id: "clawpet-tauri-runtime".into(),
-                device_name: "Clawpet Desktop".into(),
+                runtime_id: "clawpals-tauri-runtime".into(),
+                device_name: "Clawpals Desktop".into(),
                 mode: "desktop-app".into(),
                 connected: false,
                 avatar: AvatarStatus {
@@ -444,11 +444,11 @@ pub fn start_runtime_server() {
         let listener = match TcpListener::bind("0.0.0.0:8737") {
             Ok(l) => l,
             Err(e) => {
-                eprintln!("Clawpet internal runtime failed to bind 0.0.0.0:8737: {e}");
+                eprintln!("Clawpals internal runtime failed to bind 0.0.0.0:8737: {e}");
                 return;
             }
         };
-        eprintln!("Clawpet internal runtime listening on 0.0.0.0:8737");
+        eprintln!("Clawpals internal runtime listening on 0.0.0.0:8737");
         for stream in listener.incoming().flatten() {
             let state = Arc::clone(&state);
             thread::spawn(move || handle_client(stream, state));
@@ -518,11 +518,11 @@ fn route(
             200,
             json!({
               "ok": true,
-              "service": "clawpet-runtime",
+              "service": "clawpals-runtime",
               "version": "0.1.0",
               "authRequired": true,
               "runtime": "tauri-internal",
-              "owner": "clawpet-desktop-app",
+              "owner": "clawpals-desktop-app",
               "displayHost": display_host()
             }),
         );

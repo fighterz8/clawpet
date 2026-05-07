@@ -1,4 +1,4 @@
-# Clawpet Requirements
+# Clawpals Requirements
 
 ## MVP scope
 
@@ -8,7 +8,7 @@ The real product MVP is runtime-first: a desktop avatar overlay that can connect
 
 ## Functional requirements — web MVP
 
-- Display a Clawpet project landing page.
+- Display a Clawpals project landing page.
 - Preview the Dawn avatar concept using lightweight CSS/SVG.
 - Show selectable states: idle, thinking, happy, alert, sleepy, focused.
 - Display sample OpenClaw event messages.

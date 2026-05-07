@@ -7,9 +7,9 @@ function help() {
   npm run send-test -- [state] [message]
 
 Examples:
-  npm run send-test -- thinking "Working on Clawpet..."
+  npm run send-test -- thinking "Working on Clawpals..."
   npm run send-test -- happy "Deploy finished."
-  CLAWPET_RUNTIME_URL=http://127.0.0.1:8737 npm run send-test -- alert "OAuth approval needed."
+  CLAWPALS_RUNTIME_URL=http://127.0.0.1:8737 npm run send-test -- alert "OAuth approval needed."
 
 States: ${avatarStates.join(", ")}`);
 }
@@ -24,7 +24,7 @@ if (stateArg === "--help" || stateArg === "-h") {
 try {
   const state = parseAvatarState(stateArg);
   const message = messageParts.join(" ").trim() || undefined;
-  const runtimeUrl = process.env.CLAWPET_RUNTIME_URL;
+  const runtimeUrl = process.env.CLAWPALS_RUNTIME_URL;
   const result = await sendTestEvent({ state, message, runtimeUrl });
   console.log(JSON.stringify({ ok: true, eventId: result.event.eventId, state, response: result.response }, null, 2));
 } catch (error) {

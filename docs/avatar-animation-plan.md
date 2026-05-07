@@ -2,7 +2,7 @@
 
 ## Goal
 
-Create a new Dawn avatar that is attractive as a static Clawpet now and can become an animated v0.5 bundle next.
+Create a new Dawn avatar that is attractive as a static Clawpals now and can become an animated v0.5 bundle next.
 
 ## Current reality
 
@@ -81,7 +81,7 @@ Example total: 11 frames.
 2. Add `resolveFrames(state)` while keeping `resolveAsset(state)` for v0.1 callers.
 3. Update overlay `BundleAvatar` to cycle frames by state FPS.
 4. Update runtime upload validation/serving to accept `frames/*.png` in addition to `assets/*.png`.
-5. Update `clawpet avatar push` to upload frame paths from the manifest.
+5. Update `clawpals avatar push` to upload frame paths from the manifest.
 6. Add tests for v0.1 compatibility and v0.5 animated bundles.
 
 ## Dawn v1 direction

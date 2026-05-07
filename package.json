@@ -1,10 +1,10 @@
 {
-  "name": "clawpet",
+  "name": "clawpals",
   "version": "0.2.0",
   "private": true,
   "type": "module",
   "bin": {
-    "clawpet": "skills/clawpet/bin/clawpet.mjs"
+    "clawpals": "skills/clawpals/bin/clawpals.mjs"
   },
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 5173",

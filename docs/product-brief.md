@@ -1,22 +1,22 @@
-# Clawpet Product Brief
+# Clawpals Product Brief
 
 ## Working name
 
-**Clawpet**
+**Clawpals**
 
 ## One-sentence pitch
 
-Clawpet is a local-first avatar runtime that gives OpenClaw an ambient desktop presence through state-driven emotions, lightweight animation, and user-owned avatar bundles.
+Clawpals is a local-first avatar runtime that gives OpenClaw an ambient desktop presence through state-driven emotions, lightweight animation, and user-owned avatar bundles.
 
 ## Problem
 
 AI assistants usually live as chat windows, logs, or background processes. That makes them powerful but invisible. Users do not always know when the assistant is working, blocked, alerting, idle, or waiting for input.
 
-Traditional dashboards are useful, but they are often heavy and interruptive. Clawpet explores a lighter pattern: an ambient companion that makes agent state visible without demanding attention.
+Traditional dashboards are useful, but they are often heavy and interruptive. Clawpals explores a lighter pattern: an ambient companion that makes agent state visible without demanding attention.
 
 ## Solution
 
-Clawpet renders a small desktop avatar controlled by OpenClaw events. OpenClaw may be running on the same machine or on a separate host, which matches how many OpenClaw users run their setup.
+Clawpals renders a small desktop avatar controlled by OpenClaw events. OpenClaw may be running on the same machine or on a separate host, which matches how many OpenClaw users run their setup.
 
 The avatar can show states like idle, thinking, happy, alert, sleepy, or focused, and can display short optional messages.
 

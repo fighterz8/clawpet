@@ -132,7 +132,7 @@ Then compare context packs:
 
 ## OpenClaw Skill Setup Flow
 
-The Clawpet/Clawpals skill should eventually guide the user through setup:
+The Clawpals/Clawpals skill should eventually guide the user through setup:
 
 1. Choose expression on/off.
 2. Pick a personality profile.
@@ -157,6 +157,6 @@ The setup should produce predictable config, not vague prompt-only behavior.
 
 ## Naming Note
 
-Nick wants to rename the project from Clawpet to Clawpals because `clawpal` is taken.
+Nick wants to rename the project from Clawpals to Clawpals because `clawpal` is taken.
 
 The rename should update repo/package/docs/UI references carefully while preserving protocol compatibility where needed.

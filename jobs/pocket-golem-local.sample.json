@@ -10,8 +10,8 @@
   "previewGif": "/home/nick/.openclaw/workspace/local_avatars/pocket-golem-v0/pocket-golem-preview.gif",
   "promptPack": {
     "jobTemplate": "docs/prompts/avatar-job-template.md",
-    "creative": "docs/prompts/clawpet-creative-prompt.md",
-    "frameDelta": "docs/prompts/clawpet-frame-delta-prompt.md"
+    "creative": "docs/prompts/clawpals-creative-prompt.md",
+    "frameDelta": "docs/prompts/clawpals-frame-delta-prompt.md"
   },
   "states": {
     "idle": {
@@ -76,7 +76,7 @@
     }
   },
   "generation": {
-    "coreConcept": "A tiny slate-and-moss pocket golem companion for local-only Clawpet avatar generation tests.",
+    "coreConcept": "A tiny slate-and-moss pocket golem companion for local-only Clawpals avatar generation tests.",
     "locked": {
       "species": "pocket golem made of stacked slate stones with a moss-green glowing core",
       "silhouette": "rounded stacked stones, stubby arms, central glowing core, simple bright eyes",

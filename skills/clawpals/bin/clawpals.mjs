@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Clawpet skill CLI — drive a Clawpet desktop runtime from OpenClaw.
+// Clawpals skill CLI — drive a Clawpals desktop runtime from OpenClaw.
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import httpModule from "node:http";
 import httpsModule from "node:https";
@@ -18,7 +18,7 @@ const LEGACY_EXPRESSION_ON_LEVELS = ["low", "medium", "high"];
 const DEFAULT_EXPRESSION_LEVEL = "off";
 const MAX_BUBBLE_LENGTH = 160;
 
-// Map semantic events -> avatar states. Used by `clawpet react <event>`.
+// Map semantic events -> avatar states. Used by `clawpals react <event>`.
 // Values: { state, defaultBubble, minLevel } where minLevel is the lowest activity
 // level at which this reaction fires. Anything below minLevel is a silent no-op.
 const REACTIONS = {
@@ -38,7 +38,7 @@ function levelRank(level) { return ACTIVITY_LEVELS.indexOf(level); }
 function levelAllows(current, minRequired) {
   return current !== "off" && levelRank(current) >= levelRank(minRequired);
 }
-const CONFIG_DIR = join(homedir(), ".openclaw", "clawpet");
+const CONFIG_DIR = join(homedir(), ".openclaw", "clawpals");
 const CONFIG_PATH = join(CONFIG_DIR, "config.json");
 
 function loadConfig() {
@@ -83,20 +83,20 @@ async function syncReactivityMirror() {
 }
 
 function resolveRuntimeUrl() {
-  if (process.env.CLAWPET_RUNTIME_URL) return process.env.CLAWPET_RUNTIME_URL.replace(/\/$/, "");
+  if (process.env.CLAWPALS_RUNTIME_URL) return process.env.CLAWPALS_RUNTIME_URL.replace(/\/$/, "");
   const cfg = loadConfig();
   if (cfg.runtimeUrl) return String(cfg.runtimeUrl).replace(/\/$/, "");
   return "http://127.0.0.1:8737";
 }
 
 function resolveRuntimeToken() {
-  if (process.env.CLAWPET_RUNTIME_TOKEN) return process.env.CLAWPET_RUNTIME_TOKEN.trim();
+  if (process.env.CLAWPALS_RUNTIME_TOKEN) return process.env.CLAWPALS_RUNTIME_TOKEN.trim();
   const cfg = loadConfig();
   return cfg.runtimeToken ? String(cfg.runtimeToken) : undefined;
 }
 
 function resolveActivity() {
-  const env = process.env.CLAWPET_ACTIVITY;
+  const env = process.env.CLAWPALS_ACTIVITY;
   if (env && ACTIVITY_LEVELS.includes(env)) return env;
   const cfg = loadConfig();
   if (cfg.activity && ACTIVITY_LEVELS.includes(cfg.activity)) return cfg.activity;
@@ -134,7 +134,7 @@ function normalizeExpressionLevel(level) {
 }
 
 function resolveDaemonVoice() {
-  const env = process.env.CLAWPET_DAEMON_VOICE;
+  const env = process.env.CLAWPALS_DAEMON_VOICE;
   if (env && DAEMON_VOICE_LEVELS.includes(env)) return env;
   const cfg = loadConfig();
   if (cfg.daemonVoice && DAEMON_VOICE_LEVELS.includes(cfg.daemonVoice)) return cfg.daemonVoice;
@@ -142,7 +142,7 @@ function resolveDaemonVoice() {
 }
 
 function resolveExpressionLevel() {
-  const env = normalizeExpressionLevel(process.env.CLAWPET_EXPRESSION_LEVEL);
+  const env = normalizeExpressionLevel(process.env.CLAWPALS_EXPRESSION_LEVEL);
   if (env) return env;
   const cfg = loadConfig();
   const configured = normalizeExpressionLevel(cfg.expressionLevel);
@@ -151,7 +151,7 @@ function resolveExpressionLevel() {
 }
 
 function resolveHeartbeatReactions() {
-  const env = process.env.CLAWPET_HEARTBEAT_REACTIONS;
+  const env = process.env.CLAWPALS_HEARTBEAT_REACTIONS;
   if (env != null) return env === "1" || env.toLowerCase() === "true" || env.toLowerCase() === "on";
   const cfg = loadConfig();
   return Boolean(cfg.heartbeatReactions);
@@ -210,33 +210,33 @@ async function http(method, url, body) {
   return { status: statusCode, ok: statusCode >= 200 && statusCode < 300, body: json };
 }
 
-function fail(msg, code = 1) { console.error(`clawpet: ${msg}`); process.exit(code); }
+function fail(msg, code = 1) { console.error(`clawpals: ${msg}`); process.exit(code); }
 
 function usage() {
-  console.log(`clawpet v${VERSION}
+  console.log(`clawpals v${VERSION}
 
 Usage:
-  clawpet wizard [display|openclaw] [--code 123456 --host host:8737]
-  clawpet doctor
-  clawpet ping
-  clawpet status
-  clawpet send <state> [message] [--bubble TEXT] [--quiet]
-  clawpet react <event> [--bubble TEXT] [--quiet]   # event: user-message|tool-start|tool-error|blocker|done|long-task|thinking
-  clawpet activity [off|minimal|balanced|expressive|maximum]  # deprecated legacy alias
-  clawpet daemon-voice [silent|lite|vivid]
-  clawpet expression-level [off|on]
-  clawpet heartbeat-reactions [on|off]              # default off
-  clawpet pair --url <runtime-url> [--token <bearer-token>]
-  clawpet pair --code <6-digit> --host <host[:port]>     # magic-pair: claim a code on a remote runtime
-  clawpet pair-mode [--seconds 90]                       # open pair mode on the local runtime; prints code
-  clawpet rotate-token
-  clawpet avatar push <bundle-dir>                 # upload/select avatar bundle on paired runtime
-  clawpet install [--os windows|unix]
-  clawpet config
-  clawpet daemon <start|stop|status|run|enable|disable> # auto-react sidecar (tails OpenClaw session log)
+  clawpals wizard [display|openclaw] [--code 123456 --host host:8737]
+  clawpals doctor
+  clawpals ping
+  clawpals status
+  clawpals send <state> [message] [--bubble TEXT] [--quiet]
+  clawpals react <event> [--bubble TEXT] [--quiet]   # event: user-message|tool-start|tool-error|blocker|done|long-task|thinking
+  clawpals activity [off|minimal|balanced|expressive|maximum]  # deprecated legacy alias
+  clawpals daemon-voice [silent|lite|vivid]
+  clawpals expression-level [off|on]
+  clawpals heartbeat-reactions [on|off]              # default off
+  clawpals pair --url <runtime-url> [--token <bearer-token>]
+  clawpals pair --code <6-digit> --host <host[:port]>     # magic-pair: claim a code on a remote runtime
+  clawpals pair-mode [--seconds 90]                       # open pair mode on the local runtime; prints code
+  clawpals rotate-token
+  clawpals avatar push <bundle-dir>                 # upload/select avatar bundle on paired runtime
+  clawpals install [--os windows|unix]
+  clawpals config
+  clawpals daemon <start|stop|status|run|enable|disable> # auto-react sidecar (tails OpenClaw session log)
 
 States: ${STATES.join(" | ")}
-Runtime URL: ${resolveRuntimeUrl()}  (override with CLAWPET_RUNTIME_URL or 'clawpet pair')
+Runtime URL: ${resolveRuntimeUrl()}  (override with CLAWPALS_RUNTIME_URL or 'clawpals pair')
 Auth token: ${resolveRuntimeToken() ? "set" : "not set"}`);
 }
 
@@ -264,7 +264,7 @@ async function cmdWizard(positional, flags) {
 
   if (mode === "display") {
     const host = await detectDisplayHost();
-    console.log("Clawpet display-machine wizard\n");
+    console.log("Clawpals display-machine wizard\n");
     console.log("Run this on the machine where the avatar window should appear. Keep terminals open while testing.\n");
     console.log("1) Try the standalone demo:");
     console.log("   npm run runtime:demo");
@@ -273,32 +273,32 @@ async function cmdWizard(positional, flags) {
     console.log("\n2) When the demo works, stop the demo runtime and start pairable runtime:");
     console.log("   npm run runtime:tailscale");
     console.log("\n3) In another terminal, open pair mode:");
-    console.log("   clawpet pair-mode");
+    console.log("   clawpals pair-mode");
     console.log("\n4) Send the 6-digit code to your OpenClaw assistant. Suggested host:");
     console.log(`   ${host}:8737`);
     console.log("\nIf something fails, run:");
-    console.log("   clawpet doctor");
+    console.log("   clawpals doctor");
     return;
   }
 
   const code = flags.code;
   const host = flags.host || positional[1];
   if (!code || !host) {
-    console.log("Clawpet OpenClaw-host wizard\n");
+    console.log("Clawpals OpenClaw-host wizard\n");
     console.log("Run this on the OpenClaw machine after the display machine shows a pair code.\n");
     console.log("Usage:");
-    console.log("  clawpet wizard openclaw --code <6-digit-code> --host <display-host>:8737");
+    console.log("  clawpals wizard openclaw --code <6-digit-code> --host <display-host>:8737");
     console.log("\nThis will pair, sync daemon/expression settings, disable heartbeat flashes, start the daemon, and send a test bubble.");
     return;
   }
 
-  console.log("Clawpet OpenClaw-host wizard\n");
+  console.log("Clawpals OpenClaw-host wizard\n");
   await cmdPair({ code, host });
   cmdActivity(["balanced"], {});
   cmdHeartbeats(["off"], {});
   await cmdDaemon(["stop"], {});
   await cmdDaemon(["start"], {});
-  await cmdSend(["happy", "Clawpet paired from OpenClaw"], { bubble: "Connected" });
+  await cmdSend(["happy", "Clawpals paired from OpenClaw"], { bubble: "Connected" });
   console.log("\n✓ Paired and live. Ask the user to confirm the pet changed to Connected/Happy.");
 }
 
@@ -315,15 +315,15 @@ async function cmdDoctor() {
   } catch (e) {
     rows.push(["runtime", `unreachable (${e.message})`]);
   }
-  console.log("Clawpet doctor\n");
+  console.log("Clawpals doctor\n");
   for (const [k, v] of rows) console.log(`${k.padEnd(12)} ${v}`);
   console.log("\nDisplay-machine quick test:");
   console.log("  npm run runtime:demo");
   console.log("  npm run desktop:dev");
   console.log("\nCross-machine pairing:");
   console.log("  Display machine: npm run runtime:tailscale");
-  console.log("  Display machine: clawpet pair-mode");
-  console.log("  OpenClaw host:    clawpet pair --code <code> --host <display-host>:8737");
+  console.log("  Display machine: clawpals pair-mode");
+  console.log("  OpenClaw host:    clawpals pair --code <code> --host <display-host>:8737");
 }
 
 async function cmdPing() {
@@ -354,28 +354,28 @@ async function cmdStatus() {
 }
 
 function resolveEmitSource(mode = "send") {
-  const source = (process.env.CLAWPET_EMIT_SOURCE || "manual").toLowerCase();
+  const source = (process.env.CLAWPALS_EMIT_SOURCE || "manual").toLowerCase();
   if (source === "daemon") {
     return {
       kind: "openclaw",
       displayName: "daemon voice",
-      instanceId: "clawpet-daemon-voice",
+      instanceId: "clawpals-daemon-voice",
     };
   }
   if (source === "expression" || mode === "react") {
     return {
       kind: "openclaw",
       displayName: "OpenClaw expression",
-      instanceId: "clawpet-openclaw-expression",
+      instanceId: "clawpals-openclaw-expression",
     };
   }
   return {
     kind: "openclaw",
     // Direct CLI sends are usually setup/test/plumbing. Only explicitly
     // requested routines should surface as user-requested, via
-    // CLAWPET_EMIT_SOURCE=user-requested.
+    // CLAWPALS_EMIT_SOURCE=user-requested.
     displayName: source === "user-requested" ? "user-requested" : "system signal",
-    instanceId: source === "user-requested" ? "clawpet-user-requested" : "clawpet-system-signal-direct",
+    instanceId: source === "user-requested" ? "clawpals-user-requested" : "clawpals-system-signal-direct",
   };
 }
 
@@ -390,7 +390,7 @@ async function cmdSend(positional, flags) {
   if (message && message.length > 280) fail("send: message must be <= 280 chars");
 
   // Direct sends are setup/test/plumbing by default; explicit user-requested
-  // routines can mark CLAWPET_EMIT_SOURCE=user-requested.
+  // routines can mark CLAWPALS_EMIT_SOURCE=user-requested.
   const activity = resolveActivity();
   if (activity === "off") {
     if (!quiet) console.log(JSON.stringify({ ok: true, suppressed: true, reason: "activity is 'off'" }));
@@ -398,7 +398,7 @@ async function cmdSend(positional, flags) {
   }
 
   const source = resolveEmitSource("send");
-  const sourceClass = source.instanceId === "clawpet-user-requested" ? "user-requested" : "system signal";
+  const sourceClass = source.instanceId === "clawpals-user-requested" ? "user-requested" : "system signal";
   const event = {
     type: "avatar.state",
     version: "0.1.0",
@@ -418,7 +418,7 @@ async function cmdSend(positional, flags) {
   try {
     const r = await http("POST", `${url}/avatar/state`, event);
     if (!r.ok) {
-      console.error(`clawpet: send failed (HTTP ${r.status})`);
+      console.error(`clawpals: send failed (HTTP ${r.status})`);
       console.error(JSON.stringify(r.body, null, 2));
       process.exit(2);
     }
@@ -453,7 +453,7 @@ async function cmdReact(positional, flags) {
   }
 
   const source = resolveEmitSource("react");
-  const isDaemonEmit = source.instanceId === "clawpet-daemon-voice";
+  const isDaemonEmit = source.instanceId === "clawpals-daemon-voice";
   let bubble = typeof flags.bubble === "string" ? flags.bubble : def.bubble;
 
   if (!isDaemonEmit) {
@@ -497,7 +497,7 @@ async function cmdReact(positional, flags) {
   try {
     const r = await http("POST", `${url}/avatar/state`, event);
     if (!r.ok) {
-      console.error(`clawpet: react failed (HTTP ${r.status})`);
+      console.error(`clawpals: react failed (HTTP ${r.status})`);
       console.error(JSON.stringify(r.body, null, 2));
       process.exit(2);
     }
@@ -521,7 +521,7 @@ async function cmdHeartbeats(positional, _flags) {
   saveConfig(cfg);
   const mirror = await syncReactivityMirror();
   console.log(JSON.stringify({ ok: true, heartbeatReactions: enabled, configPath: CONFIG_PATH }, null, 2));
-  if (!mirror.ok && !mirror.skipped) console.error(`clawpet: warning: failed syncing reactivity mirror (${mirror.status ?? mirror.error ?? "unknown error"})`);
+  if (!mirror.ok && !mirror.skipped) console.error(`clawpals: warning: failed syncing reactivity mirror (${mirror.status ?? mirror.error ?? "unknown error"})`);
 }
 
 async function cmdActivity(positional, _flags) {
@@ -539,7 +539,7 @@ async function cmdActivity(positional, _flags) {
   saveConfig(cfg);
   const mirror = await syncReactivityMirror();
   console.log(JSON.stringify({ ok: true, previous, current: level, daemonVoice: resolveDaemonVoice(), expressionLevel: resolveExpressionLevel(), configPath: CONFIG_PATH }, null, 2));
-  if (!mirror.ok && !mirror.skipped) console.error(`clawpet: warning: failed syncing reactivity mirror (${mirror.status ?? mirror.error ?? "unknown error"})`);
+  if (!mirror.ok && !mirror.skipped) console.error(`clawpals: warning: failed syncing reactivity mirror (${mirror.status ?? mirror.error ?? "unknown error"})`);
 }
 
 async function cmdDaemonVoice(positional, _flags) {
@@ -555,7 +555,7 @@ async function cmdDaemonVoice(positional, _flags) {
   saveConfig(cfg);
   const mirror = await syncReactivityMirror();
   console.log(JSON.stringify({ ok: true, previous, current: level, configPath: CONFIG_PATH }, null, 2));
-  if (!mirror.ok && !mirror.skipped) console.error(`clawpet: warning: failed syncing reactivity mirror (${mirror.status ?? mirror.error ?? "unknown error"})`);
+  if (!mirror.ok && !mirror.skipped) console.error(`clawpals: warning: failed syncing reactivity mirror (${mirror.status ?? mirror.error ?? "unknown error"})`);
 }
 
 async function cmdExpressionLevel(positional, _flags) {
@@ -572,7 +572,7 @@ async function cmdExpressionLevel(positional, _flags) {
   saveConfig(cfg);
   const mirror = await syncReactivityMirror();
   console.log(JSON.stringify({ ok: true, previous, current: normalizedLevel, configPath: CONFIG_PATH }, null, 2));
-  if (!mirror.ok && !mirror.skipped) console.error(`clawpet: warning: failed syncing reactivity mirror (${mirror.status ?? mirror.error ?? "unknown error"})`);
+  if (!mirror.ok && !mirror.skipped) console.error(`clawpals: warning: failed syncing reactivity mirror (${mirror.status ?? mirror.error ?? "unknown error"})`);
 }
 
 async function cmdRotateToken() {
@@ -580,7 +580,7 @@ async function cmdRotateToken() {
   try {
     const r = await http("POST", `${url}/admin/rotate-token`);
     if (!r.ok || !r.body || typeof r.body.token !== "string") {
-      console.error(`clawpet: rotate-token failed (HTTP ${r.status})`);
+      console.error(`clawpals: rotate-token failed (HTTP ${r.status})`);
       console.error(JSON.stringify(r.body, null, 2));
       process.exit(2);
     }
@@ -670,7 +670,7 @@ async function cmdPairMode(_positional, flags) {
     "  └──────────────────────────────────────────────┘",
     "",
     "  On your OpenClaw machine, run:",
-    `    clawpet pair --code ${code} --host <this-machine-hostname>:8737`,
+    `    clawpals pair --code ${code} --host <this-machine-hostname>:8737`,
     "",
     "  Waiting for OpenClaw to claim the code… (Ctrl+C to cancel)",
   ].join("\n");
@@ -723,7 +723,7 @@ async function cmdAvatar(positional, _flags) {
   try {
     const r = await http("POST", `${url}/admin/avatar-bundle`, { manifest, assets });
     if (!r.ok) {
-      console.error(`clawpet: avatar push failed (HTTP ${r.status})`);
+      console.error(`clawpals: avatar push failed (HTTP ${r.status})`);
       console.error(JSON.stringify(r.body, null, 2));
       process.exit(2);
     }
@@ -747,7 +747,7 @@ async function cmdAvatar(positional, _flags) {
 
 function cmdInstall(flags) {
   const os = (flags.os || "").toLowerCase();
-  const repo = "https://raw.githubusercontent.com/fighterz8/clawpet/main";
+  const repo = "https://raw.githubusercontent.com/fighterz8/clawpals/main";
   const win = `irm ${repo}/scripts/install-windows.ps1 | iex`;
   const unix = `curl -fsSL ${repo}/scripts/install-unix.sh | bash`;
   if (os === "windows") { console.log(win); return; }
@@ -755,8 +755,8 @@ function cmdInstall(flags) {
   console.log("Run ONE of these on the target machine (the one that will display the avatar):\n");
   console.log("Windows (PowerShell):\n  " + win + "\n");
   console.log("macOS / Linux (bash):\n  " + unix + "\n");
-  console.log("After starting the runtime on the target, run 'clawpet pair-mode' there.");
-  console.log("Then run 'clawpet pair --code <6-digit> --host <target-tailnet-hostname>:8737' on the OpenClaw side.");
+  console.log("After starting the runtime on the target, run 'clawpals pair-mode' there.");
+  console.log("Then run 'clawpals pair --code <6-digit> --host <target-tailnet-hostname>:8737' on the OpenClaw side.");
   console.log("Tailscale is the recommended cross-machine transport for the current release.");
 }
 
@@ -770,11 +770,11 @@ function cmdConfig() {
     heartbeatReactions: resolveHeartbeatReactions(),
     configPath: CONFIG_PATH,
     configExists: existsSync(CONFIG_PATH),
-    envUrlOverride: Boolean(process.env.CLAWPET_RUNTIME_URL),
-    envTokenOverride: Boolean(process.env.CLAWPET_RUNTIME_TOKEN),
-    envActivityOverride: Boolean(process.env.CLAWPET_ACTIVITY),
-    envDaemonVoiceOverride: Boolean(process.env.CLAWPET_DAEMON_VOICE),
-    envExpressionLevelOverride: Boolean(process.env.CLAWPET_EXPRESSION_LEVEL),
+    envUrlOverride: Boolean(process.env.CLAWPALS_RUNTIME_URL),
+    envTokenOverride: Boolean(process.env.CLAWPALS_RUNTIME_TOKEN),
+    envActivityOverride: Boolean(process.env.CLAWPALS_ACTIVITY),
+    envDaemonVoiceOverride: Boolean(process.env.CLAWPALS_DAEMON_VOICE),
+    envExpressionLevelOverride: Boolean(process.env.CLAWPALS_EXPRESSION_LEVEL),
     states: STATES,
     daemonVoiceLevels: DAEMON_VOICE_LEVELS,
     expressionLevels: EXPRESSION_LEVELS,
@@ -786,10 +786,10 @@ async function cmdDaemon(positional, _flags) {
   const { fileURLToPath } = await import("node:url");
   const { dirname, join } = await import("node:path");
   const here = dirname(fileURLToPath(import.meta.url));
-  const daemonScript = join(here, "clawpet-daemon.mjs");
+  const daemonScript = join(here, "clawpals-daemon.mjs");
   const PID_FILE = join(CONFIG_DIR, "daemon.pid");
   const LOG_FILE = join(CONFIG_DIR, "daemon.log");
-  const SERVICE_NAME = "openclaw-clawpet-daemon";
+  const SERVICE_NAME = "openclaw-clawpals-daemon";
   const SERVICE_FILE = join(homedir(), ".config", "systemd", "user", `${SERVICE_NAME}.service`);
   const sub = positional[0] || "status";
 
@@ -802,7 +802,7 @@ async function cmdDaemon(positional, _flags) {
     mkdirSync(dirname(SERVICE_FILE), { recursive: true });
     const node = process.execPath;
     const content = `[Unit]
-Description=Clawpet OpenClaw activity daemon
+Description=Clawpals OpenClaw activity daemon
 After=default.target
 
 [Service]
@@ -829,7 +829,7 @@ WantedBy=default.target
 
   if (sub === "start") {
     const existing = readPid();
-    if (pidAlive(existing)) { console.log(`clawpet daemon already running (pid ${existing})`); return; }
+    if (pidAlive(existing)) { console.log(`clawpals daemon already running (pid ${existing})`); return; }
     const out = (await import("node:fs")).openSync(LOG_FILE, "a");
     const child = spawn(process.execPath, [daemonScript], {
       detached: true,
@@ -837,16 +837,16 @@ WantedBy=default.target
       env: process.env,
     });
     child.unref();
-    console.log(`clawpet daemon started (pid ${child.pid})`);
+    console.log(`clawpals daemon started (pid ${child.pid})`);
     console.log(`log: ${LOG_FILE}`);
   } else if (sub === "stop") {
     const pid = readPid();
-    if (!pidAlive(pid)) { console.log("clawpet daemon not running"); return; }
-    try { process.kill(pid, "SIGTERM"); console.log(`clawpet daemon stopped (pid ${pid})`); } catch (e) { fail(`could not stop pid ${pid}: ${e.message}`); }
+    if (!pidAlive(pid)) { console.log("clawpals daemon not running"); return; }
+    try { process.kill(pid, "SIGTERM"); console.log(`clawpals daemon stopped (pid ${pid})`); } catch (e) { fail(`could not stop pid ${pid}: ${e.message}`); }
   } else if (sub === "status") {
     const pid = readPid();
-    if (pidAlive(pid)) console.log(`clawpet daemon running (pid ${pid}) — log: ${LOG_FILE}`);
-    else console.log("clawpet daemon not running");
+    if (pidAlive(pid)) console.log(`clawpals daemon running (pid ${pid}) — log: ${LOG_FILE}`);
+    else console.log("clawpals daemon not running");
   } else if (sub === "run") {
     // Foreground run for debugging
     const child = spawn(process.execPath, [daemonScript], { stdio: "inherit", env: process.env });
@@ -858,13 +858,13 @@ WantedBy=default.target
     const file = writeSystemdService();
     execFileSync("systemctl", ["--user", "daemon-reload"], { stdio: "inherit" });
     execFileSync("systemctl", ["--user", "enable", "--now", SERVICE_NAME], { stdio: "inherit" });
-    console.log(`clawpet daemon enabled as systemd user service: ${file}`);
+    console.log(`clawpals daemon enabled as systemd user service: ${file}`);
   } else if (sub === "disable") {
     if (!systemdAvailable()) {
       fail("daemon disable currently supports systemd user services on Linux.", 2);
     }
     try { execFileSync("systemctl", ["--user", "disable", "--now", SERVICE_NAME], { stdio: "inherit" }); } catch {}
-    console.log("clawpet daemon disabled");
+    console.log("clawpals daemon disabled");
   } else {
     fail(`unknown daemon subcommand: ${sub}. Try start|stop|status|run|enable|disable`);
   }
@@ -892,5 +892,5 @@ switch (cmd) {
   case "config": cmdConfig(); break;
   case "daemon": await cmdDaemon(positional, flags); break;
   case "-h": case "--help": case "help": case undefined: usage(); break;
-  default: fail(`unknown command '${cmd}'. Run 'clawpet help'.`);
+  default: fail(`unknown command '${cmd}'. Run 'clawpals help'.`);
 }

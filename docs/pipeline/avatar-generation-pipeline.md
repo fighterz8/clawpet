@@ -1,6 +1,6 @@
 # Avatar Generation Pipeline
 
-Goal: let an agent generate Clawpet assets and land them in the app with minimal manual surgery.
+Goal: let an agent generate Clawpals assets and land them in the app with minimal manual surgery.
 
 ## Pipeline
 
@@ -23,13 +23,13 @@ This script:
 5. Push to runtime:
 
 ```bash
-node ~/.openclaw/workspace/skills/clawpet/bin/clawpet.mjs avatar push public/avatars/<bundle-name>
+node ~/.openclaw/workspace/skills/clawpals/bin/clawpals.mjs avatar push public/avatars/<bundle-name>
 ```
 
 6. Verify:
 
 ```bash
-node ~/.openclaw/workspace/skills/clawpet/bin/clawpet.mjs status
+node ~/.openclaw/workspace/skills/clawpals/bin/clawpals.mjs status
 curl -fsS http://<runtime-host>:8737/avatar-bundle/current/avatar.json
 ```
 
@@ -69,7 +69,7 @@ What the wrapper does:
 - runs deterministic coherency checks before building
 - writes a repair queue for frames that drift
 - calls `scripts/build_avatar_bundle.py`
-- optionally pushes the bundle through the existing Clawpet pairing
+- optionally pushes the bundle through the existing Clawpals pairing
 - verifies runtime avatar id + bundle version after push
 
 Sample job manifest:
@@ -77,8 +77,8 @@ Sample job manifest:
 
 Prompt-pack scaffold:
 - `docs/prompts/avatar-job-template.md`
-- `docs/prompts/clawpet-creative-prompt.md`
-- `docs/prompts/clawpet-frame-delta-prompt.md`
+- `docs/prompts/clawpals-creative-prompt.md`
+- `docs/prompts/clawpals-frame-delta-prompt.md`
 
 ## Current limitation
 

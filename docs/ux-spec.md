@@ -1,8 +1,8 @@
-# Clawpet UX Spec
+# Clawpals UX Spec
 
 ## Core experience
 
-Clawpet should feel like a small companion presence, not a full app window. It should communicate what OpenClaw is doing at a glance.
+Clawpals should feel like a small companion presence, not a full app window. It should communicate what OpenClaw is doing at a glance.
 
 ## Primary states
 

@@ -8,7 +8,7 @@ import { AvatarBundleStore } from "./avatarBundleStore";
 const defaultAllowedOrigins = [
   "http://localhost:5173",
   "http://127.0.0.1:5173",
-  "https://clawpet.vercel.app",
+  "https://clawpals.vercel.app",
 ];
 
 export type CreateRuntimeAppOptions = {
@@ -76,7 +76,7 @@ export function createRuntimeApp(options: CreateRuntimeAppOptions = {}) {
   app.get("/health", (c) =>
     c.json({
       ok: true,
-      service: "clawpet-runtime",
+      service: "clawpals-runtime",
       version: "0.1.0",
       authRequired: Boolean(authToken),
       runtime: "node-dev",
