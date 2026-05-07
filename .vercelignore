@@ -1,0 +1,9 @@
+.git
+node_modules
+dist
+src-tauri/target
+.avatar-pipeline
+/avatars
+/assets
+*.log
+.DS_Store
