@@ -1,13 +1,13 @@
 {
-  "id": "pocket-golem-v0",
-  "name": "Pocket Golem",
-  "version": "0.2.0-local-animated",
-  "description": "A local-only pipeline test avatar: a tiny slate-and-moss pocket golem companion with animated state loops.",
+  "id": "pocket-golem-sheet-v0",
+  "name": "Pocket Golem Sheet Fixture",
+  "version": "0.2.0-sheet-experiment",
+  "description": "Opt-in sprite-sheet slicing fixture using mock-generated anchors.",
   "mode": "local-only",
   "targetRuntime": "gladriel",
-  "pushAfterBuild": true,
-  "outputRoot": "/home/nick/.openclaw/workspace/local_avatars/pocket-golem-v0/bundle",
-  "previewGif": "/home/nick/.openclaw/workspace/local_avatars/pocket-golem-v0/pocket-golem-preview.gif",
+  "pushAfterBuild": false,
+  "outputRoot": "/home/nick/.openclaw/workspace/local_avatars/pocket-golem-sheet-v0/bundle",
+  "previewGif": "/home/nick/.openclaw/workspace/local_avatars/pocket-golem-sheet-v0/preview.gif",
   "promptPack": {
     "jobTemplate": "docs/prompts/avatar-job-template.md",
     "creative": "docs/prompts/clawpals-creative-prompt.md",
@@ -253,8 +253,8 @@
         "camera angle"
       ]
     },
-    "strategy": "anchors-plus-deterministic-motion",
-    "provider": "none",
+    "strategy": "sprite-sheet-experiment",
+    "provider": "mock",
     "sourceImageContract": {
       "background": "transparent-alpha",
       "chromaKey": null,
@@ -291,5 +291,18 @@
     "targetCanvasPx": 256,
     "applySameTransformTo": "all-frames",
     "legacyCropAllowed": false
+  },
+  "spriteSheet": {
+    "path": "fixtures/mock-anchor-sheet.png",
+    "rows": 2,
+    "cols": 3,
+    "stateOrder": [
+      "idle",
+      "thinking",
+      "focused",
+      "happy",
+      "alert",
+      "sleepy"
+    ]
   }
 }

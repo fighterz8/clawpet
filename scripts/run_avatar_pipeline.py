@@ -12,10 +12,14 @@ from typing import Any
 
 from PIL import Image
 
+from avatar_providers import get_provider
+
 REQUIRED_STATES = ["idle", "thinking", "focused", "happy", "alert", "sleepy"]
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CLAWPALS_CLI = Path.home() / ".openclaw/workspace/skills/clawpals/bin/clawpals.mjs"
 DEFAULT_BUILD_SCRIPT = ROOT / "scripts/build_avatar_bundle.py"
+DEFAULT_ANIMATE_SCRIPT = ROOT / "scripts/animate_avatar_frames.py"
+DEFAULT_SLICE_SHEET_SCRIPT = ROOT / "scripts/slice_avatar_sheet.py"
 DEFAULT_STAGE_ROOT = ROOT / ".avatar-pipeline"
 BG_RULE = {"g_min": 200, "r_max": 80, "b_max": 150}
 
@@ -31,6 +35,10 @@ class PipelinePaths:
     build_spec_path: Path
     prompt_plan_path: Path
     coherency_report_path: Path
+    post_build_coherency_report_path: Path
+    repair_queue_path: Path
+    contact_sheet_path: Path
+    vision_qa_report_path: Path
     bundle_dir: Path
     preview_gif: Path
 
@@ -99,11 +107,18 @@ def normalize_manifest(raw: dict[str, Any], manifest_path: Path) -> dict[str, An
             "frames": [str(resolve_path(item, base=manifest_dir)) for item in frames],
             "fps": fps,
             "motionRecipe": entry.get("motionRecipe", "subtle state-appropriate motion"),
+            "anchorPath": str(resolve_path(entry["anchorPath"], base=manifest_dir)) if entry.get("anchorPath") else str(resolve_path(frames[0], base=manifest_dir)),
+            "animationMode": entry.get("animationMode"),
+            "framePlan": entry.get("framePlan"),
         }
 
     generation = raw.get("generation", {})
     if not isinstance(generation, dict):
         raise PipelineError("Manifest field generation must be an object when provided")
+    pipeline_job_schema_version = raw.get("pipelineJobSchemaVersion")
+    registration = raw.get("registration", {"mode": "legacy-crop", "targetCanvasPx": 256, "legacyCropAllowed": True})
+    if not isinstance(registration, dict):
+        raise PipelineError("Manifest field registration must be an object when provided")
     coherency = raw.get("coherency", {})
     if not isinstance(coherency, dict):
         raise PipelineError("Manifest field coherency must be an object when provided")
@@ -130,7 +145,9 @@ def normalize_manifest(raw: dict[str, Any], manifest_path: Path) -> dict[str, An
         "outputRoot": str(output_root),
         "previewGif": str(preview_gif),
         "states": normalized_states,
+        "pipelineJobSchemaVersion": pipeline_job_schema_version,
         "generation": generation,
+        "registration": registration,
         "coherency": defaults,
         "manifestDir": str(manifest_dir),
     }
@@ -144,6 +161,10 @@ def compute_paths(manifest: dict[str, Any], manifest_path: Path) -> PipelinePath
         build_spec_path=stage_dir / "build-spec.generated.json",
         prompt_plan_path=stage_dir / "prompt-plan.generated.json",
         coherency_report_path=stage_dir / "coherency-report.generated.json",
+        post_build_coherency_report_path=stage_dir / "post-build-coherency-report.generated.json",
+        repair_queue_path=stage_dir / "repair-queue.generated.json",
+        contact_sheet_path=stage_dir / "contact-sheet.generated.png",
+        vision_qa_report_path=stage_dir / "vision-qa-report.generated.json",
         bundle_dir=Path(manifest["outputRoot"]),
         preview_gif=Path(manifest["previewGif"]),
     )
@@ -158,6 +179,8 @@ def render_build_spec(manifest: dict[str, Any], paths: PipelinePaths) -> dict[st
         "description": manifest.get("description", ""),
         "states": {state: entry["frames"] for state, entry in manifest["states"].items()},
         "fps": {state: entry["fps"] for state, entry in manifest["states"].items()},
+        "sourceImageContract": manifest.get("generation", {}).get("sourceImageContract", {}),
+        "registration": manifest.get("registration", {"mode": "legacy-crop", "targetCanvasPx": 256}),
     }
 
 
@@ -276,8 +299,86 @@ def generate_coherency_report(manifest: dict[str, Any]) -> dict[str, Any]:
     return report
 
 
+
+def manifest_for_built_bundle(manifest: dict[str, Any], paths: PipelinePaths) -> dict[str, Any]:
+    built = dict(manifest)
+    built_states: dict[str, dict[str, Any]] = {}
+    for state, entry in manifest["states"].items():
+        frame_count = len(entry["frames"])
+        built_states[state] = {
+            **entry,
+            "frames": [str(paths.bundle_dir / "frames" / f"{state}-{i:02d}.png") for i in range(frame_count)],
+        }
+    built["states"] = built_states
+    return built
+
+
+def write_contact_sheet(manifest: dict[str, Any], paths: PipelinePaths, *, source: str = "post-build") -> None:
+    thumb = 96
+    label_h = 18
+    pad = 8
+    max_frames = max(len(entry["frames"]) for entry in manifest["states"].values())
+    width = pad + max_frames * (thumb + pad)
+    height = pad + len(REQUIRED_STATES) * (thumb + label_h + pad)
+    sheet = Image.new("RGBA", (width, height), (18, 20, 30, 255))
+    for row, state in enumerate(REQUIRED_STATES):
+        y = pad + row * (thumb + label_h + pad)
+        for col, frame in enumerate(manifest["states"][state]["frames"]):
+            x = pad + col * (thumb + pad)
+            try:
+                im = Image.open(frame).convert("RGBA")
+                im.thumbnail((thumb, thumb), Image.Resampling.NEAREST)
+                tile = Image.new("RGBA", (thumb, thumb), (36, 39, 52, 255))
+                tile.alpha_composite(im, ((thumb - im.width) // 2, (thumb - im.height) // 2))
+            except Exception:
+                tile = Image.new("RGBA", (thumb, thumb), (120, 20, 35, 255))
+            sheet.alpha_composite(tile, (x, y + label_h))
+    paths.contact_sheet_path.parent.mkdir(parents=True, exist_ok=True)
+    sheet.save(paths.contact_sheet_path)
+
+
+def write_post_build_artifacts(manifest: dict[str, Any], paths: PipelinePaths) -> dict[str, Any]:
+    built_manifest = manifest_for_built_bundle(manifest, paths)
+    report = generate_coherency_report(built_manifest)
+    report["source"] = "post-build-bundle-frames"
+    paths.post_build_coherency_report_path.write_text(json.dumps(report, indent=2) + "\n")
+    paths.repair_queue_path.write_text(json.dumps({"ok": report["ok"], "source": "post-build-bundle-frames", "repairQueue": report["repairQueue"]}, indent=2) + "\n")
+    write_contact_sheet(built_manifest, paths)
+    return report
+
 def validate_manifest(manifest: dict[str, Any]) -> list[str]:
     problems: list[str] = []
+    generation = manifest.get("generation", {})
+    strategy = generation.get("strategy")
+    source_contract = generation.get("sourceImageContract", {})
+    locked = generation.get("locked", {})
+    registration = manifest.get("registration", {})
+    if strategy:
+        if strategy not in {"anchors-plus-deterministic-motion", "manual-frames", "sprite-sheet-experiment", "reference-edit-motion"}:
+            problems.append(f"Unknown generation.strategy: {strategy}")
+        background = source_contract.get("background")
+        chroma_key = source_contract.get("chromaKey")
+        if background not in {"transparent-alpha", "chroma-green"}:
+            problems.append("generation.sourceImageContract.background must be either 'transparent-alpha' or 'chroma-green'")
+        if background == "transparent-alpha" and chroma_key:
+            problems.append("transparent-alpha source contract must not also set chromaKey")
+        if background == "chroma-green" and not chroma_key:
+            problems.append("chroma-green source contract requires chromaKey, e.g. '#00ff66'")
+        for required in ["logicalCanvas", "exportSize", "preserveCanvas"]:
+            if required not in source_contract:
+                problems.append(f"generation.sourceImageContract missing required field for strategy jobs: {required}")
+        if not locked.get("paletteHex") or not all(isinstance(x, str) and x.startswith("#") for x in locked.get("paletteHex", [])):
+            problems.append("generation.locked.paletteHex must contain exact hex colors for strategy jobs")
+        if not isinstance(locked.get("outlineHex"), str) or not locked.get("outlineHex", "").startswith("#"):
+            problems.append("generation.locked.outlineHex must be an exact hex color for strategy jobs")
+    mode = registration.get("mode", "legacy-crop")
+    if mode not in {"preserve-canvas", "anchor-locked", "legacy-crop"}:
+        problems.append("registration.mode must be preserve-canvas, anchor-locked, or legacy-crop")
+    if mode == "legacy-crop" and registration.get("legacyCropAllowed") is False:
+        problems.append("registration.mode is legacy-crop but legacyCropAllowed=false")
+    target_canvas = registration.get("targetCanvasPx", 256)
+    if not isinstance(target_canvas, int) or target_canvas <= 0:
+        problems.append("registration.targetCanvasPx must be a positive integer")
     for state in REQUIRED_STATES:
         entry = manifest["states"][state]
         if len(entry["frames"]) < 2:
@@ -322,7 +423,8 @@ def action_coherency_report(manifest: dict[str, Any], paths: PipelinePaths) -> N
         raise PipelineError("Cannot run coherency report until basic validation passes:\n- " + "\n- ".join(problems))
     report = generate_coherency_report(manifest)
     paths.coherency_report_path.write_text(json.dumps(report, indent=2) + "\n")
-    print(json.dumps({"ok": report["ok"], "repairCount": len(report["repairQueue"]), "report": str(paths.coherency_report_path)}, indent=2))
+    paths.repair_queue_path.write_text(json.dumps({"ok": report["ok"], "source": "source-frames", "repairQueue": report["repairQueue"]}, indent=2) + "\n")
+    print(json.dumps({"ok": report["ok"], "repairCount": len(report["repairQueue"]), "report": str(paths.coherency_report_path), "repairQueue": str(paths.repair_queue_path)}, indent=2))
 
 
 def action_validate(manifest: dict[str, Any], paths: PipelinePaths) -> None:
@@ -333,6 +435,46 @@ def action_validate(manifest: dict[str, Any], paths: PipelinePaths) -> None:
     print(f"Validation passed for {manifest['name']} ({manifest['id']})")
     print(f"Generated build spec: {paths.build_spec_path}")
     print(f"Generated prompt plan: {paths.prompt_plan_path}")
+
+
+def action_slice_sheet(manifest: dict[str, Any], paths: PipelinePaths) -> None:
+    write_stage_files(manifest, paths)
+    sliced_manifest = paths.stage_dir / "sliced-job.generated.json"
+    run_command([sys.executable, str(DEFAULT_SLICE_SHEET_SCRIPT), str(paths.manifest_path), str(sliced_manifest)], cwd=ROOT)
+
+
+def action_generate(manifest: dict[str, Any], paths: PipelinePaths) -> None:
+    provider_name = manifest.get("generation", {}).get("provider", "none")
+    try:
+        provider = get_provider(provider_name)
+    except ValueError as exc:
+        raise PipelineError(str(exc)) from exc
+    anchors_dir = paths.stage_dir / "generated-anchors"
+    anchors_dir.mkdir(parents=True, exist_ok=True)
+    identity = provider.generate_identity_anchor(manifest, anchors_dir)
+    generated: dict[str, Any] = {"ok": True, "provider": provider_name, "identityAnchor": str(identity.path), "states": {}}
+    job = load_json(paths.manifest_path)
+    manifest_dir = paths.manifest_path.parent.resolve()
+    for state in REQUIRED_STATES:
+        result = provider.generate_state_anchor(manifest, state, identity.path, anchors_dir)
+        generated["states"][state] = {"anchorPath": str(result.path), "metadata": result.metadata}
+        entry = job.setdefault("states", {}).setdefault(state, {})
+        rel_or_abs = str(result.path)
+        entry["anchorPath"] = rel_or_abs
+        entry["frames"] = [rel_or_abs]
+        entry["animationMode"] = "deterministic"
+        entry.setdefault("fps", manifest["states"][state]["fps"])
+    generated_job = paths.stage_dir / "generated-job.generated.json"
+    generated_report = paths.stage_dir / "generation-report.generated.json"
+    generated_job.write_text(json.dumps(job, indent=2) + "\n")
+    generated_report.write_text(json.dumps(generated, indent=2) + "\n")
+    print(json.dumps({"ok": True, "provider": provider_name, "generatedJob": str(generated_job), "report": str(generated_report), "anchorsDir": str(anchors_dir)}, indent=2))
+
+
+def action_animate(manifest: dict[str, Any], paths: PipelinePaths) -> None:
+    write_stage_files(manifest, paths)
+    animated_manifest = paths.stage_dir / "animated-job.generated.json"
+    run_command([sys.executable, str(DEFAULT_ANIMATE_SCRIPT), str(paths.manifest_path), str(animated_manifest)], cwd=ROOT)
 
 
 def action_build(manifest: dict[str, Any], paths: PipelinePaths) -> None:
@@ -346,8 +488,79 @@ def action_build(manifest: dict[str, Any], paths: PipelinePaths) -> None:
         raise PipelineError(f"Build completed but avatar.json is missing: {paths.bundle_dir / 'avatar.json'}")
     if not paths.preview_gif.exists():
         raise PipelineError(f"Build completed but preview gif is missing: {paths.preview_gif}")
+    post_report = write_post_build_artifacts(manifest, paths)
+    if not post_report["ok"]:
+        raise PipelineError(f"Post-build coherency failed with {len(post_report['repairQueue'])} frame(s) needing repair. See {paths.post_build_coherency_report_path}")
     print(f"Built bundle: {paths.bundle_dir}")
     print(f"Preview gif: {paths.preview_gif}")
+    print(f"Post-build report: {paths.post_build_coherency_report_path}")
+    print(f"Contact sheet: {paths.contact_sheet_path}")
+
+
+def action_repair(manifest: dict[str, Any], paths: PipelinePaths) -> None:
+    # Targeted repair: keep passing frames untouched and repair only queued failures.
+    # provider=mock exercises the provider edit hook offline; provider=none uses a
+    # conservative anchor-copy fallback. Future OpenAI/Gemini providers should plug
+    # into AvatarImageProvider.edit_frame_delta without changing the queue contract.
+    queue_doc = None
+    for candidate in [paths.repair_queue_path, paths.post_build_coherency_report_path, paths.coherency_report_path]:
+        if candidate.exists():
+            queue_doc = json.loads(candidate.read_text())
+            break
+    if queue_doc is None:
+        action_coherency_report(manifest, paths)
+        queue_doc = json.loads(paths.repair_queue_path.read_text())
+    repairs = queue_doc.get("repairQueue", [])
+    if not repairs:
+        print(json.dumps({"ok": True, "repairCount": 0, "message": "No queued repairs."}, indent=2))
+        return
+
+    source_manifest = load_json(paths.manifest_path)
+    provider = None
+    provider_name = manifest.get("generation", {}).get("provider", "none")
+    if provider_name != "none":
+        try:
+            provider = get_provider(provider_name)
+        except ValueError as exc:
+            raise PipelineError(str(exc)) from exc
+    repaired = 0
+    repair_dir = paths.stage_dir / "repaired-frames"
+    repair_dir.mkdir(parents=True, exist_ok=True)
+    for item in repairs:
+        state = item.get("state")
+        frame_index = item.get("frameIndex")
+        if state not in source_manifest.get("states", {}) or not isinstance(frame_index, int):
+            continue
+        state_entry = source_manifest["states"][state]
+        frames = state_entry.get("frames", [])
+        if frame_index < 0 or frame_index >= len(frames):
+            continue
+        # Prefer the source job anchor. Post-build reports may point at 256px emitted
+        # bundle frames; mixing those back into 512px source jobs creates false drift.
+        anchor_path = Path(state_entry.get("anchorPath") or frames[0]).expanduser()
+        if not anchor_path.is_absolute():
+            anchor_path = (paths.manifest_path.parent / anchor_path).resolve()
+        if not anchor_path.exists():
+            anchor_path = Path(item.get("anchorPath") or frames[0]).expanduser()
+            if not anchor_path.is_absolute():
+                anchor_path = (paths.manifest_path.parent / anchor_path).resolve()
+        if provider is not None:
+            result = provider.edit_frame_delta(source_manifest, state, {"index": frame_index, "failures": item.get("failures", []), "repairPrompt": item.get("repairPrompt")}, anchor_path, repair_dir)
+            out = result.path
+        else:
+            out = repair_dir / f"{state}-{frame_index:02d}-repair.png"
+            Image.open(anchor_path).convert("RGBA").save(out)
+        frames[frame_index] = str(out)
+        state_entry["frames"] = frames
+        repaired += 1
+
+    repaired_manifest = paths.stage_dir / "repaired-job.generated.json"
+    repair_history = paths.stage_dir / "repair-history.generated.json"
+    strategy = f"provider:{provider_name}" if provider is not None else "anchor-copy-baseline"
+    source_manifest.setdefault("repair", {})["strategy"] = strategy
+    repaired_manifest.write_text(json.dumps(source_manifest, indent=2) + "\n")
+    repair_history.write_text(json.dumps({"ok": True, "strategy": strategy, "provider": provider_name, "repairCount": repaired, "sourceQueue": str(paths.repair_queue_path), "repairedManifest": str(repaired_manifest)}, indent=2) + "\n")
+    print(json.dumps({"ok": True, "repairCount": repaired, "repairedManifest": str(repaired_manifest), "history": str(repair_history)}, indent=2))
 
 
 def clawpals_cmd(*parts: str) -> list[str]:
@@ -384,6 +597,38 @@ def action_verify(manifest: dict[str, Any], paths: PipelinePaths) -> None:
     print(json.dumps({"ok": True, "avatarId": avatar.get("avatarId"), "bundleVersion": avatar.get("bundleVersion"), "runtimeId": status.get("runtimeId"), "connected": status.get("connected"), "openClawAuth": status.get("openClawAuth")}, indent=2))
 
 
+
+def action_vision_qa(manifest: dict[str, Any], paths: PipelinePaths) -> None:
+    provider_name = manifest.get("generation", {}).get("visionProvider") or manifest.get("generation", {}).get("provider", "none")
+    if provider_name == "none":
+        raise PipelineError("vision QA requires generation.visionProvider or generation.provider; use provider 'mock' for offline tests")
+    if not paths.contact_sheet_path.exists():
+        # Build creates the post-build contact sheet. If no bundle exists, build first.
+        if not (paths.bundle_dir / "avatar.json").exists():
+            action_build(manifest, paths)
+        else:
+            built_manifest = manifest_for_built_bundle(manifest, paths)
+            write_contact_sheet(built_manifest, paths)
+    try:
+        provider = get_provider(provider_name)
+        review = provider.review_contact_sheet(manifest, paths.contact_sheet_path, {"rubric": "docs/pipeline/avatar-vision-qa-rubric.md"})
+    except (ValueError, RuntimeError) as exc:
+        raise PipelineError(str(exc)) from exc
+    result = {
+        "ok": review.ok,
+        "score": review.score,
+        "provider": provider_name,
+        "reviewTarget": str(paths.contact_sheet_path),
+        "failures": review.failures,
+        "metadata": review.metadata,
+        "repairQueue": [],
+    }
+    paths.vision_qa_report_path.write_text(json.dumps(result, indent=2) + "\n")
+    print(json.dumps({"ok": review.ok, "score": review.score, "provider": provider_name, "report": str(paths.vision_qa_report_path)}, indent=2))
+    if not review.ok:
+        raise PipelineError(f"Vision QA failed; see {paths.vision_qa_report_path}")
+
+
 def action_run(manifest: dict[str, Any], paths: PipelinePaths) -> None:
     action_build(manifest, paths)
     if manifest["pushAfterBuild"]:
@@ -395,7 +640,7 @@ def action_run(manifest: dict[str, Any], paths: PipelinePaths) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run the Clawpals avatar bundle pipeline from a JSON manifest.")
-    parser.add_argument("action", choices=["scaffold", "emit-prompts", "coherency-report", "validate", "build", "push", "verify", "run"])
+    parser.add_argument("action", choices=["scaffold", "emit-prompts", "coherency-report", "validate", "generate", "slice-sheet", "animate", "repair", "build", "vision-qa", "push", "verify", "run"])
     parser.add_argument("manifest", type=Path, help="Path to an avatar job manifest JSON file")
     return parser
 
@@ -405,7 +650,7 @@ def main() -> int:
     raw = load_json(args.manifest.expanduser().resolve())
     manifest = normalize_manifest(raw, args.manifest.expanduser().resolve())
     paths = compute_paths(manifest, args.manifest.expanduser().resolve())
-    actions = {"scaffold": action_scaffold, "emit-prompts": action_emit_prompts, "coherency-report": action_coherency_report, "validate": action_validate, "build": action_build, "push": action_push, "verify": action_verify, "run": action_run}
+    actions = {"scaffold": action_scaffold, "emit-prompts": action_emit_prompts, "coherency-report": action_coherency_report, "validate": action_validate, "generate": action_generate, "slice-sheet": action_slice_sheet, "animate": action_animate, "repair": action_repair, "build": action_build, "vision-qa": action_vision_qa, "push": action_push, "verify": action_verify, "run": action_run}
     actions[args.action](manifest, paths)
     return 0
 

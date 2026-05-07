@@ -1,0 +1,129 @@
+{
+  "pipelineJobSchemaVersion": "0.1.0",
+  "id": "lantern-moth-wizard-gpt-image-2-expressive-v0",
+  "name": "Lantern Moth Wizard Expressive GPT Image 2",
+  "version": "0.3.1-gpt-image-2-preview",
+  "description": "Real image-generation pipeline test using a more expressive GPT Image 2 sprite sheet, sliced anchors, deterministic animation, QA, and runtime push.",
+  "mode": "local-only",
+  "pushAfterBuild": false,
+  "outputRoot": "/home/nick/.openclaw/workspace/local_avatars/lantern-moth-wizard-gpt-image-2-expressive-v0/bundle",
+  "previewGif": "/home/nick/.openclaw/workspace/local_avatars/lantern-moth-wizard-gpt-image-2-expressive-v0/preview.gif",
+  "generation": {
+    "strategy": "sprite-sheet-experiment",
+    "provider": "none",
+    "sourceImageContract": {
+      "background": "chroma-green",
+      "chromaKey": "#00ff66",
+      "logicalCanvas": "128x128",
+      "exportSize": "512x512",
+      "preserveCanvas": true,
+      "singleCharacter": true,
+      "noText": true,
+      "noScene": true
+    },
+    "locked": {
+      "species": "tiny cozy lantern moth wizard",
+      "signatureFeature": "warm amber lantern abdomen glow and rounded moth wings with pale gold eye spots",
+      "silhouette": "rounded moth body, small wings, antennae, tiny wizard cloak, central lantern glow",
+      "poseFraming": "3/4 front, centered, thumbnail-readable",
+      "outlineHex": "#0a0820",
+      "paletteHex": [
+        "#0a0820",
+        "#2d2638",
+        "#6f5a7a",
+        "#f5e6c8",
+        "#ffd37a",
+        "#fff6d6",
+        "#b7a6ff",
+        "#00ff66"
+      ],
+      "forbiddenChanges": [
+        "species",
+        "signature silhouette",
+        "palette",
+        "outline color",
+        "body proportions",
+        "lighting direction",
+        "camera angle"
+      ]
+    }
+  },
+  "registration": {
+    "mode": "preserve-canvas",
+    "fallbackMode": "anchor-locked",
+    "anchorState": "idle",
+    "anchorFrameIndex": 0,
+    "targetCanvasPx": 256,
+    "applySameTransformTo": "all-frames",
+    "legacyCropAllowed": false
+  },
+  "spriteSheet": {
+    "path": "fixtures/lantern-moth-wizard-sheet-gpt-image-2-expressive.png",
+    "rows": 2,
+    "cols": 3,
+    "stateOrder": [
+      "idle",
+      "thinking",
+      "focused",
+      "happy",
+      "alert",
+      "sleepy"
+    ]
+  },
+  "states": {
+    "idle": {
+      "fps": 4,
+      "anchorPath": "fixtures/lantern-moth-wizard-sheet-gpt-image-2-expressive.png",
+      "animationMode": "deterministic",
+      "frames": [
+        "fixtures/lantern-moth-wizard-sheet-gpt-image-2-expressive.png",
+        "fixtures/lantern-moth-wizard-sheet-gpt-image-2-expressive.png"
+      ]
+    },
+    "thinking": {
+      "fps": 4,
+      "anchorPath": "fixtures/lantern-moth-wizard-sheet-gpt-image-2-expressive.png",
+      "animationMode": "deterministic",
+      "frames": [
+        "fixtures/lantern-moth-wizard-sheet-gpt-image-2-expressive.png",
+        "fixtures/lantern-moth-wizard-sheet-gpt-image-2-expressive.png"
+      ]
+    },
+    "focused": {
+      "fps": 4,
+      "anchorPath": "fixtures/lantern-moth-wizard-sheet-gpt-image-2-expressive.png",
+      "animationMode": "deterministic",
+      "frames": [
+        "fixtures/lantern-moth-wizard-sheet-gpt-image-2-expressive.png",
+        "fixtures/lantern-moth-wizard-sheet-gpt-image-2-expressive.png"
+      ]
+    },
+    "happy": {
+      "fps": 5,
+      "anchorPath": "fixtures/lantern-moth-wizard-sheet-gpt-image-2-expressive.png",
+      "animationMode": "deterministic",
+      "frames": [
+        "fixtures/lantern-moth-wizard-sheet-gpt-image-2-expressive.png",
+        "fixtures/lantern-moth-wizard-sheet-gpt-image-2-expressive.png"
+      ]
+    },
+    "alert": {
+      "fps": 5,
+      "anchorPath": "fixtures/lantern-moth-wizard-sheet-gpt-image-2-expressive.png",
+      "animationMode": "deterministic",
+      "frames": [
+        "fixtures/lantern-moth-wizard-sheet-gpt-image-2-expressive.png",
+        "fixtures/lantern-moth-wizard-sheet-gpt-image-2-expressive.png"
+      ]
+    },
+    "sleepy": {
+      "fps": 3,
+      "anchorPath": "fixtures/lantern-moth-wizard-sheet-gpt-image-2-expressive.png",
+      "animationMode": "deterministic",
+      "frames": [
+        "fixtures/lantern-moth-wizard-sheet-gpt-image-2-expressive.png",
+        "fixtures/lantern-moth-wizard-sheet-gpt-image-2-expressive.png"
+      ]
+    }
+  }
+}

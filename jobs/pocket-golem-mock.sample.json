@@ -1,13 +1,13 @@
 {
-  "id": "pocket-golem-v0",
-  "name": "Pocket Golem",
-  "version": "0.2.0-local-animated",
-  "description": "A local-only pipeline test avatar: a tiny slate-and-moss pocket golem companion with animated state loops.",
+  "id": "pocket-golem-mock-v0",
+  "name": "Pocket Golem Mock",
+  "version": "0.2.0-mock-generated",
+  "description": "Mock-provider fixture for offline avatar provider generation tests.",
   "mode": "local-only",
   "targetRuntime": "gladriel",
-  "pushAfterBuild": true,
-  "outputRoot": "/home/nick/.openclaw/workspace/local_avatars/pocket-golem-v0/bundle",
-  "previewGif": "/home/nick/.openclaw/workspace/local_avatars/pocket-golem-v0/pocket-golem-preview.gif",
+  "pushAfterBuild": false,
+  "outputRoot": "/home/nick/.openclaw/workspace/local_avatars/pocket-golem-mock-v0/bundle",
+  "previewGif": "/home/nick/.openclaw/workspace/local_avatars/pocket-golem-mock-v0/pocket-golem-mock-preview.gif",
   "promptPack": {
     "jobTemplate": "docs/prompts/avatar-job-template.md",
     "creative": "docs/prompts/clawpals-creative-prompt.md",
@@ -254,7 +254,7 @@
       ]
     },
     "strategy": "anchors-plus-deterministic-motion",
-    "provider": "none",
+    "provider": "mock",
     "sourceImageContract": {
       "background": "transparent-alpha",
       "chromaKey": null,

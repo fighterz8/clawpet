@@ -202,6 +202,42 @@ If the desktop app still starts with the old blue/default Dawn after restart, th
 
 The desktop machine is a display/runtime target, not the place the user has to manually edit files.
 
+## Avatar generation workflow
+
+When the user asks to create or change a Clawpals avatar, OpenClaw should create the avatar on the OpenClaw host, build the bundle, push it to the paired runtime, and verify it. Do not instruct the user to manually edit desktop-machine assets.
+
+Default strategy: generate six state anchors, animate deterministic frame loops, run QA, build, push, verify. Use provider-edited frame deltas only when advanced generation is explicitly configured.
+
+Required flow:
+
+1. Run `clawpals status` or `clawpals ping` to confirm runtime readiness.
+2. Scaffold a job manifest under `~/.openclaw/clawpals/avatar-jobs/` for user-specific jobs; use repo `jobs/` only for fixtures/tests/examples.
+3. Lock exact palette hex values, outline, pose framing, signature silhouette, and source image contract before frame generation.
+4. Generate or collect six state anchors: `idle`, `thinking`, `focused`, `happy`, `alert`, and `sleepy`.
+5. Run deterministic animation and QA. Repair failed frames only; do not regenerate the whole avatar unless the identity anchor failed.
+6. Build the bundle and create review artifacts such as a contact sheet and preview GIF.
+7. Push with `clawpals avatar push <bundle-dir>`.
+8. Verify with `clawpals status` and the runtime-served manifest.
+
+If the provider is not configured, emit the prompt plan/job scaffold and say provider-backed image generation is unavailable. Do not claim that an avatar was generated.
+
+Detailed runbook: `docs/avatar-generation.md`. Minimal job scaffold: `templates/avatar-job-template.json`.
+
+Skill-facing wrappers are available for the repo pipeline when `scripts/run_avatar_pipeline.py` is discoverable, or when `CLAWPALS_PIPELINE_ROOT` points at the Clawpals repo:
+
+```bash
+clawpals avatar validate <job.json>
+clawpals avatar animate <job.json>
+clawpals avatar qa <job.json>
+clawpals avatar build <job.json>
+clawpals avatar review <job.json>
+clawpals avatar run <job.json>
+clawpals avatar push-job <job.json>
+clawpals avatar verify <job.json>
+```
+
+Low-level runtime upload remains `clawpals avatar push <bundle-dir>`.
+
 ## ClawHub packaging note
 
 This skill is the OpenClaw-side control package. The desktop runtime/overlay remains installed from the Clawpals GitHub repo/Vercel docs. ClawHub users install this skill, then run `clawpals install` to get the target-machine installer command.

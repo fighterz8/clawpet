@@ -90,7 +90,9 @@ That means:
 - animated avatar bundles with per-state frame loops
 - runtime avatar switching from OpenClaw
 - local-only avatar generation/build/push pipeline
-- coherency QA + targeted frame repair flow for generated avatars
+- deterministic avatar animation baseline from six state anchors
+- coherency QA, post-build artifacts, and targeted frame repair flow
+- mock provider + provider interface for future image-generation backends
 
 ## Downloads
 
@@ -307,21 +309,32 @@ These exist to show:
 ## Local-only avatar generation pipeline
 
 Clawpals now supports a stronger OpenClaw-side avatar workflow:
-- generate source frames locally
-- build a bundle locally
-- run coherency QA
-- repair only drifted frames
+- scaffold a versioned avatar job contract
+- generate or collect six state anchors
+- animate frame loops deterministically
+- build a portable bundle locally
+- run source and post-build coherency QA
+- emit review artifacts such as contact sheets and preview GIFs
+- repair only failed frames
 - push the finished bundle to the paired runtime
 
 This keeps custom avatar work off the display machine and makes iteration much more agent-friendly.
 
+Current status:
+- **Stable baseline:** manual/local anchors, mock provider, deterministic animation, preserve-canvas/anchor-locked registration, post-build QA, contact sheets, targeted repair plumbing, and skill CLI wrappers.
+- **Experimental:** sprite-sheet slicing.
+- **Not yet implemented:** real provider-backed image generation/semantic repair. Preferred future providers are OpenAI `gpt-image-2` and Gemini `gemini-3.1-flash-image-preview`.
+
 See:
+- [`docs/v0.6.0-avatar-pipeline-release-notes.md`](docs/v0.6.0-avatar-pipeline-release-notes.md)
+- [`docs/pipeline/avatar-generation-reliability-build-spec.md`](docs/pipeline/avatar-generation-reliability-build-spec.md)
 - [`docs/pipeline/avatar-generation-pipeline.md`](docs/pipeline/avatar-generation-pipeline.md)
 - [`docs/pipeline/avatar-coherency-qa.md`](docs/pipeline/avatar-coherency-qa.md)
+- [`docs/pipeline/avatar-vision-qa-rubric.md`](docs/pipeline/avatar-vision-qa-rubric.md)
 - [`docs/clawpals-style-guide.md`](docs/clawpals-style-guide.md)
 
 > [!CAUTION]
-> Generated avatars are still an active R&D area. The new pipeline is much better than the earlier manual flow, but frame coherency and repair quality are still improving.
+> Generated avatars are still an active R&D area. The pipeline mechanics are now much stronger, but polished avatar quality still depends on future real provider integration and calibrated repair/vision QA.
 
 ## Architecture
 
@@ -364,13 +377,15 @@ Tokens persist on both sides after successful pairing.
 - runtime avatar push/select
 - animated showcase bundles
 - local-only avatar generation/build/push flow
-- coherency QA scaffolding and repair queue generation
+- deterministic animation from six state anchors
+- post-build coherency QA, contact sheets, vision QA mock path, and targeted repair hooks
 - stable GitHub Release download path
 
 ### In progress
 
 - Windows signing rollout
 - smoother animation quality
+- real OpenAI/Gemini provider-backed avatar generation and semantic repair
 - stronger automatic avatar coherency repair
 - richer helper controls
 - better daemon inference and more descriptive updates
@@ -380,10 +395,11 @@ Tokens persist on both sides after successful pairing.
 - polished cross-agent support beyond OpenClaw
 - hosted relay path for users without Tailscale
 - environment/screen awareness
-- fully automated provider-backed frame generation and repair
+- calibrated production-quality provider-backed avatar generation and repair
 
 ## Documentation
 
+- [`docs/v0.6.0-avatar-pipeline-release-notes.md`](docs/v0.6.0-avatar-pipeline-release-notes.md)
 - [`docs/v0.5-brief.md`](docs/v0.5-brief.md)
 - [`docs/clawpals-style-guide.md`](docs/clawpals-style-guide.md)
 - [`docs/avatar-bundle-spec.md`](docs/avatar-bundle-spec.md)

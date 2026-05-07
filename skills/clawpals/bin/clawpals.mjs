@@ -4,8 +4,9 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import httpModule from "node:http";
 import httpsModule from "node:https";
 import { homedir } from "node:os";
-import { join, dirname } from "node:path";
+import { join, dirname, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
+import { spawnSync } from "node:child_process";
 
 const VERSION = "0.4.0";
 const STATES = ["idle", "thinking", "focused", "happy", "alert", "sleepy"];
@@ -231,6 +232,7 @@ Usage:
   clawpals pair-mode [--seconds 90]                       # open pair mode on the local runtime; prints code
   clawpals rotate-token
   clawpals avatar push <bundle-dir>                 # upload/select avatar bundle on paired runtime
+  clawpals avatar <validate|generate|slice-sheet|animate|repair|build|qa|vision-qa|review|verify|run> <job.json>
   clawpals install [--os windows|unix]
   clawpals config
   clawpals daemon <start|stop|status|run|enable|disable> # auto-react sidecar (tails OpenClaw session log)
@@ -693,9 +695,49 @@ async function cmdPairMode(_positional, flags) {
   console.log("\n  ✗ Pair mode timed out without a claim.");
 }
 
+function resolvePipelineRoot() {
+  if (process.env.CLAWPALS_PIPELINE_ROOT) return resolve(process.env.CLAWPALS_PIPELINE_ROOT);
+  const candidates = [
+    resolve(dirname(new URL(import.meta.url).pathname), "../../.."),
+    process.cwd(),
+  ];
+  for (const candidate of candidates) {
+    if (existsSync(join(candidate, "scripts", "run_avatar_pipeline.py"))) return candidate;
+  }
+  return candidates[0];
+}
+
+function runAvatarPipeline(action, jobPath, extraArgs = []) {
+  const root = resolvePipelineRoot();
+  const script = join(root, "scripts", "run_avatar_pipeline.py");
+  if (!existsSync(script)) fail(`avatar ${action}: pipeline script not found at ${script}. Set CLAWPALS_PIPELINE_ROOT to the Clawpals repo root.`, 2);
+  const resolvedJob = resolve(jobPath);
+  const result = spawnSync("python3", [script, action, resolvedJob, ...extraArgs], { cwd: root, stdio: "inherit" });
+  if (result.error) fail(`avatar ${action}: ${result.error.message}`, 2);
+  if (result.status !== 0) process.exit(result.status ?? 1);
+}
+
 async function cmdAvatar(positional, _flags) {
-  const [subcmd, bundleDir] = positional;
-  if (subcmd !== "push") fail("avatar: only supported command is 'push <bundle-dir>'");
+  const [subcmd, target] = positional;
+  const pipelineActions = new Set(["scaffold", "emit-prompts", "coherency-report", "validate", "generate", "slice-sheet", "animate", "repair", "build", "vision-qa", "push-job", "verify", "run"]);
+  if (pipelineActions.has(subcmd)) {
+    if (!target) fail(`avatar ${subcmd}: <job.json> required`);
+    const action = subcmd === "push-job" ? "push" : subcmd;
+    runAvatarPipeline(action, target);
+    return;
+  }
+  if (subcmd === "qa") {
+    if (!target) fail("avatar qa: <job.json> required");
+    runAvatarPipeline("coherency-report", target);
+    return;
+  }
+  if (subcmd === "review") {
+    if (!target) fail("avatar review: <job.json> required");
+    runAvatarPipeline("build", target);
+    return;
+  }
+  const bundleDir = target;
+  if (subcmd !== "push") fail("avatar: use 'push <bundle-dir>' or pipeline actions validate|animate|build|qa|review|verify|run <job.json>");
   if (!bundleDir) fail("avatar push: <bundle-dir> required (folder containing avatar.json + assets/*.png)");
   const manifestPath = join(bundleDir, "avatar.json");
   if (!existsSync(manifestPath)) fail(`avatar push: missing ${manifestPath}`);
