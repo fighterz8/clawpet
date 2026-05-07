@@ -110,13 +110,66 @@ function CopyButton({ text, label }: { text: string; label: string }) {
   );
 }
 
+function usePrefersReducedMotion() {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduced(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+  return reduced;
+}
+
+function ScrollProgress() {
+  const [progress, setProgress] = useState(0);
+  useEffect(() => {
+    let raf = 0;
+    const update = () => {
+      window.cancelAnimationFrame(raf);
+      raf = window.requestAnimationFrame(() => {
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        setProgress(max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0);
+      });
+    };
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      window.cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, []);
+  return <div className="lp-scroll-progress" style={{ transform: `scaleX(${progress})` }} aria-hidden />;
+}
+
 function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
   const [visible, setVisible] = useState(false);
+  const [node, setNode] = useState<HTMLDivElement | null>(null);
+  const reduced = usePrefersReducedMotion();
+
   useEffect(() => {
-    const t = window.setTimeout(() => setVisible(true), delay);
-    return () => window.clearTimeout(t);
-  }, [delay]);
-  return <div className={`lp-reveal ${visible ? "lp-reveal--in" : ""}`}>{children}</div>;
+    if (reduced) {
+      setVisible(true);
+      return;
+    }
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        const t = window.setTimeout(() => setVisible(true), delay);
+        observer.disconnect();
+        return () => window.clearTimeout(t);
+      },
+      { rootMargin: "0px 0px -12% 0px", threshold: 0.12 },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [delay, node, reduced]);
+
+  return <div ref={setNode} className={`lp-reveal ${visible ? "lp-reveal--in" : ""}`}>{children}</div>;
 }
 
 function Landing() {
@@ -125,6 +178,7 @@ function Landing() {
   return (
     <div className="lp-root">
       <div className="lp-bg" aria-hidden />
+      <ScrollProgress />
 
       <header className="lp-nav">
         <div className="lp-nav__brand">
@@ -155,6 +209,11 @@ function Landing() {
             <a className="lp-btn lp-btn--ghost" href="https://github.com/fighterz8/clawpals" target="_blank" rel="noreferrer">View on GitHub</a>
           </div>
           <p className="lp-foot-hint">Local-first · Tailscale-first for cross-machine setups · MIT</p>
+          <div className="lp-trust-strip" aria-label="Product principles">
+            <span><strong>0-token</strong> daemon reactivity</span>
+            <span><strong>local</strong> runtime</span>
+            <span><strong>user-owned</strong> avatars</span>
+          </div>
         </Reveal>
 
         <Reveal delay={200}>
