@@ -300,6 +300,7 @@ Built-in showcase/demo bundles currently include:
 - `dawn-v2-amethyst`
 - `dawn-v2-ashgold`
 - `lantern-moth-v0`
+- `hearthling-v0`
 
 These exist to show:
 1. animated bundle playback
