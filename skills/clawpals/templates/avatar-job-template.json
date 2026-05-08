@@ -8,6 +8,7 @@
   "pushAfterBuild": false,
   "generation": {
     "strategy": "anchors-plus-deterministic-motion",
+    "acceptanceProfile": "golden-avatar-v0.6",
     "provider": "none",
     "sourceImageContract": {
       "background": "transparent-alpha",
@@ -27,6 +28,13 @@
       "outlineHex": "#0a0820",
       "paletteHex": ["#0a0820", "#263142", "#596575", "#9ca7aa", "#9cff9d", "#fdfcff"],
       "forbiddenChanges": ["species", "signature silhouette", "palette", "outline color", "body proportions", "lighting direction", "camera angle"]
+    },
+    "stateActing": {
+      "thinking": "The character itself looks thoughtful through eye direction, head/ear/antenna tilt, or posture; any question/spark cue is secondary.",
+      "focused": "The character itself looks intent through narrowed eyes, forward energy, grounded posture, or a focused signature-feature change.",
+      "happy": "The character itself looks joyful through face, posture, bounce energy, or signature-feature lift; hearts/sparks are secondary.",
+      "alert": "The character itself reacts with widened eyes, perked silhouette, tension, or upright posture; alert sparks are secondary.",
+      "sleepy": "The character itself looks tired through drooping eyes, lowered posture, slower energy, or relaxed signature feature; Z cues are secondary."
     }
   },
   "registration": {

@@ -16,6 +16,29 @@ rig-safe avatar design
 
 If the only way to create motion is to split the character into arbitrary image sections, the avatar design has failed the OpenClaw animation contract. Redesign the character simpler instead of adding more slicing hacks.
 
+## Golden-avatar acceptance profile
+
+Use `dawn-v2-ember`, `lantern-moth-v0`, and `glass-toad-v0` as the current goldens. New generated avatars do not need to copy their species or style exactly, but they must hit the same functional properties:
+
+- **Same creature, six performances:** every state must read as the same character acting a different state, not six loosely similar generated stickers.
+- **Character-led state acting:** thinking/focused/happy/alert/sleepy must be visible in the body, eyes, posture, or signature feature. Floating symbols may support the read, but may not be the main state difference.
+- **Distinctive silhouette:** the avatar needs one memorable identity hook visible at overlay size. “Generic round animal plus small icon” is not enough.
+- **Stable art direction:** palette, outline weight, pixel density, lighting, camera angle, and proportions stay locked across all states and frames.
+- **Animation-native shapes:** frame motion should be expressible through blinks, breathing, bounce, glow/flame/tail/ear/antenna nudges, or authored state frames. If motion requires arbitrary rectangular section splitting, reject the design.
+- **Overlay readability:** at 96-128 px, eyes/expression/signature feature remain readable and the state is still distinguishable.
+- **No artifact debt:** no text, watermark, neighboring sprite bleed, opaque/chroma background leakage, pasted-on props, or stray edge pixels.
+
+### Reject-by-default patterns
+
+Reject or regenerate before animation if any of these are true:
+
+- States differ mostly by question marks/hearts/sparkles/Zs while the character itself stays unchanged.
+- The character is a generic animal/object with no strong Clawpals-specific silhouette hook.
+- The design has complex wings, limbs, capes, scarves, dangling accessories, long hair/fur, or other parts that cannot be moved as simple channels.
+- State anchors change species, proportions, scale, outline thickness, palette, or camera angle.
+- Small thumbnail review collapses multiple states into the same expression.
+- Generated frames look like a camera shake, crop shift, or pasted section effect instead of authored character motion.
+
 ## Hard design requirements
 
 A production-bound generated avatar should satisfy these before animation:

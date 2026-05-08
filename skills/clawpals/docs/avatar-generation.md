@@ -21,6 +21,25 @@ Hard defaults:
 
 This gate matters more than the cleverness of the animation code. If the creature is not rig-safe, generated frames will drift or look static.
 
+### Golden acceptance gate
+
+For v0.6.0-quality generated avatars, set:
+
+```json
+"generation": {
+  "acceptanceProfile": "golden-avatar-v0.6",
+  "stateActing": {
+    "thinking": "character-led acting description...",
+    "focused": "character-led acting description...",
+    "happy": "character-led acting description...",
+    "alert": "character-led acting description...",
+    "sleepy": "character-led acting description..."
+  }
+}
+```
+
+The goldens are `dawn-v2-ember`, `lantern-moth-v0`, and `glass-toad-v0`. New avatars should match their functional quality: same character across all states, expressive body/face/signature-feature acting, distinctive silhouette, stable art direction, and readable thumbnail state changes. Floating symbols can support a state but cannot be the main difference.
+
 1. Confirm runtime readiness:
 
 ```bash
@@ -123,7 +142,7 @@ Keep the provider interface model-neutral so the pipeline can test both without 
 
 ## Vision QA rubric
 
-See `docs/pipeline/avatar-vision-qa-rubric.md` in the repo. Vision QA reviews the post-build contact sheet for identity consistency, expression readability, animation coherence, thumbnail charm/readability, and artifacts. It is provider-backed and optional until calibrated; deterministic QA remains the blocking baseline.
+See `docs/pipeline/avatar-vision-qa-rubric.md` in the repo. Vision QA reviews the post-build contact sheet for identity consistency, expression readability, character-led state acting, animation coherence, thumbnail charm/readability, silhouette distinctiveness, and artifacts. It is provider-backed and optional until calibrated; deterministic QA remains the blocking baseline.
 
 
 ## Sprite sheet experiment

@@ -15,6 +15,7 @@ from PIL import Image
 from avatar_providers import get_provider
 
 REQUIRED_STATES = ["idle", "thinking", "focused", "happy", "alert", "sleepy"]
+ACTIVE_STATES = ["thinking", "focused", "happy", "alert", "sleepy"]
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CLAWPALS_CLI = Path.home() / ".openclaw/workspace/skills/clawpals/bin/clawpals.mjs"
 DEFAULT_BUILD_SCRIPT = ROOT / "scripts/build_avatar_bundle.py"
@@ -191,15 +192,29 @@ def render_prompt_plan(manifest: dict[str, Any]) -> dict[str, Any]:
         "job": {k: manifest[k] for k in ["id", "name", "version", "mode", "targetRuntime"]},
         "coreConcept": gen.get("coreConcept", manifest.get("description", "")),
         "lockedCharacter": locked,
+        "goldenAcceptanceProfile": {
+            "profile": gen.get("acceptanceProfile", "golden-avatar-v0.6"),
+            "goldens": ["dawn-v2-ember", "lantern-moth-v0", "glass-toad-v0"],
+            "rules": [
+                "Each state must be the same character performing a different emotion/state, not six similar stickers.",
+                "State readability must be character-led through eyes, mouth, posture, body energy, or signature feature; floating symbols are support only.",
+                "The silhouette needs one memorable identity hook that remains readable at desktop-overlay scale.",
+                "Palette, outline weight, pixel density, lighting, camera angle, proportions, and framing stay locked.",
+                "Reject designs that need arbitrary rectangular section-splitting to simulate motion.",
+                "Reject pasted-on props, text, watermark, background leakage, neighboring sprite bleed, and stray edge pixels.",
+            ],
+        },
         "coherencyContract": manifest["coherency"],
         "states": {},
     }
     for state in REQUIRED_STATES:
         entry = manifest["states"][state]
+        state_acting = gen.get("stateActing", {}).get(state, "") if isinstance(gen.get("stateActing"), dict) else ""
         prompts = []
         for i, frame in enumerate(entry["frames"]):
             if i == 0:
-                prompt = f"Create the {state} anchor for {manifest['name']}. Preserve the locked character identity and define this state's expression clearly."
+                acting_clause = f" Character-led acting requirement: {state_acting}." if state_acting else ""
+                prompt = f"Create the {state} anchor for {manifest['name']}. Preserve the locked character identity and define this state's expression clearly.{acting_clause} Do not rely on floating symbols alone."
             else:
                 prompt = (
                     f"Repair-safe frame delta for {manifest['name']} / {state} frame {i}. "
@@ -207,7 +222,7 @@ def render_prompt_plan(manifest: dict[str, Any]) -> dict[str, Any]:
                     "Do not redesign the character, palette, eyes, silhouette, proportions, or framing. If in doubt, do less."
                 )
             prompts.append({"index": i, "currentFramePath": frame, "prompt": prompt})
-        plan["states"][state] = {"fps": entry["fps"], "motionRecipe": entry["motionRecipe"], "frames": prompts}
+        plan["states"][state] = {"fps": entry["fps"], "motionRecipe": entry["motionRecipe"], "stateActing": state_acting, "frames": prompts}
     return plan
 
 
@@ -371,6 +386,26 @@ def validate_manifest(manifest: dict[str, Any]) -> list[str]:
             problems.append("generation.locked.paletteHex must contain exact hex colors for strategy jobs")
         if not isinstance(locked.get("outlineHex"), str) or not locked.get("outlineHex", "").startswith("#"):
             problems.append("generation.locked.outlineHex must be an exact hex color for strategy jobs")
+        acceptance_profile = generation.get("acceptanceProfile")
+        if acceptance_profile and acceptance_profile not in {"golden-avatar-v0.6"}:
+            problems.append("generation.acceptanceProfile must be 'golden-avatar-v0.6' when provided")
+        if acceptance_profile == "golden-avatar-v0.6":
+            for required in ["signatureFeature", "silhouette", "poseFraming"]:
+                if not isinstance(locked.get(required), str) or len(locked.get(required, "").strip()) < 12:
+                    problems.append(f"generation.locked.{required} must describe a specific golden-profile identity constraint")
+            forbidden = locked.get("forbiddenChanges", [])
+            if not isinstance(forbidden, list) or len(forbidden) < 6:
+                problems.append("generation.locked.forbiddenChanges should lock species, silhouette, palette, outline, proportions, camera, and framing")
+            state_acting = generation.get("stateActing")
+            if not isinstance(state_acting, dict):
+                problems.append("generation.stateActing is required for golden-avatar-v0.6 jobs")
+            else:
+                missing_acting = [state for state in ACTIVE_STATES if not isinstance(state_acting.get(state), str) or len(state_acting.get(state, "").strip()) < 20]
+                if missing_acting:
+                    problems.append("generation.stateActing must describe character-led acting for: " + ", ".join(missing_acting))
+                symbol_only = [state for state, desc in state_acting.items() if isinstance(desc, str) and any(word in desc.lower() for word in ["only", "just", "mostly"]) and any(sym in desc.lower() for sym in ["symbol", "icon", "question", "heart", "sparkle", "z"])]
+                if symbol_only:
+                    problems.append("generation.stateActing cannot rely mostly/only on floating symbols for: " + ", ".join(symbol_only))
     mode = registration.get("mode", "legacy-crop")
     if mode not in {"preserve-canvas", "anchor-locked", "legacy-crop"}:
         problems.append("registration.mode must be preserve-canvas, anchor-locked, or legacy-crop")
