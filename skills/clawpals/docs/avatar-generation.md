@@ -64,11 +64,7 @@ Use `skills/clawpals/templates/avatar-job-template.json` as the scaffold.
 
 4. Generate or collect six state anchors: `idle`, `thinking`, `focused`, `happy`, `alert`, `sleepy`.
 
-5. Animate deterministically by default:
-
-```bash
-clawpals avatar animate ~/.openclaw/clawpals/avatar-jobs/<job-id>.json
-```
+5. Generate animation frames with the image provider for production avatars. For `gpt-image-2` avatars, never use local Pillow/deterministic operations to create visible art changes such as glow, blinks, squash/stretch, expression changes, or motion. Local animation commands are for mock/CI diagnostics only. Production frames must be provider reference-edits from the locked state anchor.
 
 6. Run pipeline QA for golden-profile jobs, then build and review artifacts:
 
@@ -152,4 +148,4 @@ See `docs/pipeline/avatar-vision-qa-rubric.md` in the repo. Vision QA reviews th
 
 ## Sprite sheet experiment
 
-Sprite sheets are opt-in only. They are useful for experiments but should not replace the reliable anchor-first path. Use `clawpals avatar slice-sheet <job.json>` only when the job has a `spriteSheet` block with `path`, `rows`, `cols`, and `stateOrder`. The slicer saves full isolated cells as anchors so registration stays stable, then routes those anchors into deterministic animation. Watch for cell bleed, labels/text, and neighboring-pose contamination.
+Sprite sheets are opt-in only. They are useful for experiments but should not replace the reliable anchor-first path. Use `clawpals avatar slice-sheet <job.json>` only when the job has a `spriteSheet` block with `path`, `rows`, `cols`, and `stateOrder`. The slicer saves full isolated cells as anchors so registration stays stable. For production, sliced anchors must still be animated with provider reference-edited frames, not local deterministic visual edits. Watch for cell bleed, labels/text, and neighboring-pose contamination.

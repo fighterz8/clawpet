@@ -5,7 +5,7 @@ The reliable avatar pipeline should not jump directly from state anchors to gene
 ```text
 state anchor
 -> state-specific motion plan
--> deterministic frame generation or provider reference-edit generation
+-> provider reference-edit frame generation for production avatars
 -> QA/repair/build
 ```
 
@@ -15,8 +15,8 @@ First apply the designed-to-animate contract in `docs/pipeline/avatar-designed-t
 
 Each state should define small, readable deltas. The frame plan is both:
 
-1. executable by deterministic operations when possible, and
-2. promptable as reference-edit instructions for future OpenAI/Gemini frame generation.
+1. promptable as provider reference-edit instructions for OpenAI/Gemini frame generation, and
+2. executable by deterministic operations only for mock/CI diagnostics, never final production art.
 
 ## Example frame plan item
 
@@ -50,7 +50,7 @@ For non-winged avatars, map the same intent to species-appropriate motion:
 - alert jolt/spark
 - sleepy droop/Z cue
 
-## Current deterministic operations
+## Local deterministic operations are test-only
 
 - `copy_anchor`
 - `translate_sprite_layer`
@@ -61,8 +61,8 @@ For non-winged avatars, map the same intent to species-appropriate motion:
 - `antenna_twitch`
 - `wing_flutter`
 
-Some operations are semantic placeholders today. For example, `wing_flutter` currently uses conservative micro-motion until masks or provider reference edits can target wings only. Keeping the operation name matters because it becomes the stable contract for future provider-backed frame generation.
+Local operations are semantic placeholders for tests and diagnostics only. Production avatars generated with `gpt-image-2` must not use Pillow/local pixel edits for visual motion, glow, blink, squash/stretch, or expression changes. Those changes must be generated as provider reference edits from the locked anchor/state frame. Local code may clean chroma, package, inspect, and QA, but it must not invent visible art.
 
 ## Why this matters
 
-Without explicit motion plans, default deterministic animation can look static, especially for states like thinking/focused/idle. Motion plans preserve identity while giving each state a readable behavior before any frame generation happens.
+Without explicit motion plans, generated animation can look static, especially for states like thinking/focused/idle. Motion plans preserve identity while giving each state a readable behavior before provider frame generation happens.

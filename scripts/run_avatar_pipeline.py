@@ -449,6 +449,48 @@ def generate_qa_report(manifest: dict[str, Any], paths: PipelinePaths) -> dict[s
         "failures": [],
     }
 
+    def parse_hex_color(value: str) -> tuple[int, int, int] | None:
+        value = value.strip().lstrip("#")
+        if len(value) != 6:
+            return None
+        try:
+            return (int(value[0:2], 16), int(value[2:4], 16), int(value[4:6], 16))
+        except ValueError:
+            return None
+
+    def chroma_background_issue(image: Image.Image) -> dict[str, Any] | None:
+        contract = manifest.get("generation", {}).get("sourceImageContract", {})
+        if contract.get("background") != "chroma-green":
+            return None
+        chroma = parse_hex_color(str(contract.get("chromaKey", "")))
+        if chroma is None:
+            return None
+        im = image.convert("RGBA")
+        w, h = im.size
+        px = im.load()
+        # Production provider-edited frames should keep a clean flat chroma border.
+        # If the provider paints glow/tiles/matte into the border, the runtime keyer
+        # can expose opaque squares. This is analysis only, not a local visual edit.
+        border = max(4, min(w, h) // 32)
+        total = off = 0
+        max_delta = 0
+        for y in range(h):
+            for x in range(w):
+                if not (x < border or y < border or x >= w - border or y >= h - border):
+                    continue
+                r, g, b, a = px[x, y]
+                if a < 8:
+                    continue
+                delta = abs(r - chroma[0]) + abs(g - chroma[1]) + abs(b - chroma[2])
+                total += 1
+                max_delta = max(max_delta, delta)
+                if delta > int(cfg.get("maxChromaBorderDelta", 80)):
+                    off += 1
+        ratio = off / max(total, 1)
+        if ratio > float(cfg.get("maxChromaBorderOffRatio", 0.002)):
+            return {"gate": "chroma-background-cleanliness", "reason": f"{ratio:.3%} of border pixels drift from chroma key; max delta {max_delta}"}
+        return None
+
     # Gate 1: materialized frames/anchors. Sprite-sheet experiments must be sliced
     # before QA; otherwise all states can point at the same sheet and still look valid.
     anchor_paths: dict[str, str] = {}
@@ -495,6 +537,10 @@ def generate_qa_report(manifest: dict[str, Any], paths: PipelinePaths) -> dict[s
         avg_motion = sum(motion) / max(len(motion), 1)
         if len(frames) < int(cfg.get("minFramesPerState", 3)):
             state_issues.append({"gate": "loop-frame-count", "reason": f"only {len(frames)} frames"})
+        for i, frame in enumerate(frames):
+            issue = chroma_background_issue(frame)
+            if issue:
+                state_issues.append({"frameIndex": i, **issue})
         if len(unique_frame_hashes) < min_unique:
             state_issues.append({"gate": "loop-unique-frames", "reason": f"only {len(unique_frame_hashes)} unique frame(s); expected >= {min_unique}"})
         min_motion_by_state = cfg.get("minAvgMotionPctByState", {}) if isinstance(cfg.get("minAvgMotionPctByState"), dict) else {}
@@ -574,8 +620,17 @@ def validate_manifest(manifest: dict[str, Any]) -> list[str]:
     locked = generation.get("locked", {})
     registration = manifest.get("registration", {})
     if strategy:
-        if strategy not in {"anchors-plus-deterministic-motion", "manual-frames", "sprite-sheet-experiment", "reference-edit-motion"}:
+        if strategy not in {"anchors-plus-deterministic-motion", "manual-frames", "sprite-sheet-experiment", "reference-edit-motion", "provider-edited-frames"}:
             problems.append(f"Unknown generation.strategy: {strategy}")
+        if generation.get("provider") in {"gpt-image-2", "openai/gpt-image-2"} and generation.get("localVisualEditsAllowed") is not False:
+            problems.append("gpt-image-2 production jobs must set generation.localVisualEditsAllowed=false; visible art changes must be provider-edited, not local/Pillow-edited")
+        if strategy == "provider-edited-frames":
+            for state in REQUIRED_STATES:
+                entry = manifest["states"][state]
+                if entry.get("framePlan"):
+                    problems.append(f"State '{state}' uses framePlan with provider-edited-frames; production frames must be explicit provider-edited image files")
+                if entry.get("animationMode") != "provider-edited-frames":
+                    problems.append(f"State '{state}' animationMode must be provider-edited-frames")
         background = source_contract.get("background")
         chroma_key = source_contract.get("chromaKey")
         if background not in {"transparent-alpha", "chroma-green"}:
