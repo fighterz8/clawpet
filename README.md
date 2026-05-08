@@ -32,7 +32,7 @@
 
 ## Demo
 
-The default showcase set is intentionally small and consistent so new avatars can be added as matching tiles instead of one-off screenshots. Each tile uses the same structure: preview, avatar name, demonstrated state, and the kind of chat bubble that state can surface in the overlay.
+Meet the current default companions. Each one has its own look, state animation, and small status bubble so OpenClaw feels present without taking over your desktop.
 
 <div align="center">
   <table>
@@ -73,8 +73,6 @@ The default showcase set is intentionally small and consistent so new avatars ca
     </tr>
   </table>
 </div>
-
-To add another showcase avatar, add a new table cell with the same fields: preview GIF, display name, demo state, and matching bubble copy.
 
 Clawpals is meant to feel ambient, not noisy: glanceable status, tiny emotions, and just enough presence to know your assistant is alive and working.
 
