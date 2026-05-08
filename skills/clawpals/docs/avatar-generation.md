@@ -62,9 +62,18 @@ Use `skills/clawpals/templates/avatar-job-template.json` as the scaffold.
 - source image contract: transparent alpha or chroma green, not both
 - registration mode, usually `preserve-canvas`
 
-4. Generate or collect six state anchors: `idle`, `thinking`, `focused`, `happy`, `alert`, `sleepy`.
+4. Generate the first `idle` anchor only, show only that anchor to the user, and wait for explicit approve/disapprove. Do not dump every generated state/frame into chat. If the user disapproves, regenerate the idle anchor and repeat until approved.
 
-5. Generate animation frames with the image provider for production avatars. For `gpt-image-2` avatars, never use local Pillow/deterministic operations to create visible art changes such as glow, blinks, squash/stretch, expression changes, or motion. Local animation commands are for mock/CI diagnostics only. Production frames must be provider reference-edits from the locked state anchor.
+   The idle anchor must hit the standardized sprite size (golden-aligned with `dawn-v2-ember` and `lantern-moth-v0`):
+   - Longest axis fills **92–100%** of the 256-canvas (≈944–1024 px on a 1024 export).
+   - Short axis fills **78–94%** (anything ≥95% on both axes reads chunky like `glass-toad-v0` and is rejected).
+   - Avoid sub-90% on the longest axis (mooncap was 41%, too small).
+   - Configured in `generation.spriteSize`; QA fails the idle anchor if it falls outside.
+   - Always include in the generation prompt: "the character must fill ~95% of the longest dimension of the export with ~5% transparent margin".
+
+5. After approval, generate or collect the remaining five state anchors: `thinking`, `focused`, `happy`, `alert`, `sleepy`.
+
+6. Generate animation frames with the image provider for production avatars. For `gpt-image-2` avatars, never use local Pillow/deterministic operations to create visible art changes such as glow, blinks, squash/stretch, expression changes, or motion. Local animation commands are for mock/CI diagnostics only. Production frames must be provider reference-edits from the locked state anchor.
 
 6. Run pipeline QA for golden-profile jobs, then build and review artifacts:
 

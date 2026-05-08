@@ -3,7 +3,9 @@
 The reliable avatar pipeline should not jump directly from state anchors to generated frames with vague motion instructions. Each state needs an explicit frame plan before animation or provider frame editing.
 
 ```text
-state anchor
+idle anchor candidate
+-> user approval gate (show only the first anchor; regenerate until approved)
+-> remaining state anchors
 -> state-specific motion plan
 -> provider reference-edit frame generation for production avatars
 -> QA/repair/build

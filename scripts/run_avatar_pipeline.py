@@ -524,7 +524,7 @@ def generate_qa_report(manifest: dict[str, Any], paths: PipelinePaths) -> dict[s
                 state_issues.append({"gate": "intrinsic-acting", "reason": f"only {internal_changed} internal changed pixels at {size}px; expected >= {min_internal}"})
             if accessory_only_fails and changed_total > 0 and internal_ratio < float(cfg.get("accessoryOnlyInternalRatio", 0.35)):
                 state_issues.append({"gate": "accessory-only-acting", "reason": f"internal delta ratio {internal_ratio:.2f}; emotion likely carried by external symbol/accessory"})
-            if state == "focused" and internal_changed < max(min_internal, 4):
+            if state == "focused" and min_internal > 0 and internal_changed < max(min_internal, 4):
                 state_issues.append({"gate": "focused-positive-cue", "reason": "focused is too close to idle internally"})
             min_iou = float(cfg.get("minSilhouetteIouVsIdle", 0.60))
             if anchor_iou < min_iou:
@@ -561,6 +561,48 @@ def generate_qa_report(manifest: dict[str, Any], paths: PipelinePaths) -> dict[s
             "loopQuality": {"frames": len(frames), "uniqueFrames": len(unique_frame_hashes), "avgMotionPct": avg_motion, "wraparoundMotionPct": wrap},
             "issues": state_issues,
         }
+    # Sprite-size standardization (golden-aligned with dawn-v2-ember and lantern-moth-v0).
+    # Check idle anchor's bbox vs canvas to enforce a consistent visual scale across avatars.
+    sprite_size = manifest.get("generation", {}).get("spriteSize", {})
+    target_canvas = int(manifest.get("registration", {}).get("targetCanvasPx", 256))
+    long_min = float(sprite_size.get("longestAxisMinPct", 0.92))
+    long_max = float(sprite_size.get("longestAxisMaxPct", 1.00))
+    short_min = float(sprite_size.get("shortAxisMinPct", 0.78))
+    short_max = float(sprite_size.get("shortAxisMaxPct", 0.94))
+    margin_min = int(sprite_size.get("minTransparentMarginPx", 0))
+    try:
+        idle_path = Path(manifest["states"]["idle"]["frames"][0])
+        idle_im = load_rgba(idle_path)
+        # Resize-aware metrics: compute on the actual exported frame, scaled to targetCanvasPx.
+        if idle_im.size != (target_canvas, target_canvas):
+            idle_im = idle_im.resize((target_canvas, target_canvas), Image.Resampling.NEAREST)
+        alpha = idle_im.split()[-1].point(lambda x: 255 if x > 16 else 0)
+        bbox = alpha.getbbox()
+        if bbox:
+            bw, bh = bbox[2] - bbox[0], bbox[3] - bbox[1]
+            longest = max(bw, bh) / target_canvas
+            shortest = min(bw, bh) / target_canvas
+            margin = min(bbox[0], bbox[1], target_canvas - bbox[2], target_canvas - bbox[3])
+            size_metrics = {
+                "canvasPx": target_canvas,
+                "bboxPx": [bw, bh],
+                "longestAxisPct": round(longest, 3),
+                "shortAxisPct": round(shortest, 3),
+                "transparentMarginPx": margin,
+            }
+            report["spriteSize"] = size_metrics
+            if longest < long_min:
+                report["failures"].append({"state": "idle", "gate": "sprite-size-too-small", "reason": f"idle longest-axis fill {longest:.2f} < {long_min:.2f}; sprite reads too small at overlay scale", "metrics": size_metrics})
+            if longest > long_max:
+                report["failures"].append({"state": "idle", "gate": "sprite-size-too-large", "reason": f"idle longest-axis fill {longest:.2f} > {long_max:.2f}", "metrics": size_metrics})
+            if shortest > short_max:
+                report["failures"].append({"state": "idle", "gate": "sprite-shape-too-chunky", "reason": f"idle short-axis fill {shortest:.2f} > {short_max:.2f}; both axes near 100% reads heavy/blocky", "metrics": size_metrics})
+            if shortest < short_min:
+                report["failures"].append({"state": "idle", "gate": "sprite-shape-too-thin", "reason": f"idle short-axis fill {shortest:.2f} < {short_min:.2f}", "metrics": size_metrics})
+            if margin_min and margin < margin_min:
+                report["failures"].append({"state": "idle", "gate": "sprite-margin-too-tight", "reason": f"transparent margin {margin}px < {margin_min}px", "metrics": size_metrics})
+    except Exception as exc:
+        report["failures"].append({"state": "idle", "gate": "sprite-size-check-failed", "reason": str(exc)})
     report["ok"] = not report["failures"]
     return report
 

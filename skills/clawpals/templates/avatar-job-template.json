@@ -29,6 +29,14 @@
       "paletteHex": ["#0a0820", "#263142", "#596575", "#9ca7aa", "#9cff9d", "#fdfcff"],
       "forbiddenChanges": ["species", "signature silhouette", "palette", "outline color", "body proportions", "lighting direction", "camera angle"]
     },
+    "spriteSize": {
+      "longestAxisMinPct": 0.92,
+      "longestAxisMaxPct": 1.00,
+      "shortAxisMinPct": 0.78,
+      "shortAxisMaxPct": 0.94,
+      "minTransparentMarginPx": 0,
+      "note": "Golden-aligned with dawn-v2-ember and lantern-moth-v0. Glass-toad-v0 is too chunky on both axes; mooncap was too small."
+    },
     "stateActing": {
       "thinking": "The character itself looks thoughtful through eye direction, head/ear/antenna tilt, or posture; any question/spark cue is secondary.",
       "focused": "The character itself looks intent through narrowed eyes, forward energy, grounded posture, or a focused signature-feature change.",

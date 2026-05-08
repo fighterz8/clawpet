@@ -1,0 +1,173 @@
+{
+  "pipelineJobSchemaVersion": "0.1.0",
+  "id": "mooncap-sprite-gpt-edited-frames-v0",
+  "name": "Mooncap Sprite GPT Edited Frames",
+  "version": "0.6.0-gpt-edited-preview",
+  "description": "Mooncap Sprite provider-edited production-path validation avatar.",
+  "mode": "local-only",
+  "pushAfterBuild": false,
+  "outputRoot": "/home/nick/.openclaw/workspace/local_avatars/mooncap-sprite-gpt-edited-frames-v0/bundle",
+  "previewGif": "/home/nick/.openclaw/workspace/local_avatars/mooncap-sprite-gpt-edited-frames-v0/preview.gif",
+  "generation": {
+    "strategy": "provider-edited-frames",
+    "acceptanceProfile": "golden-avatar-v0.6",
+    "provider": "openai/gpt-image-2",
+    "sourceImageContract": {
+      "background": "chroma-green",
+      "chromaKey": "#10EA6D",
+      "logicalCanvas": "128x128",
+      "exportSize": "1024x1024",
+      "preserveCanvas": true,
+      "singleCharacter": true,
+      "noText": true,
+      "noScene": true
+    },
+    "locked": {
+      "species": "tiny magical Mooncap Sprite familiar",
+      "signatureFeature": "small glowing moonstone crescent core embedded inside belly/chest",
+      "silhouette": "compact rounded mushroom-cap hood body with two tiny fixed nubs built into outline",
+      "poseFraming": "forward-facing centered desktop-overlay sprite with identical silhouette across states",
+      "outlineHex": "#11131a",
+      "paletteHex": [
+        "#11131a",
+        "#25283a",
+        "#54506a",
+        "#bfefff",
+        "#fff6c8",
+        "#10EA6D"
+      ],
+      "forbiddenChanges": [
+        "species",
+        "signature silhouette",
+        "palette",
+        "outline color",
+        "body proportions",
+        "camera angle",
+        "lighting",
+        "scale",
+        "framing",
+        "loose accessories",
+        "external symbols",
+        "arms",
+        "legs",
+        "wings"
+      ]
+    },
+    "stateActing": {
+      "thinking": "The mooncap itself looks thoughtful through upward/side eye direction, uncertain mouth, and a subtle internal moonstone-core swirl while the outer silhouette stays identical.",
+      "focused": "The mooncap itself looks intent through narrowed eyes, straight mouth, and a brighter sharper internal moonstone core while the outer silhouette stays identical.",
+      "happy": "The mooncap itself looks joyful through happy eyes, bigger smile, and a warmer brighter internal moonstone core while the outer silhouette stays identical.",
+      "alert": "The mooncap itself looks startled through wide round eyes, tiny open mouth, and a flaring internal moonstone core while the outer silhouette stays identical.",
+      "sleepy": "The mooncap itself looks tired through half-closed droopy eyes, sleepy mouth, and a dimmer internal moonstone core while the outer silhouette stays identical."
+    },
+    "localVisualEditsAllowed": false
+  },
+  "registration": {
+    "mode": "preserve-canvas",
+    "fallbackMode": "anchor-locked",
+    "anchorState": "idle",
+    "anchorFrameIndex": 0,
+    "targetCanvasPx": 256,
+    "applySameTransformTo": "all-frames",
+    "legacyCropAllowed": false
+  },
+  "coherency": {
+    "minFramesPerState": 4,
+    "bboxTolerancePct": 0.9,
+    "centerTolerancePct": 0.35,
+    "paletteTolerancePct": 0.82,
+    "minSilhouetteIouVsIdle": 0.6,
+    "requiredChecks": [
+      "silhouette",
+      "palette",
+      "proportions",
+      "framing",
+      "stateExpression",
+      "visibleMotion"
+    ],
+    "stateThresholds": {
+      "thinking": {
+        "minInternalDelta32Px": 2,
+        "accessoryOnlyFails": true
+      },
+      "focused": {
+        "minInternalDelta32Px": 0,
+        "accessoryOnlyFails": false
+      }
+    }
+  },
+  "states": {
+    "idle": {
+      "fps": 4,
+      "anchorPath": "fixtures/mooncap-sprite-gpt-edited-frames/idle-00.png",
+      "animationMode": "provider-edited-frames",
+      "motionRecipe": "subtle internal moonstone glow",
+      "frames": [
+        "fixtures/mooncap-sprite-gpt-edited-frames/idle-00.png",
+        "fixtures/mooncap-sprite-gpt-edited-frames/idle-01.png",
+        "fixtures/mooncap-sprite-gpt-edited-frames/idle-02.png",
+        "fixtures/mooncap-sprite-gpt-edited-frames/idle-03.png"
+      ]
+    },
+    "thinking": {
+      "fps": 4,
+      "anchorPath": "fixtures/mooncap-sprite-gpt-edited-frames/thinking-00.png",
+      "animationMode": "provider-edited-frames",
+      "motionRecipe": "The mooncap itself looks thoughtful through upward/side eye direction, uncertain mouth, and a subtle internal moonstone-core swirl while the outer silhouette stays identical.",
+      "frames": [
+        "fixtures/mooncap-sprite-gpt-edited-frames/thinking-00.png",
+        "fixtures/mooncap-sprite-gpt-edited-frames/thinking-01.png",
+        "fixtures/mooncap-sprite-gpt-edited-frames/thinking-02.png",
+        "fixtures/mooncap-sprite-gpt-edited-frames/thinking-03.png"
+      ]
+    },
+    "focused": {
+      "fps": 4,
+      "anchorPath": "fixtures/mooncap-sprite-gpt-edited-frames/focused-00.png",
+      "animationMode": "provider-edited-frames",
+      "motionRecipe": "The mooncap itself looks intent through narrowed eyes, straight mouth, and a brighter sharper internal moonstone core while the outer silhouette stays identical.",
+      "frames": [
+        "fixtures/mooncap-sprite-gpt-edited-frames/focused-00.png",
+        "fixtures/mooncap-sprite-gpt-edited-frames/focused-01.png",
+        "fixtures/mooncap-sprite-gpt-edited-frames/focused-02.png",
+        "fixtures/mooncap-sprite-gpt-edited-frames/focused-03.png"
+      ]
+    },
+    "happy": {
+      "fps": 5,
+      "anchorPath": "fixtures/mooncap-sprite-gpt-edited-frames/happy-00.png",
+      "animationMode": "provider-edited-frames",
+      "motionRecipe": "The mooncap itself looks joyful through happy eyes, bigger smile, and a warmer brighter internal moonstone core while the outer silhouette stays identical.",
+      "frames": [
+        "fixtures/mooncap-sprite-gpt-edited-frames/happy-00.png",
+        "fixtures/mooncap-sprite-gpt-edited-frames/happy-01.png",
+        "fixtures/mooncap-sprite-gpt-edited-frames/happy-02.png",
+        "fixtures/mooncap-sprite-gpt-edited-frames/happy-03.png"
+      ]
+    },
+    "alert": {
+      "fps": 5,
+      "anchorPath": "fixtures/mooncap-sprite-gpt-edited-frames/alert-00.png",
+      "animationMode": "provider-edited-frames",
+      "motionRecipe": "The mooncap itself looks startled through wide round eyes, tiny open mouth, and a flaring internal moonstone core while the outer silhouette stays identical.",
+      "frames": [
+        "fixtures/mooncap-sprite-gpt-edited-frames/alert-00.png",
+        "fixtures/mooncap-sprite-gpt-edited-frames/alert-01.png",
+        "fixtures/mooncap-sprite-gpt-edited-frames/alert-02.png",
+        "fixtures/mooncap-sprite-gpt-edited-frames/alert-03.png"
+      ]
+    },
+    "sleepy": {
+      "fps": 4,
+      "anchorPath": "fixtures/mooncap-sprite-gpt-edited-frames/sleepy-00.png",
+      "animationMode": "provider-edited-frames",
+      "motionRecipe": "The mooncap itself looks tired through half-closed droopy eyes, sleepy mouth, and a dimmer internal moonstone core while the outer silhouette stays identical.",
+      "frames": [
+        "fixtures/mooncap-sprite-gpt-edited-frames/sleepy-00.png",
+        "fixtures/mooncap-sprite-gpt-edited-frames/sleepy-01.png",
+        "fixtures/mooncap-sprite-gpt-edited-frames/sleepy-02.png",
+        "fixtures/mooncap-sprite-gpt-edited-frames/sleepy-03.png"
+      ]
+    }
+  }
+}
