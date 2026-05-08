@@ -66,7 +66,19 @@ Each dimension should produce a score from `0.0` to `1.0` plus short failure rea
 
 Initial policy:
 
-- Deterministic QA failure blocks build/push.
+- Deterministic coherency QA failure blocks build/push.
+- Golden-profile pipeline QA (`avatar:pipeline -- qa`) blocks build/push for `acceptanceProfile: golden-avatar-v0.6` jobs.
 - Vision QA failure creates repair queue and should block auto-push unless the user explicitly approves.
-- Use `--skip-vision-qa` or `provider: mock` for deterministic local tests.
+- Use `provider: mock` for deterministic local tests.
 - For `acceptanceProfile: golden-avatar-v0.6`, any dimension below `0.82` or total score below `0.86` blocks auto-push.
+
+## Pipeline QA artifacts
+
+The `qa` action emits:
+
+- `qa-report.generated.json` — automated gates for materialized frames, cross-state identity, intrinsic state acting, loop quality, and focused positive cue.
+- `overlay-32.generated.png` — tiny overlay-scale review sheet.
+- `silhouette-32.generated.png` — tiny silhouette readability sheet.
+- `state-delta-32.generated.png` — tiny changed-pixel sheet versus idle.
+
+Golden calibration target: `dawn-v2-ember`, `lantern-moth-v0`, and `glass-toad-v0` pass; the rejected rig-safe orange cat fails.

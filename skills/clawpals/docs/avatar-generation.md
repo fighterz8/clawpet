@@ -70,9 +70,10 @@ Use `skills/clawpals/templates/avatar-job-template.json` as the scaffold.
 clawpals avatar animate ~/.openclaw/clawpals/avatar-jobs/<job-id>.json
 ```
 
-6. Build and review artifacts:
+6. Run pipeline QA for golden-profile jobs, then build and review artifacts:
 
 ```bash
+npm run avatar:pipeline -- qa ~/.openclaw/clawpals/avatar-jobs/<job-id>.json
 clawpals avatar build ~/.openclaw/clawpals/avatar-jobs/<job-id>.json
 ```
 
@@ -81,6 +82,10 @@ Important artifacts:
 ```text
 .avatar-pipeline/<job-id>/animation-report.generated.json
 .avatar-pipeline/<job-id>/coherency-report.generated.json
+.avatar-pipeline/<job-id>/qa-report.generated.json
+.avatar-pipeline/<job-id>/overlay-32.generated.png
+.avatar-pipeline/<job-id>/silhouette-32.generated.png
+.avatar-pipeline/<job-id>/state-delta-32.generated.png
 .avatar-pipeline/<job-id>/post-build-coherency-report.generated.json
 .avatar-pipeline/<job-id>/contact-sheet.generated.png
 ```

@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from PIL import Image
+from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
 from avatar_providers import get_provider
 
@@ -40,6 +40,10 @@ class PipelinePaths:
     repair_queue_path: Path
     contact_sheet_path: Path
     vision_qa_report_path: Path
+    qa_report_path: Path
+    overlay_32_path: Path
+    silhouette_32_path: Path
+    state_delta_32_path: Path
     bundle_dir: Path
     preview_gif: Path
 
@@ -130,6 +134,18 @@ def normalize_manifest(raw: dict[str, Any], manifest_path: Path) -> dict[str, An
         "bboxTolerancePct": 0.18,
         "centerTolerancePct": 0.12,
         "paletteTolerancePct": 0.35,
+        "minUniqueFramesPerState": 3,
+        "overlayReadabilityPx": 32,
+        "minInternalDelta32Px": 4,
+        "accessoryOnlyInternalRatio": 0.35,
+        "maxWraparoundJumpRatio": 1.6,
+        "stateThresholds": {
+            "thinking": {"minInternalDelta32Px": 5, "accessoryOnlyFails": True},
+            "focused": {"minInternalDelta32Px": 4, "requiresPositiveCue": True, "accessoryOnlyFails": True},
+            "happy": {"minInternalDelta32Px": 7, "accessoryOnlyFails": True},
+            "alert": {"minInternalDelta32Px": 6, "accessoryOnlyFails": True},
+            "sleepy": {"minInternalDelta32Px": 5, "accessoryOnlyFails": True},
+        },
         "requiredChecks": ["silhouette", "palette", "face", "proportions", "framing", "stateExpression"],
     }
     defaults.update(coherency)
@@ -166,6 +182,10 @@ def compute_paths(manifest: dict[str, Any], manifest_path: Path) -> PipelinePath
         repair_queue_path=stage_dir / "repair-queue.generated.json",
         contact_sheet_path=stage_dir / "contact-sheet.generated.png",
         vision_qa_report_path=stage_dir / "vision-qa-report.generated.json",
+        qa_report_path=stage_dir / "qa-report.generated.json",
+        overlay_32_path=stage_dir / "overlay-32.generated.png",
+        silhouette_32_path=stage_dir / "silhouette-32.generated.png",
+        state_delta_32_path=stage_dir / "state-delta-32.generated.png",
         bundle_dir=Path(manifest["outputRoot"]),
         preview_gif=Path(manifest["previewGif"]),
     )
@@ -269,6 +289,93 @@ def palette_overlap(a: list[list[int]], b: list[list[int]]) -> float:
     return len(aset & bset) / max(len(aset | bset), 1)
 
 
+def load_rgba(path: str | Path) -> Image.Image:
+    return Image.open(path).convert("RGBA")
+
+
+def alpha_mask(im: Image.Image, *, size: int | None = None, expand: int = 0) -> Image.Image:
+    src = im.convert("RGBA")
+    if size:
+        src = src.resize((size, size), Image.Resampling.LANCZOS)
+    mask = src.getchannel("A").point(lambda px: 255 if px > 24 else 0)
+    if expand:
+        mask = mask.filter(ImageFilter.MaxFilter(expand * 2 + 1))
+    return mask
+
+
+def changed_mask(a: Image.Image, b: Image.Image, *, size: int = 32, threshold: int = 24) -> Image.Image:
+    aa = a.convert("RGBA").resize((size, size), Image.Resampling.LANCZOS)
+    bb = b.convert("RGBA").resize((size, size), Image.Resampling.LANCZOS)
+    diff = ImageChops.difference(aa, bb).convert("RGBA")
+    out = Image.new("L", (size, size), 0)
+    opx = out.load(); dpx = diff.load()
+    for y in range(size):
+        for x in range(size):
+            r, g, bch, al = dpx[x, y]
+            if max(r, g, bch, al) > threshold:
+                opx[x, y] = 255
+    return out
+
+
+def count_mask(mask: Image.Image) -> int:
+    return sum(1 for px in mask.getdata() if px > 0)
+
+
+def mask_intersection_count(a: Image.Image, b: Image.Image) -> int:
+    return sum(1 for apx, bpx in zip(a.getdata(), b.getdata()) if apx > 0 and bpx > 0)
+
+
+def image_hash(im: Image.Image, *, size: int = 32) -> bytes:
+    small = im.convert("RGBA").resize((size, size), Image.Resampling.LANCZOS)
+    return small.tobytes()
+
+
+def frame_diff_ratio(a: Image.Image, b: Image.Image, *, size: int = 64, threshold: int = 18) -> float:
+    mask = changed_mask(a, b, size=size, threshold=threshold)
+    return count_mask(mask) / float(size * size)
+
+
+def bbox_from_mask(mask: Image.Image) -> tuple[int, int, int, int] | None:
+    return mask.getbbox()
+
+
+def silhouette_iou(a: Image.Image, b: Image.Image, *, size: int = 32) -> float:
+    am = alpha_mask(a, size=size)
+    bm = alpha_mask(b, size=size)
+    inter = sum(1 for apx, bpx in zip(am.getdata(), bm.getdata()) if apx and bpx)
+    union = sum(1 for apx, bpx in zip(am.getdata(), bm.getdata()) if apx or bpx)
+    return inter / max(union, 1)
+
+
+def write_qa_review_sheets(manifest: dict[str, Any], paths: PipelinePaths, *, size: int = 32) -> None:
+    scale = 4
+    tile = size * scale
+    label_h = 16
+    cols = max(len(entry["frames"]) for entry in manifest["states"].values())
+    rows = len(REQUIRED_STATES)
+    overlay = Image.new("RGBA", (cols * tile, rows * (tile + label_h)), (22, 24, 32, 255))
+    silhouette = Image.new("RGBA", overlay.size, (22, 24, 32, 255))
+    delta = Image.new("RGBA", overlay.size, (22, 24, 32, 255))
+    idle = load_rgba(manifest["states"]["idle"]["frames"][0])
+    for r, state in enumerate(REQUIRED_STATES):
+        for c, frame in enumerate(manifest["states"][state]["frames"]):
+            x = c * tile
+            y = r * (tile + label_h) + label_h
+            im = load_rgba(frame).resize((size, size), Image.Resampling.LANCZOS).resize((tile, tile), Image.Resampling.NEAREST)
+            overlay.alpha_composite(im, (x, y))
+            sm = alpha_mask(load_rgba(frame), size=size).resize((tile, tile), Image.Resampling.NEAREST)
+            sil = Image.new("RGBA", (tile, tile), (0, 0, 0, 0))
+            ImageDraw.Draw(sil).bitmap((0, 0), sm, fill=(255, 255, 255, 255))
+            silhouette.alpha_composite(sil, (x, y))
+            dm = changed_mask(idle, load_rgba(frame), size=size).resize((tile, tile), Image.Resampling.NEAREST)
+            dimg = Image.new("RGBA", (tile, tile), (0, 0, 0, 0))
+            ImageDraw.Draw(dimg).bitmap((0, 0), dm, fill=(255, 95, 80, 255))
+            delta.alpha_composite(dimg, (x, y))
+    overlay.save(paths.overlay_32_path)
+    silhouette.save(paths.silhouette_32_path)
+    delta.save(paths.state_delta_32_path)
+
+
 def generate_coherency_report(manifest: dict[str, Any]) -> dict[str, Any]:
     cfg = manifest["coherency"]
     report: dict[str, Any] = {"ok": True, "job": manifest["id"], "states": {}, "repairQueue": []}
@@ -311,6 +418,92 @@ def generate_coherency_report(manifest: dict[str, Any]) -> dict[str, Any]:
                 report["repairQueue"].append(repair)
                 issues.append(repair)
         report["states"][state] = {"anchor": anchor, "frames": metrics, "issues": issues}
+    return report
+
+
+def generate_qa_report(manifest: dict[str, Any], paths: PipelinePaths) -> dict[str, Any]:
+    cfg = manifest["coherency"]
+    size = int(cfg.get("overlayReadabilityPx", 32))
+    state_thresholds = cfg.get("stateThresholds", {}) if isinstance(cfg.get("stateThresholds"), dict) else {}
+    idle_anchor = load_rgba(manifest["states"]["idle"]["frames"][0])
+    idle_body_mask = alpha_mask(idle_anchor, size=size, expand=1)
+    report: dict[str, Any] = {
+        "ok": True,
+        "job": manifest["id"],
+        "profile": manifest.get("generation", {}).get("acceptanceProfile"),
+        "source": "source-frames",
+        "artifacts": {
+            "overlay32": str(paths.overlay_32_path),
+            "silhouette32": str(paths.silhouette_32_path),
+            "stateDelta32": str(paths.state_delta_32_path),
+        },
+        "states": {},
+        "failures": [],
+    }
+
+    # Gate 1: materialized frames/anchors. Sprite-sheet experiments must be sliced
+    # before QA; otherwise all states can point at the same sheet and still look valid.
+    anchor_paths: dict[str, str] = {}
+    for state in REQUIRED_STATES:
+        anchor = Path(manifest["states"][state].get("anchorPath") or manifest["states"][state]["frames"][0])
+        frames = [Path(p) for p in manifest["states"][state]["frames"]]
+        if len(set(str(p) for p in frames)) == 1 and len(frames) > 1:
+            report["failures"].append({"gate": "materialized-frames", "state": state, "reason": "state frames still point to the same source image"})
+        anchor_paths[state] = str(anchor.resolve()) if anchor.exists() else str(anchor)
+    duplicate_anchor_states = sorted({state for state, p in anchor_paths.items() if list(anchor_paths.values()).count(p) > 1})
+    if duplicate_anchor_states:
+        report["failures"].append({"gate": "materialized-anchors", "states": duplicate_anchor_states, "reason": "multiple state anchors are pixel-identical at 32px"})
+
+    for state in REQUIRED_STATES:
+        frames = [load_rgba(p) for p in manifest["states"][state]["frames"]]
+        anchor = frames[0]
+        state_issues: list[dict[str, Any]] = []
+        metrics = frame_metrics(Path(manifest["states"][state]["frames"][0]))
+        anchor_iou = silhouette_iou(idle_anchor, anchor, size=size) if state != "idle" else 1.0
+        internal_changed = accessory_changed = changed_total = 0
+        if state != "idle":
+            diff = changed_mask(idle_anchor, anchor, size=size)
+            changed_total = count_mask(diff)
+            internal_changed = mask_intersection_count(diff, idle_body_mask)
+            accessory_changed = max(0, changed_total - internal_changed)
+            thresholds = state_thresholds.get(state, {}) if isinstance(state_thresholds.get(state), dict) else {}
+            min_internal = int(thresholds.get("minInternalDelta32Px", cfg.get("minInternalDelta32Px", 4)))
+            accessory_only_fails = bool(thresholds.get("accessoryOnlyFails", True))
+            internal_ratio = internal_changed / max(changed_total, 1)
+            if internal_changed < min_internal:
+                state_issues.append({"gate": "intrinsic-acting", "reason": f"only {internal_changed} internal changed pixels at {size}px; expected >= {min_internal}"})
+            if accessory_only_fails and changed_total > 0 and internal_ratio < float(cfg.get("accessoryOnlyInternalRatio", 0.35)):
+                state_issues.append({"gate": "accessory-only-acting", "reason": f"internal delta ratio {internal_ratio:.2f}; emotion likely carried by external symbol/accessory"})
+            if state == "focused" and internal_changed < max(min_internal, 4):
+                state_issues.append({"gate": "focused-positive-cue", "reason": "focused is too close to idle internally"})
+            min_iou = float(cfg.get("minSilhouetteIouVsIdle", 0.60))
+            if anchor_iou < min_iou:
+                state_issues.append({"gate": "cross-state-identity", "reason": f"silhouette IoU vs idle is {anchor_iou:.2f}; expected >= {min_iou:.2f}"})
+
+        unique_frame_hashes = {image_hash(frame) for frame in frames}
+        min_unique = min(int(cfg.get("minUniqueFramesPerState", 3)), len(frames))
+        motion = [frame_diff_ratio(a, b) for a, b in zip(frames, frames[1:])]
+        wrap = frame_diff_ratio(frames[-1], frames[0]) if len(frames) > 1 else 0.0
+        avg_motion = sum(motion) / max(len(motion), 1)
+        if len(frames) < int(cfg.get("minFramesPerState", 3)):
+            state_issues.append({"gate": "loop-frame-count", "reason": f"only {len(frames)} frames"})
+        if len(unique_frame_hashes) < min_unique:
+            state_issues.append({"gate": "loop-unique-frames", "reason": f"only {len(unique_frame_hashes)} unique frame(s); expected >= {min_unique}"})
+        if motion and avg_motion > 0 and wrap > avg_motion * float(cfg.get("maxWraparoundJumpRatio", 1.6)):
+            state_issues.append({"gate": "loop-wraparound", "reason": f"wraparound jump {wrap:.3f} is too large versus avg motion {avg_motion:.3f}"})
+
+        state_ok = not state_issues
+        if not state_ok:
+            report["failures"].extend({"state": state, **issue} for issue in state_issues)
+        report["states"][state] = {
+            "ok": state_ok,
+            "anchorMetrics": metrics,
+            "silhouetteIouVsIdle": anchor_iou,
+            "stateDelta32": {"total": changed_total, "internal": internal_changed, "accessory": accessory_changed},
+            "loopQuality": {"frames": len(frames), "uniqueFrames": len(unique_frame_hashes), "avgMotionPct": avg_motion, "wraparoundMotionPct": wrap},
+            "issues": state_issues,
+        }
+    report["ok"] = not report["failures"]
     return report
 
 
@@ -462,6 +655,20 @@ def action_coherency_report(manifest: dict[str, Any], paths: PipelinePaths) -> N
     print(json.dumps({"ok": report["ok"], "repairCount": len(report["repairQueue"]), "report": str(paths.coherency_report_path), "repairQueue": str(paths.repair_queue_path)}, indent=2))
 
 
+def action_qa(manifest: dict[str, Any], paths: PipelinePaths) -> None:
+    write_stage_files(manifest, paths)
+    problems = validate_manifest(manifest)
+    if problems:
+        raise PipelineError("Cannot run QA until basic validation passes:\n- " + "\n- ".join(problems))
+    paths.stage_dir.mkdir(parents=True, exist_ok=True)
+    write_qa_review_sheets(manifest, paths, size=int(manifest["coherency"].get("overlayReadabilityPx", 32)))
+    report = generate_qa_report(manifest, paths)
+    paths.qa_report_path.write_text(json.dumps(report, indent=2) + "\n")
+    print(json.dumps({"ok": report["ok"], "failureCount": len(report["failures"]), "report": str(paths.qa_report_path), "overlay32": str(paths.overlay_32_path), "silhouette32": str(paths.silhouette_32_path), "stateDelta32": str(paths.state_delta_32_path)}, indent=2))
+    if not report["ok"]:
+        raise PipelineError(f"QA failed with {len(report['failures'])} issue(s). See {paths.qa_report_path}")
+
+
 def action_validate(manifest: dict[str, Any], paths: PipelinePaths) -> None:
     write_stage_files(manifest, paths)
     problems = validate_manifest(manifest)
@@ -518,6 +725,8 @@ def action_build(manifest: dict[str, Any], paths: PipelinePaths) -> None:
     report = json.loads(paths.coherency_report_path.read_text())
     if not report["ok"]:
         raise PipelineError(f"Coherency failed with {len(report['repairQueue'])} frame(s) needing repair. See {paths.coherency_report_path}")
+    if manifest.get("generation", {}).get("acceptanceProfile") == "golden-avatar-v0.6":
+        action_qa(manifest, paths)
     run_command([sys.executable, str(DEFAULT_BUILD_SCRIPT), str(paths.build_spec_path)], cwd=ROOT)
     if not (paths.bundle_dir / "avatar.json").exists():
         raise PipelineError(f"Build completed but avatar.json is missing: {paths.bundle_dir / 'avatar.json'}")
@@ -675,7 +884,7 @@ def action_run(manifest: dict[str, Any], paths: PipelinePaths) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run the Clawpals avatar bundle pipeline from a JSON manifest.")
-    parser.add_argument("action", choices=["scaffold", "emit-prompts", "coherency-report", "validate", "generate", "slice-sheet", "animate", "repair", "build", "vision-qa", "push", "verify", "run"])
+    parser.add_argument("action", choices=["scaffold", "emit-prompts", "coherency-report", "qa", "validate", "generate", "slice-sheet", "animate", "repair", "build", "vision-qa", "push", "verify", "run"])
     parser.add_argument("manifest", type=Path, help="Path to an avatar job manifest JSON file")
     return parser
 
@@ -685,7 +894,7 @@ def main() -> int:
     raw = load_json(args.manifest.expanduser().resolve())
     manifest = normalize_manifest(raw, args.manifest.expanduser().resolve())
     paths = compute_paths(manifest, args.manifest.expanduser().resolve())
-    actions = {"scaffold": action_scaffold, "emit-prompts": action_emit_prompts, "coherency-report": action_coherency_report, "validate": action_validate, "generate": action_generate, "slice-sheet": action_slice_sheet, "animate": action_animate, "repair": action_repair, "build": action_build, "vision-qa": action_vision_qa, "push": action_push, "verify": action_verify, "run": action_run}
+    actions = {"scaffold": action_scaffold, "emit-prompts": action_emit_prompts, "coherency-report": action_coherency_report, "qa": action_qa, "validate": action_validate, "generate": action_generate, "slice-sheet": action_slice_sheet, "animate": action_animate, "repair": action_repair, "build": action_build, "vision-qa": action_vision_qa, "push": action_push, "verify": action_verify, "run": action_run}
     actions[args.action](manifest, paths)
     return 0
 
