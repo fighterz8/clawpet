@@ -20,7 +20,17 @@ function BundleAvatar({ state, bundle }: { state: AvatarState; bundle: ResolvedA
 
   useEffect(() => {
     if (!activeFrame || frames.length <= 1) return;
-    const ms = 1000 / activeFrame.fps;
+    const baseMs = 1000 / activeFrame.fps;
+    // Idle state: randomize blink cadence so it feels alive.
+    // Frame 0 holds for a randomized 1.4–4.6s gap between blinks; other idle frames use base timing with small jitter.
+    let ms = baseMs;
+    if (state === "idle") {
+      if (frameIndex === 0) {
+        ms = 1400 + Math.random() * 3200;
+      } else {
+        ms = baseMs * (0.85 + Math.random() * 0.3);
+      }
+    }
     const id = window.setTimeout(() => {
       setFrameIndex((i) => {
         const next = i + 1;
@@ -29,7 +39,7 @@ function BundleAvatar({ state, bundle }: { state: AvatarState; bundle: ResolvedA
       });
     }, ms);
     return () => window.clearTimeout(id);
-  }, [activeFrame, frames.length]);
+  }, [activeFrame, frames.length, frameIndex, state]);
 
   if (!bundle) return <div className="bundle-avatar bundle-avatar--loading" />;
   const { src, animation } = activeFrame ?? bundle.resolveAsset(state);
