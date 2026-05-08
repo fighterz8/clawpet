@@ -81,4 +81,4 @@ The `qa` action emits:
 - `silhouette-32.generated.png` — tiny silhouette readability sheet.
 - `state-delta-32.generated.png` — tiny changed-pixel sheet versus idle.
 
-Golden calibration target: `dawn-v2-ember`, `lantern-moth-v0`, and `glass-toad-v0` pass; the rejected rig-safe orange cat fails.
+Golden calibration target: `cobalt-golem-v0`, `dawn-v2-ember`, and `lantern-moth-v0` pass; rejected experimental avatars should remain outside the default bundle set.

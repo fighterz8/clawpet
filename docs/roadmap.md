@@ -1,22 +1,23 @@
 # Clawpals Roadmap
 
-Where we are after v0.3 and where this is heading. Items are grouped by horizon. The unifying thesis: **Clawpals should feel alive, not animated stills.**
+Where we are after v0.6.0 release-candidate work and where this is heading. Items are grouped by horizon. The unifying thesis: **Clawpals should feel alive, not animated stills.**
 
-## Current state (v0.3)
+## Current state (v0.6.0 release candidate)
 
-- Pixel-art avatars rendered from versioned bundles (`public/avatars/<name>-v<n>/`).
+- Pixel-art avatars rendered from versioned frame bundles (`public/avatars/<name>-v<n>/`).
+- Current lean default bundle set: `cobalt-golem-v0`, `dawn-v2-ember`, and `lantern-moth-v0`.
 - Tauri desktop overlay: transparent, draggable, system tray, fixed-size.
 - Local Hono runtime API with bearer-token auth, loopback trust, and server-side state decay (active → idle → sleepy).
-- OpenClaw `clawpals` skill with semantic reactions, user-controlled activity levels, optional heartbeat reactions, and one-line install scripts for Windows/macOS/Linux.
+- OpenClaw `clawpals` skill with zero-token daemon reactivity, `daemon-voice` density controls, separate opt-in `expression-level`, optional heartbeat reactions, and install scripts for Windows/macOS/Linux.
 - Tailscale-native cross-machine projection. No port forwarding required.
-- Locked style guide (v1) for consistent multi-avatar generation.
+- Local avatar pipeline with mock/provider interfaces, coherency QA, contact sheets, repair hooks, and frame-bundle push.
 
-## Near-term (v0.4 – v0.6)
+## Near-term (v0.6 – v0.7)
 
 These are the next obvious wins; mostly incremental on what we have.
 
 ### ✅ Automatic tool/turn reactions via session-JSONL daemon (shipped 2026-05-04)
-Dawn now reacts in real time to whatever OpenClaw is doing, with **zero LLM-token cost**, via a sidecar daemon that tails the active session JSONL at `~/.openclaw/agents/main/sessions/*.jsonl`. The daemon classifies events as they're appended and dispatches `clawpals react`/`clawpals send` accordingly. Activity-level dial-down (`off`/`minimal`/`balanced`/`expressive`/`maximum`) controls reaction density.
+Clawpals now reacts in real time to whatever OpenClaw is doing, with **zero model-token cost**, via a sidecar daemon that tails the active session JSONL at `~/.openclaw/agents/main/sessions/*.jsonl`. The daemon classifies events as they're appended and dispatches state/bubble updates. `daemon-voice silent|lite|vivid` controls zero-token system-signal density; `expression-level off|on` separately gates optional model-authored flavor bubbles.
 
 ```
 clawpals daemon enable | disable | start | stop | status | run
@@ -31,7 +32,7 @@ This turned out to be much simpler than the OpenClaw extension/hook path because
 - Map approval events (`AgentApprovalEventData`) to `react blocker` once we wire those into the JSONL stream.
 
 ### Multi-avatar selection
-- Runtime accepts `CLAWPALS_AVATAR_BUNDLE` (default `dawn-v2-ember`) and reports it in `/status`.
+- Runtime accepts `CLAWPALS_AVATAR_BUNDLE` (default/showcase currently `cobalt-golem-v0`) and reports it in `/status`.
 - Desktop overlay reads that and loads the matching bundle automatically.
 - Skill: `clawpals avatar list | use <name>`.
 
@@ -39,7 +40,7 @@ This turned out to be much simpler than the OpenClaw extension/hook path because
 - Avatar bundles can declare default bubble copy per state (`"idleBubble": "..."`), so emits without explicit `--bubble` get something on-brand instead of falling back to `message`.
 
 ### Bundle distribution
-- Publish well-formed Clawpals bundles to ClawHub: `clawpals avatar install dawn-v0` pulls a verified bundle and drops it in.
+- Publish well-formed Clawpals bundles to ClawHub: `clawpals avatar install cobalt-golem-v0` pulls a verified bundle and drops it in.
 - Style-guide compliance check runs on bundle install (palette + state set + transparency).
 
 ### Signed binary release

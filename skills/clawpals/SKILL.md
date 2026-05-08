@@ -1,6 +1,6 @@
 ---
 name: clawpals
-description: Control and configure a Clawpals desktop companion for OpenClaw. Use for pairing a desktop Clawpals runtime over Tailscale, starting the zero-token auto-reactivity daemon, changing avatar activity/behavior, sending avatar states/bubbles, rotating tokens, and managing the OpenClaw-side source of truth for future avatar appearance/assets.
+description: Control and configure a Clawpals desktop companion for OpenClaw. Use for pairing a desktop Clawpals runtime over Tailscale, starting the zero-token auto-reactivity daemon, tuning daemon voice/expression behavior, sending avatar states/bubbles, rotating tokens, and managing the OpenClaw-side source of truth for future avatar appearance/assets.
 ---
 
 # Clawpals
@@ -171,7 +171,7 @@ Security properties of magic pair: short-lived window, 6-digit code, attempt lim
 Users should ask OpenClaw to change Clawpals appearance/behavior. Store generated or edited bundle files on the OpenClaw host first, then push them to the paired runtime:
 
 ```bash
-clawpals avatar push ~/.openclaw/clawpals/bundles/dawn-v1
+clawpals avatar push ~/.openclaw/clawpals/bundles/cobalt-golem-v0
 ```
 
 Bundle folder shape:
@@ -198,7 +198,7 @@ clawpals status                  # avatar.avatarId / bundleVersion should match 
 curl -fsS "$RUNTIME_URL/avatar-bundle/current/avatar.json"  # should return the generated manifest
 ```
 
-The built-in fallback/default avatar is Dawn Ember (`dawn-v2-ember`), not the deprecated old blue Dawn (`dawn-v0`). If the desktop app still starts with the old blue/default Dawn after restart, the runtime is probably an older build or an environment override (`CLAWPALS_AVATAR_BUNDLE=dawn-v0`) is still active. Update/restart the desktop runtime from a build containing Dawn Ember as the fallback and persisted runtime bundles before moving on to generated multi-frame work.
+The current v0.6.0 showcase/default demo avatar is Cobalt Golem (`cobalt-golem-v0`). Dawn Ember (`dawn-v2-ember`) and Lantern Moth (`lantern-moth-v0`) remain built-in defaults. If the desktop app still starts with the deprecated old blue Dawn (`dawn-v0`) after restart, the runtime is probably an older build or an environment override (`CLAWPALS_AVATAR_BUNDLE=dawn-v0`) is still active. Update/restart the desktop runtime before moving on to generated multi-frame work.
 
 The desktop machine is a display/runtime target, not the place the user has to manually edit files.
 

@@ -222,7 +222,7 @@ def render_prompt_plan(manifest: dict[str, Any]) -> dict[str, Any]:
         "lockedCharacter": locked,
         "goldenAcceptanceProfile": {
             "profile": gen.get("acceptanceProfile", "golden-avatar-v0.6"),
-            "goldens": ["dawn-v2-ember", "lantern-moth-v0", "glass-toad-v0"],
+            "goldens": ["cobalt-golem-v0", "dawn-v2-ember", "lantern-moth-v0"],
             "rules": [
                 "Each state must be the same character performing a different emotion/state, not six similar stickers.",
                 "State readability must be character-led through eyes, mouth, posture, body energy, or signature feature; floating symbols are support only.",

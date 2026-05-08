@@ -456,10 +456,11 @@ describe("runtime API", () => {
     const dir = mkdtempSync(join(tmpdir(), "clawpals-bundle-test-"));
     const bundleStore = new AvatarBundleStore(dir);
     const app = createRuntimeApp({ avatarBundleStore: bundleStore });
-    const manifest = JSON.parse(readFileSync("public/avatars/dawn-v0/avatar.json", "utf8"));
+    const manifest = JSON.parse(readFileSync("public/avatars/cobalt-golem-v0/avatar.json", "utf8"));
     const assets: Record<string, string> = {};
-    for (const def of Object.values(manifest.states) as Array<{ asset: string }>) {
-      assets[def.asset] = readFileSync(join("public/avatars/dawn-v0", def.asset)).toString("base64");
+    for (const def of Object.values(manifest.states) as Array<{ fallbackAsset?: string; frames?: string[] }>) {
+      if (def.fallbackAsset) assets[def.fallbackAsset] = readFileSync(join("public/avatars/cobalt-golem-v0", def.fallbackAsset)).toString("base64");
+      for (const frame of def.frames ?? []) assets[frame] = readFileSync(join("public/avatars/cobalt-golem-v0", frame)).toString("base64");
     }
 
     const pushed = await app.request("/admin/avatar-bundle", {
@@ -468,15 +469,15 @@ describe("runtime API", () => {
       body: JSON.stringify({ manifest, assets }),
     });
     expect(pushed.status).toBe(200);
-    expect(await pushed.json()).toMatchObject({ ok: true, avatarId: "Dawn", bundleVersion: "0.4.0", assetCount: 6 });
+    expect(await pushed.json()).toMatchObject({ ok: true, avatarId: "Cobalt Golem", bundleVersion: "0.6.0-official-candidate", assetCount: 30 });
 
     const status = await (await app.request("/status")).json();
-    expect(status.avatar.avatarId).toBe("Dawn");
-    expect(status.avatar.bundleVersion).toBe("0.4.0");
+    expect(status.avatar.avatarId).toBe("Cobalt Golem");
+    expect(status.avatar.bundleVersion).toBe("0.6.0-official-candidate");
 
     const servedManifest = await app.request("/avatar-bundle/current/avatar.json");
     expect(servedManifest.status).toBe(200);
-    expect(await servedManifest.json()).toMatchObject({ name: "Dawn", version: "0.4.0" });
+    expect(await servedManifest.json()).toMatchObject({ name: "Cobalt Golem", version: "0.6.0-official-candidate" });
 
     const asset = await app.request("/avatar-bundle/current/assets/idle.png");
     expect(asset.status).toBe(200);
@@ -489,7 +490,7 @@ describe("runtime API", () => {
     const dir = mkdtempSync(join(tmpdir(), "clawpals-frame-bundle-test-"));
     const bundleStore = new AvatarBundleStore(dir);
     const app = createRuntimeApp({ avatarBundleStore: bundleStore });
-    const png = readFileSync("public/avatars/dawn-v0/assets/idle.png").toString("base64");
+    const png = readFileSync("public/avatars/dawn-v2-ember/assets/idle.png").toString("base64");
     const manifest = {
       schemaVersion: "0.5.0",
       name: "Dawn",

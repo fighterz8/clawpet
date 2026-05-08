@@ -38,7 +38,7 @@ For v0.6.0-quality generated avatars, set:
 }
 ```
 
-The default style goldens are `dawn-v2-ember` and `lantern-moth-v0` (Lantern Ember Moth). `glass-toad-v0` is useful for coherency calibration, but is chunkier than the desired default/preset house style. New default avatars should match Dawn Ember and Lantern Ember Moth stylistically: warm ember/lantern glow, crisp dark outline, compact magical familiar silhouette, flat cel-shaded forms, restrained warm palette with one accent glow, and thumbnail-readable charm. They should also match the functional quality of the goldens: same character across all states, expressive body/face/signature-feature acting, distinctive silhouette, stable art direction, and readable thumbnail state changes. Floating symbols can support a state but cannot be the main difference.
+The default style goldens are `cobalt-golem-v0`, `dawn-v2-ember`, and `lantern-moth-v0` (Lantern Ember Moth). Older experimental avatars were removed from the repo to keep releases lean. New default avatars should match Dawn Ember and Lantern Ember Moth stylistically: warm ember/lantern glow, crisp dark outline, compact magical familiar silhouette, flat cel-shaded forms, restrained warm palette with one accent glow, and thumbnail-readable charm. They should also match the functional quality of the goldens: same character across all states, expressive body/face/signature-feature acting, distinctive silhouette, stable art direction, and readable thumbnail state changes. Floating symbols can support a state but cannot be the main difference.
 
 1. Confirm runtime readiness:
 
@@ -67,7 +67,7 @@ Use `skills/clawpals/templates/avatar-job-template.json` as the scaffold.
 
    The idle anchor must hit the standardized sprite size (golden-aligned with `dawn-v2-ember` and `lantern-moth-v0`):
    - Longest axis fills **78–90%** of the 256-canvas (≈800–922 px on a 1024 export).
-   - Short axis fills **66–84%** (anything ≥90% on both axes reads chunky like `glass-toad-v0` and is rejected).
+   - Short axis fills **66–84%** (anything ≥90% on both axes reads too chunky for the default house style and is rejected).
    - Note: standard tightened down ~15% from the v1 92–100% / 78–94% range because that read too large on desktop overlay (Hearthling).
    - Avoid sub-90% on the longest axis (mooncap was 41%, too small).
    - Configured in `generation.spriteSize`; QA fails the idle anchor if it falls outside.

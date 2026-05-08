@@ -7,20 +7,19 @@ import "./landing.css";
 
 type ScriptedBeat = { state: AvatarState; bubble: string; hold: number };
 
-const DAWN_DEMO: ScriptedBeat[] = [
+const GOLEM_DEMO: ScriptedBeat[] = [
   { state: "idle",     bubble: "",                                   hold: 1800 },
   { state: "thinking", bubble: "Reading your message…",              hold: 2400 },
-  { state: "focused",  bubble: "Refactoring the runtime middleware", hold: 3000 },
+  { state: "focused",  bubble: "Running the test cycle",            hold: 3000 },
   { state: "alert",    bubble: "Heads up — needs your approval",     hold: 2400 },
-  { state: "happy",    bubble: "Done!  🐲",                          hold: 2400 },
+  { state: "happy",    bubble: "Done!",                              hold: 2400 },
   { state: "sleepy",   bubble: "Quiet hours… 💤",                    hold: 2600 },
 ];
 
 const PRESET_SHOWCASE = [
+  { avatarId: "cobalt-golem-v0", title: "Cobalt Golem", accent: "#3d63b8" },
   { avatarId: "dawn-v2-ember", title: "Dawn Ember", accent: "#ff8a5b" },
   { avatarId: "lantern-moth-v0", title: "Lantern Moth", accent: "#5fc8b5" },
-  { avatarId: "cobalt-golem-v0", title: "Cobalt Golem", accent: "#3d63b8" },
-  { avatarId: "hearthling-v0", title: "Hearthling", accent: "#ff7a3d" },
 ];
 
 const DOWNLOADS = {
@@ -203,8 +202,8 @@ function Landing() {
             <span className="lp-headline__accent">and watch it work.</span>
           </h1>
           <p className="lp-lede">
-            A pixel-art desktop pet generated from your OpenClaw's name, soul, and personality — then animated by what it's actually doing:
-            thinking, working, blocked, done. Floats over your desktop. Reacts in real time over Tailscale. Ships with animated Dawn presets plus a fully different lantern-moth showcase companion.
+            A local-first desktop companion for OpenClaw — animated by what your agent is actually doing:
+            thinking, working, blocked, done, or resting. Floats over your desktop, pairs over Tailscale, and now showcases the frame-based Cobalt Golem bundle alongside Dawn Ember and Lantern Moth.
           </p>
           <div className="lp-cta">
             <a className="lp-btn lp-btn--primary" href="#install">Try it in 3 minutes</a>
@@ -219,14 +218,14 @@ function Landing() {
         </Reveal>
 
         <Reveal delay={200}>
-          <DemoStage avatarId="dawn-v2-ember" beats={DAWN_DEMO} accent="#ff8a5b" />
+          <DemoStage avatarId="cobalt-golem-v0" beats={GOLEM_DEMO} accent="#3d63b8" />
         </Reveal>
       </section>
 
       <section className="lp-section" id="how">
         <Reveal>
           <p className="lp-eyebrow">How it works</p>
-          <h2 className="lp-h2">Three small pieces. One personalized little familiar.</h2>
+          <h2 className="lp-h2">Three small pieces. One visible little familiar.</h2>
         </Reveal>
 
         <div className="lp-cards">
@@ -243,33 +242,34 @@ function Landing() {
           <Reveal delay={240}><article className="lp-card">
             <div className="lp-card__num">03</div>
             <h3>OpenClaw skill + daemon</h3>
-            <p>A sidecar tails OpenClaw's live session stream and mirrors real activity over Tailscale. Semantic reactions add optional flavor, gated by <em>your</em> activity setting.</p>
+            <p>A zero-token daemon tails OpenClaw's live session stream and mirrors real activity over Tailscale. Optional OpenClaw-authored expression is separate, explicit, and off by default.</p>
           </article></Reveal>
         </div>
       </section>
 
       <section className="lp-section lp-section--dual">
         <Reveal>
-          <p className="lp-eyebrow">Activity, your call</p>
-          <h2 className="lp-h2">You decide how chatty your Clawpals is.</h2>
+          <p className="lp-eyebrow">Reactivity controls</p>
+          <h2 className="lp-h2">System signals are free. Personality is opt-in.</h2>
           <p className="lp-body">
-            Five levels — <code>off</code>, <code>minimal</code>, <code>balanced</code>, <code>expressive</code>, <code>maximum</code> — set with one CLI command and persisted on disk.
-            The skill itself enforces the gate, so the model can't accidentally spam emits past the level you chose.
+            The production path is the daemon: it mirrors OpenClaw activity from local session logs with no model calls.
+            <code>daemon-voice</code> controls zero-token system-signal density, <code>expression-level</code> gates optional model-authored bubbles, and heartbeat flashes stay separately opt-in.
           </p>
           <ul className="lp-bullets">
-            <li><strong>balanced</strong> — long tasks + completions + blockers. Default.</li>
-            <li><strong>expressive</strong> — also reacts when you message and when tools start.</li>
-            <li><strong>off</strong> — total silence; pet still idles + decays cosmetically.</li>
+            <li><strong>daemon-voice lite</strong> — useful thinking/focused/done/blocker signals without noise. Default.</li>
+            <li><strong>expression-level off</strong> — no model-authored personality bubbles unless requested. Default.</li>
+            <li><strong>heartbeat-reactions off</strong> — periodic check flashes stay quiet unless explicitly enabled. Default.</li>
           </ul>
         </Reveal>
         <Reveal delay={120}>
           <div className="lp-codeblock">
             <span className="lp-codeblock__title">Tune anytime</span>
-            <pre>{`clawpals activity expressive
-clawpals heartbeat-reactions on
+            <pre>{`clawpals daemon enable
+clawpals daemon-voice lite
+clawpals expression-level off
 
-# don't like it? dial back:
-clawpals activity balanced`}</pre>
+# optional visible heartbeat flashes:
+clawpals heartbeat-reactions on`}</pre>
           </div>
         </Reveal>
       </section>
@@ -279,14 +279,14 @@ clawpals activity balanced`}</pre>
           <p className="lp-eyebrow">Avatars</p>
           <h2 className="lp-h2">Ask OpenClaw to redesign your familiar.</h2>
           <p className="lp-body">
-            Each avatar bundle includes normalized fallback assets, real per-state frame loops, and an <code>avatar.json</code> manifest. The fun part is personalization: OpenClaw can generate, store, push, and swap bundles conversationally. The landing page previews below are using the animated bundle versions, not static placeholder stills, so you can demo both palette variation and full character variation before testing live runtime switching.
+            Each avatar bundle includes normalized fallback assets, real per-state frame loops, and an <code>avatar.json</code> manifest. The fun part is personalization: OpenClaw can generate, store, push, and swap bundles conversationally. The landing page previews below use the current animated default bundle set only, keeping the repo lean while still demonstrating distinct character identities.
           </p>
         </Reveal>
         <div className="lp-stages lp-stages--presets">
           {PRESET_SHOWCASE.map((preset, idx) => (
             <Reveal delay={80 + idx * 80} key={preset.avatarId}>
               <div className="lp-stage-wrap">
-                <DemoStage avatarId={preset.avatarId} beats={DAWN_DEMO} accent={preset.accent} />
+                <DemoStage avatarId={preset.avatarId} beats={GOLEM_DEMO} accent={preset.accent} />
                 <p className="lp-stage-caption">{preset.title}</p>
               </div>
             </Reveal>
@@ -326,7 +326,7 @@ clawpals activity balanced`}</pre>
               <h3>3. Let OpenClaw take over</h3>
               <CopyButton label="OpenClaw" text="clawpals pair --code 472091 --host <tailscale-host>:8737" />
               <CopyButton label="OpenClaw" text='clawpals send happy "It works" --bubble "Hello! 🐲"' />
-              <p className="lp-install-note">After pairing, OpenClaw can reconnect, react, change activity level, and push avatar bundles.</p>
+              <p className="lp-install-note">After pairing, OpenClaw can reconnect, mirror activity through the daemon, tune daemon voice/expression controls, and push frame-based avatar bundles like Cobalt Golem.</p>
             </div>
           </Reveal>
         </div>
@@ -335,20 +335,20 @@ clawpals activity balanced`}</pre>
       <section className="lp-section lp-section--dual">
         <Reveal>
           <p className="lp-eyebrow">Honest cost</p>
-          <h2 className="lp-h2">Designed not to drain your token budget.</h2>
+          <h2 className="lp-h2">Normal reactivity costs zero model tokens.</h2>
           <p className="lp-body">
-            The daemon reads OpenClaw's local session log and updates the pet with zero model calls. Runtime decay is also local: active states persist, terminal <code>happy</code> falls back to <code>idle</code> after 8s, and idle drifts sleepy after 5min.
-            Only optional semantic emits cost tokens, and only when your activity level allows them.
+            The daemon reads OpenClaw's local session log and updates the pet with zero model calls. Runtime decay is local too: terminal <code>happy</code> falls back to <code>idle</code>, and idle can drift sleepy after quiet time.
+            The only model-token cost is optional expression, and that is off by default.
           </p>
         </Reveal>
         <Reveal delay={120}>
           <div className="lp-costs">
-            <div><span>off</span><strong>0</strong></div>
-            <div><span>minimal</span><strong>0–80</strong></div>
-            <div><span>balanced</span><strong>0–200</strong></div>
-            <div><span>expressive</span><strong>100–400</strong></div>
-            <div><span>maximum</span><strong>200–600</strong></div>
-            <p className="lp-costs__note">Approx extra tokens per active turn (with <code>--quiet</code>).</p>
+            <div><span>daemon mirror</span><strong>0</strong></div>
+            <div><span>daemon-voice lite</span><strong>0</strong></div>
+            <div><span>daemon-voice vivid</span><strong>0</strong></div>
+            <div><span>heartbeat flashes</span><strong>0</strong></div>
+            <div><span>expression on</span><strong>opt-in</strong></div>
+            <p className="lp-costs__note">Daemon voice changes visibility, not model spend. Expression is the only model-authored path and remains off until enabled.</p>
           </div>
         </Reveal>
       </section>

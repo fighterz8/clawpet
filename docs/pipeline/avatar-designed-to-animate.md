@@ -18,7 +18,7 @@ If the only way to create motion is to split the character into arbitrary image 
 
 ## Golden-avatar acceptance profile
 
-Use `dawn-v2-ember` and `lantern-moth-v0` as the primary defaults/style goldens. `glass-toad-v0` remains useful as an expressive/coherency calibration case, but it is intentionally chunkier than the default house style. New generated avatars do not need to copy Dawn or the moth species exactly, but default/preset candidates should feel like they belong in the same family:
+Use `cobalt-golem-v0`, `dawn-v2-ember`, and `lantern-moth-v0` as the primary defaults/style goldens. Older experimental avatars were removed from the repo to keep releases lean. New generated avatars do not need to copy Dawn or the moth species exactly, but default/preset candidates should feel like they belong in the same family:
 
 - **Ember-familiar house style:** warm magical familiar, soft ember/lantern glow, dark crisp outline, flat cel-shaded forms, compact overlay silhouette, and a slightly mythic/cute personality rather than generic sticker art.
 - **Default preset palette discipline:** prefer warm ember/coral/gold/cream bases plus one restrained accent glow. Avoid dramatic pastel, neon, plastic, mascot, or highly realistic palettes unless the user explicitly asks for an experimental avatar.

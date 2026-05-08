@@ -28,23 +28,25 @@
 > - **Bring your own OpenClaw.** Clawpals is not a hosted assistant.
 > - **Cross-machine setups are currently Tailscale-first.**
 > - **Windows release signing is in progress.** Stable release links exist now; a proper artifact-signing certificate rollout is underway.
-> - **Custom avatar generation still needs QA.** The new coherency pipeline helps, but generation/repair quality is not yet perfect.
+> - **Custom avatar generation still needs QA.** The pipeline is usable, but provider-backed generation/semantic repair is still maturing.
 
 ## Demo
 
 <div align="center">
+  <p>
+    <img src="public/previews/cobalt-golem-preview.gif" alt="Animated Cobalt Golem preview" width="280" />
+  </p>
+  <p><strong>Cobalt Golem</strong> — the current v0.6.0 showcase/default demo avatar.</p>
   <table>
     <tr>
       <td align="center" valign="top">
-        <img src="public/previews/dawn-v2-preview.gif" alt="Animated Dawn Ember preview" width="220" />
+        <img src="public/previews/dawn-v2-preview.gif" alt="Animated Dawn Ember preview" width="200" />
         <div><strong>Dawn Ember</strong></div>
-        <div><sub>Reading your message…</sub></div>
       </td>
       <td width="36"></td>
       <td align="center" valign="top">
-        <img src="public/previews/lantern-moth-preview.gif" alt="Animated Lantern Moth preview" width="220" />
+        <img src="public/previews/lantern-moth-preview.gif" alt="Animated Lantern Moth preview" width="200" />
         <div><strong>Lantern Moth</strong></div>
-        <div><sub>Focused on the current task…</sub></div>
       </td>
     </tr>
   </table>
@@ -86,7 +88,8 @@ That means:
 - local-first runtime and token-based pairing
 - helper window for setup, diagnostics, and verification
 - transparent overlay with live status light
-- daemon-driven reactivity with near-zero token cost
+- daemon-driven reactivity with zero model-token cost for normal activity mirroring
+- three polished default animated avatars: Cobalt Golem, Dawn Ember, and Lantern Moth
 - animated avatar bundles with per-state frame loops
 - runtime avatar switching from OpenClaw
 - local-only avatar generation/build/push pipeline
@@ -210,9 +213,10 @@ Manual equivalent:
 
 ```bash
 clawpals pair --code 472091 --host <desktop-host>.<tailnet>.ts.net:8737
-clawpals activity balanced
-clawpals heartbeat-reactions off
 clawpals daemon enable
+clawpals daemon-voice lite
+clawpals expression-level off
+clawpals heartbeat-reactions off
 ```
 
 ### Verify pairing
@@ -250,22 +254,39 @@ clawpals react <event>
 clawpals send <state> [message] --bubble <text>
 ```
 
-## Activity levels
+## Reactivity controls
 
-Clawpals behavior is gated by a persisted activity setting so the assistant cannot casually over-animate or over-message past the user’s chosen level.
+The current v0.6.0 model has three separate controls so cost and behavior stay easy to reason about:
 
-Levels:
-- `off`
-- `minimal`
-- `balanced`
-- `expressive`
-- `maximum`
+| Control | Default | Cost | What it does |
+| --- | --- | --- | --- |
+| `clawpals daemon-voice silent\|lite\|vivid` | `lite` | 0 model tokens | Controls how often the daemon mirrors OpenClaw work signals such as thinking, focused, done, and blocked. |
+| `clawpals expression-level off\|on` | `off` | Optional model tokens only when enabled | Allows or blocks model-authored personality/flavor bubbles. It is separate from normal daemon reactivity. |
+| `clawpals heartbeat-reactions on\|off` | `off` | 0 model tokens | Allows visible heartbeat flashes. Kept separate so periodic checks do not become noisy by accident. |
 
-Example:
+Normal Clawpals activity does **not** require LLM calls. The daemon tails OpenClaw's structured local session log and sends state updates to the runtime. Runtime decay is local too: terminal `happy` settles back to `idle`, and long idle periods can drift toward `sleepy`.
+
+The older `clawpals activity off|minimal|balanced|expressive|maximum` command still exists as a compatibility alias for older setups and scripts. New docs and user-facing setup should use `daemon-voice`, `expression-level`, and `heartbeat-reactions` instead.
+
+Recommended default:
 
 ```bash
-clawpals activity expressive
-clawpals heartbeat-reactions on
+clawpals daemon enable
+clawpals daemon-voice lite
+clawpals expression-level off
+clawpals heartbeat-reactions off
+```
+
+If you want more visible system-status movement without enabling personality bubbles:
+
+```bash
+clawpals daemon-voice vivid
+```
+
+If you want OpenClaw-authored flavor bubbles, opt in explicitly:
+
+```bash
+clawpals expression-level on
 ```
 
 ## Privacy, security, and scope
@@ -295,19 +316,15 @@ It is the body, not the whole brain.
 
 ## Avatar system
 
-Built-in showcase/demo bundles currently include:
-- `dawn-v2-ember`
-- `dawn-v2-amethyst`
-- `dawn-v2-ashgold`
-- `lantern-moth-v0`
-- `hearthling-v0`
+Built-in default bundles currently include only:
 - `cobalt-golem-v0`
-- `hearthling-v0`
+- `dawn-v2-ember`
+- `lantern-moth-v0`
 
-These exist to show:
+Older experiments and duplicate palette variants were removed from the local repo to keep the package size under control. These three remain because they cover:
 1. animated bundle playback
 2. runtime avatar switching
-3. both family variants and distinct character identities
+3. distinct character identities without bloating the release
 
 ## Local-only avatar generation pipeline
 
@@ -324,9 +341,9 @@ Clawpals now supports a stronger OpenClaw-side avatar workflow:
 This keeps custom avatar work off the display machine and makes iteration much more agent-friendly.
 
 Current status:
-- **Stable baseline:** manual/local anchors, mock provider, deterministic animation, preserve-canvas/anchor-locked registration, post-build QA, contact sheets, targeted repair plumbing, and skill CLI wrappers.
-- **Experimental:** sprite-sheet slicing.
-- **Not yet implemented:** real provider-backed image generation/semantic repair. Preferred future providers are OpenAI `gpt-image-2` and Gemini `gemini-3.1-flash-image-preview`.
+- **Stable baseline:** manual/local anchors, mock provider, deterministic animation, preserve-canvas/anchor-locked registration, post-build QA, contact sheets, targeted repair plumbing, skill CLI wrappers, and the current Cobalt Golem frame bundle.
+- **Experimental:** sprite-sheet slicing and provider-backed generation/semantic repair. Preferred future providers are OpenAI `gpt-image-2` and Gemini `gemini-3.1-flash-image-preview`.
+- **Not release-blocking for v0.6.0:** fully automated high-quality custom avatar generation.
 
 See:
 - [`docs/v0.6.0-avatar-pipeline-release-notes.md`](docs/v0.6.0-avatar-pipeline-release-notes.md)
@@ -378,7 +395,7 @@ Tokens persist on both sides after successful pairing.
 - daemon-driven reactions
 - Tailscale-first cross-machine setup
 - runtime avatar push/select
-- animated showcase bundles
+- lean default avatar set: Cobalt Golem, Dawn Ember, Lantern Moth
 - local-only avatar generation/build/push flow
 - deterministic animation from six state anchors
 - post-build coherency QA, contact sheets, vision QA mock path, and targeted repair hooks
@@ -387,18 +404,20 @@ Tokens persist on both sides after successful pairing.
 ### In progress
 
 - Windows signing rollout
+- v0.6.0 release candidate validation across packaged desktop builds
 - smoother animation quality
-- real OpenAI/Gemini provider-backed avatar generation and semantic repair
+- production-quality OpenAI/Gemini provider-backed avatar generation and semantic repair
 - stronger automatic avatar coherency repair
 - richer helper controls
 - better daemon inference and more descriptive updates
 
 ### Not yet
 
+- fully signed/trusted Windows installer rollout
 - polished cross-agent support beyond OpenClaw
 - hosted relay path for users without Tailscale
 - environment/screen awareness
-- calibrated production-quality provider-backed avatar generation and repair
+- calibrated one-click production-quality provider-backed avatar generation and repair
 
 ## Documentation
 

@@ -213,8 +213,7 @@ If you're resuming this work:
 4. The daemon is `skills/clawpals/bin/clawpals-daemon.mjs` and is unaffected
    by this work; it just consumes whatever bearer token is in
    `~/.openclaw/clawpals/config.json`.
-5. The user is on `expressive` activity by default and `maximum` while
-   debugging this. Daemon throttle is 250ms; if you see strobing, raise it.
+5. Current reactivity controls are `daemon-voice`, `expression-level`, and `heartbeat-reactions`. Legacy `activity` levels may still exist for compatibility, but docs and setup should not assume expressive/maximum defaults. Daemon throttle is 250ms; if you see strobing, raise it.
 
 ## Current status (2026-05-04 20:00 PDT)
 
