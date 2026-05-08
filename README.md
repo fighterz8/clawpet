@@ -32,25 +32,49 @@
 
 ## Demo
 
+The default showcase set is intentionally small and consistent so new avatars can be added as matching tiles instead of one-off screenshots. Each tile uses the same structure: preview, avatar name, demonstrated state, and the kind of chat bubble that state can surface in the overlay.
+
 <div align="center">
-  <p>
-    <img src="public/previews/cobalt-golem-preview.gif" alt="Animated Cobalt Golem preview" width="280" />
-  </p>
-  <p><strong>Cobalt Golem</strong> — the current v0.6.0 showcase/default demo avatar.</p>
   <table>
     <tr>
-      <td align="center" valign="top">
-        <img src="public/previews/dawn-v2-preview.gif" alt="Animated Dawn Ember preview" width="200" />
-        <div><strong>Dawn Ember</strong></div>
+      <td align="center" valign="top" width="33%">
+        <img src="public/previews/cobalt-golem-preview.gif" alt="Animated Cobalt Golem preview" width="220" />
+        <br/>
+        <strong>Cobalt Golem</strong>
+        <br/>
+        <sub><code>focused</code></sub>
+        <br/>
+        <table>
+          <tr><td align="left">💬 <em>Locked in on the current task.</em></td></tr>
+        </table>
       </td>
-      <td width="36"></td>
-      <td align="center" valign="top">
-        <img src="public/previews/lantern-moth-preview.gif" alt="Animated Lantern Moth preview" width="200" />
-        <div><strong>Lantern Moth</strong></div>
+      <td align="center" valign="top" width="33%">
+        <img src="public/previews/dawn-v2-preview.gif" alt="Animated Dawn Ember preview" width="220" />
+        <br/>
+        <strong>Dawn Ember</strong>
+        <br/>
+        <sub><code>thinking</code></sub>
+        <br/>
+        <table>
+          <tr><td align="left">💬 <em>Reading your message…</em></td></tr>
+        </table>
+      </td>
+      <td align="center" valign="top" width="33%">
+        <img src="public/previews/lantern-moth-preview.gif" alt="Animated Lantern Moth preview" width="220" />
+        <br/>
+        <strong>Lantern Moth</strong>
+        <br/>
+        <sub><code>happy</code></sub>
+        <br/>
+        <table>
+          <tr><td align="left">💬 <em>Done — found the path forward.</em></td></tr>
+        </table>
       </td>
     </tr>
   </table>
 </div>
+
+To add another showcase avatar, add a new table cell with the same fields: preview GIF, display name, demo state, and matching bubble copy.
 
 Clawpals is meant to feel ambient, not noisy: glanceable status, tiny emotions, and just enough presence to know your assistant is alive and working.
 
