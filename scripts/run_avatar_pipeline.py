@@ -139,6 +139,14 @@ def normalize_manifest(raw: dict[str, Any], manifest_path: Path) -> dict[str, An
         "minInternalDelta32Px": 4,
         "accessoryOnlyInternalRatio": 0.25,
         "maxWraparoundJumpRatio": 1.6,
+        "minAvgMotionPctByState": {
+            "idle": 0.006,
+            "thinking": 0.008,
+            "focused": 0.004,
+            "happy": 0.018,
+            "alert": 0.012,
+            "sleepy": 0.006,
+        },
         "stateThresholds": {
             "thinking": {"minInternalDelta32Px": 5, "accessoryOnlyFails": True},
             "focused": {"minInternalDelta32Px": 4, "requiresPositiveCue": True, "accessoryOnlyFails": True},
@@ -489,6 +497,10 @@ def generate_qa_report(manifest: dict[str, Any], paths: PipelinePaths) -> dict[s
             state_issues.append({"gate": "loop-frame-count", "reason": f"only {len(frames)} frames"})
         if len(unique_frame_hashes) < min_unique:
             state_issues.append({"gate": "loop-unique-frames", "reason": f"only {len(unique_frame_hashes)} unique frame(s); expected >= {min_unique}"})
+        min_motion_by_state = cfg.get("minAvgMotionPctByState", {}) if isinstance(cfg.get("minAvgMotionPctByState"), dict) else {}
+        min_motion = float(min_motion_by_state.get(state, 0.0))
+        if min_motion and avg_motion < min_motion:
+            state_issues.append({"gate": "loop-visible-motion", "reason": f"avg motion {avg_motion:.3f} is too static; expected >= {min_motion:.3f}"})
         if motion and avg_motion > 0 and wrap > avg_motion * float(cfg.get("maxWraparoundJumpRatio", 1.6)):
             state_issues.append({"gate": "loop-wraparound", "reason": f"wraparound jump {wrap:.3f} is too large versus avg motion {avg_motion:.3f}"})
 

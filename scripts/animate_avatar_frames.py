@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import math
 import sys
 from pathlib import Path
 from typing import Any
@@ -174,6 +175,58 @@ def pulse_glow(anchor: Image.Image, color: str = "#ffd37a", radius: int = 18, op
     return out
 
 
+def signature_pulse(anchor: Image.Image, intensity: float = 1.0, color_shift: bool = False) -> Image.Image:
+    """Visible signature/core pulse without changing the character silhouette."""
+    out = clean_alpha_speckles(anchor)
+    bbox = body_bbox(anchor)
+    if not bbox:
+        return out
+    x0, y0, x1, y1 = bbox
+    cx, cy = int((x0 + x1) / 2), int(y0 + (y1 - y0) * 0.62)
+    r = max(10, int(min(x1 - x0, y1 - y0) * 0.16))
+    crop_box = (max(0, cx - r), max(0, cy - r), min(anchor.width, cx + r), min(anchor.height, cy + r))
+    crop = out.crop(crop_box).convert("RGBA")
+    factor = 1.22 + max(0.0, min(float(intensity), 2.0)) * 0.28
+    crop = ImageEnhance.Brightness(crop).enhance(factor)
+    if color_shift:
+        tint = Image.new("RGBA", crop.size, (255, 175, 80, int(38 * min(float(intensity), 2.0))))
+        crop = Image.alpha_composite(crop, tint)
+        crop.putalpha(out.crop(crop_box).getchannel("A"))
+    out.alpha_composite(crop, crop_box[:2])
+    return out
+
+
+def breathing_expand(anchor: Image.Image, phase: float = 0.0, amplitude: float = 0.025) -> Image.Image:
+    scale = 1.0 + max(0.0, min(float(amplitude), 0.06)) * math.sin(float(phase) * math.pi * 2)
+    return squash_stretch(clean_alpha_speckles(anchor), scale, 1.0 / scale, baseline=0.72)
+
+
+def eye_blink(anchor: Image.Image, closedness: float = 1.0) -> Image.Image:
+    """Draw simple dark blink lines over the eye band; keeps silhouette stable."""
+    out = clean_alpha_speckles(anchor)
+    bbox = body_bbox(out)
+    if not bbox:
+        return out
+    x0, y0, x1, y1 = bbox
+    w, h = x1 - x0, y1 - y0
+    draw = ImageDraw.Draw(out, "RGBA")
+    eye_y = y0 + int(h * 0.36)
+    left = (x0 + int(w * 0.28), eye_y, x0 + int(w * 0.45), eye_y)
+    right = (x1 - int(w * 0.45), eye_y, x1 - int(w * 0.28), eye_y)
+    width = max(2, int(h * (0.018 + 0.012 * max(0.0, min(float(closedness), 1.0)))))
+    color = (15, 14, 20, 230)
+    draw.line(left, fill=color, width=width)
+    draw.line(right, fill=color, width=width)
+    return out
+
+
+def micro_squash_anticipation(anchor: Image.Image, state: str = "idle", amount: float = 1.06) -> Image.Image:
+    amount = max(1.0, min(float(amount), 1.12))
+    if state in {"happy", "alert"}:
+        return squash_stretch(clean_alpha_speckles(anchor), amount, 1.0 / amount, baseline=0.9)
+    return clean_alpha_speckles(anchor)
+
+
 def antenna_twitch(anchor: Image.Image, color: str = "#0a0820") -> Image.Image:
     out = clean_alpha_speckles(anchor)
     draw = ImageDraw.Draw(out)
@@ -251,6 +304,14 @@ def apply_operation(anchor: Image.Image, plan: dict[str, Any], state: str) -> Im
         return overlay_z(anchor, str(plan.get("paletteColor", "#fdfcff")))
     if op == "pulse_glow":
         return pulse_glow(anchor, str(plan.get("paletteColor", "#ffd37a")), int(plan.get("radius", 18)), int(plan.get("opacity", 120)))
+    if op == "signature_pulse":
+        return signature_pulse(anchor, float(plan.get("intensity", 1.0)), bool(plan.get("colorShift", plan.get("color_shift", False))))
+    if op == "breathing_expand":
+        return breathing_expand(anchor, float(plan.get("phase", 0.0)), float(plan.get("amplitude", 0.025)))
+    if op == "eye_blink":
+        return eye_blink(anchor, float(plan.get("closedness", 1.0)))
+    if op == "micro_squash_anticipation":
+        return micro_squash_anticipation(anchor, state, float(plan.get("amount", 1.06)))
     if op == "antenna_twitch":
         return antenna_twitch(anchor, str(plan.get("paletteColor", "#0a0820")))
     if op == "wing_flutter":

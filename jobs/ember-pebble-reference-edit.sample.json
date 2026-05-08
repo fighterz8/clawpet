@@ -74,8 +74,16 @@
     "minFramesPerState": 4,
     "bboxTolerancePct": 0.18,
     "centerTolerancePct": 0.12,
-    "paletteTolerancePct": 0.35,
-    "minSilhouetteIouVsIdle": 0.6
+    "paletteTolerancePct": 0.75,
+    "minSilhouetteIouVsIdle": 0.6,
+    "requiredChecks": [
+      "silhouette",
+      "palette",
+      "proportions",
+      "framing",
+      "stateExpression",
+      "visibleMotion"
+    ]
   },
   "states": {
     "idle": {
@@ -90,19 +98,44 @@
         },
         {
           "index": 1,
-          "operation": "pulse_glow",
-          "radius": 12,
-          "opacity": 50
+          "operations": [
+            {
+              "operation": "breathing_expand",
+              "phase": 0.25,
+              "amplitude": 0.03
+            },
+            {
+              "operation": "signature_pulse",
+              "intensity": 0.65
+            }
+          ]
         },
         {
           "index": 2,
-          "operation": "body_bob",
-          "dy": -1
+          "operations": [
+            {
+              "operation": "eye_blink",
+              "closedness": 0.9
+            },
+            {
+              "operation": "signature_pulse",
+              "intensity": 0.95
+            }
+          ]
         },
         {
           "index": 3,
-          "operation": "body_bob",
-          "dy": 1
+          "operations": [
+            {
+              "operation": "breathing_expand",
+              "phase": 0.75,
+              "amplitude": 0.025
+            },
+            {
+              "operation": "signature_pulse",
+              "intensity": 0.7
+            }
+          ]
         }
       ],
       "frames": [
@@ -124,18 +157,44 @@
         },
         {
           "index": 1,
-          "operation": "pulse_glow",
-          "radius": 14,
-          "opacity": 70
+          "operations": [
+            {
+              "operation": "body_bob",
+              "dy": -2
+            },
+            {
+              "operation": "signature_pulse",
+              "intensity": 0.65
+            }
+          ]
         },
         {
           "index": 2,
-          "operation": "body_bob",
-          "dy": -1
+          "operations": [
+            {
+              "operation": "eye_blink",
+              "closedness": 0.8
+            },
+            {
+              "operation": "breathing_expand",
+              "phase": 0.5,
+              "amplitude": 0.02
+            }
+          ]
         },
         {
           "index": 3,
-          "operation": "copy_anchor"
+          "operations": [
+            {
+              "operation": "signature_pulse",
+              "intensity": 1.05,
+              "colorShift": true
+            },
+            {
+              "operation": "body_bob",
+              "dy": 1
+            }
+          ]
         }
       ],
       "frames": [
@@ -157,18 +216,28 @@
         },
         {
           "index": 1,
-          "operation": "pulse_glow",
-          "radius": 14,
-          "opacity": 70
+          "operation": "signature_pulse",
+          "intensity": 1.2,
+          "colorShift": true
         },
         {
           "index": 2,
-          "operation": "body_bob",
-          "dy": -1
+          "operations": [
+            {
+              "operation": "body_bob",
+              "dy": -1
+            },
+            {
+              "operation": "signature_pulse",
+              "intensity": 1.45,
+              "colorShift": true
+            }
+          ]
         },
         {
           "index": 3,
-          "operation": "copy_anchor"
+          "operation": "signature_pulse",
+          "intensity": 1.05
         }
       ],
       "frames": [
@@ -186,23 +255,65 @@
       "framePlan": [
         {
           "index": 0,
-          "operation": "copy_anchor"
+          "operations": [
+            {
+              "operation": "micro_squash_anticipation",
+              "amount": 1.08
+            },
+            {
+              "operation": "signature_pulse",
+              "intensity": 0.9
+            }
+          ]
         },
         {
           "index": 1,
-          "operation": "body_bob",
-          "dy": -3
+          "operations": [
+            {
+              "operation": "body_bob",
+              "dy": -6
+            },
+            {
+              "operation": "eye_blink",
+              "closedness": 0.9
+            },
+            {
+              "operation": "signature_pulse",
+              "intensity": 1.5,
+              "colorShift": true
+            }
+          ]
         },
         {
           "index": 2,
-          "operation": "pulse_glow",
-          "radius": 16,
-          "opacity": 110
+          "operations": [
+            {
+              "operation": "body_bob",
+              "dy": -3
+            },
+            {
+              "operation": "breathing_expand",
+              "phase": 0.5,
+              "amplitude": 0.035
+            },
+            {
+              "operation": "signature_pulse",
+              "intensity": 1.2
+            }
+          ]
         },
         {
           "index": 3,
-          "operation": "body_bob",
-          "dy": 1
+          "operations": [
+            {
+              "operation": "body_bob",
+              "dy": 1
+            },
+            {
+              "operation": "signature_pulse",
+              "intensity": 0.8
+            }
+          ]
         }
       ],
       "frames": [
@@ -220,18 +331,43 @@
       "framePlan": [
         {
           "index": 0,
-          "operation": "copy_anchor"
+          "operations": [
+            {
+              "operation": "micro_squash_anticipation",
+              "amount": 1.05
+            },
+            {
+              "operation": "signature_pulse",
+              "intensity": 0.9
+            }
+          ]
         },
         {
           "index": 1,
-          "operation": "pulse_glow",
-          "radius": 14,
-          "opacity": 70
+          "operations": [
+            {
+              "operation": "body_bob",
+              "dy": -4
+            },
+            {
+              "operation": "signature_pulse",
+              "intensity": 1.6,
+              "colorShift": true
+            }
+          ]
         },
         {
           "index": 2,
-          "operation": "body_bob",
-          "dy": -1
+          "operations": [
+            {
+              "operation": "body_bob",
+              "dy": 1
+            },
+            {
+              "operation": "signature_pulse",
+              "intensity": 1.25
+            }
+          ]
         },
         {
           "index": 3,
@@ -257,18 +393,43 @@
         },
         {
           "index": 1,
-          "operation": "sleepy_droop",
-          "dy": 1
+          "operations": [
+            {
+              "operation": "sleepy_droop",
+              "dy": 2
+            },
+            {
+              "operation": "breathing_expand",
+              "phase": 0.7,
+              "amplitude": 0.015
+            }
+          ]
         },
         {
           "index": 2,
-          "operation": "pulse_glow",
-          "radius": 10,
-          "opacity": 30
+          "operations": [
+            {
+              "operation": "eye_blink",
+              "closedness": 1.0
+            },
+            {
+              "operation": "signature_pulse",
+              "intensity": 0.35
+            }
+          ]
         },
         {
           "index": 3,
-          "operation": "copy_anchor"
+          "operations": [
+            {
+              "operation": "sleepy_droop",
+              "dy": 1
+            },
+            {
+              "operation": "signature_pulse",
+              "intensity": 0.45
+            }
+          ]
         }
       ],
       "frames": [
