@@ -11,27 +11,82 @@ from typing import Any
 BG_RULE = {"g_min": 200, "r_max": 80, "b_max": 150}
 DEFAULT_CANVAS = 256
 
+# Chroma-key tuning. The provider returns soft antialiased edges and sometimes a faint dark
+# halo. A naive g>200/r<80/b<150 rule leaves dirty fringe pixels behind. Use chroma-distance
+# alpha plus a green-spill suppressor so the keyed sprite reads clean against any background.
+CHROMA_HARD_DIST = 70   # closer than this to the chroma key => fully transparent
+CHROMA_SOFT_DIST = 140  # farther than this => fully opaque (plus despill)
+DESPILL_DELTA = 18       # green excess over max(r,b) gets clipped to remove green tint
+
 # Usage: build_avatar_bundle.py <spec.json>
 # Spec shape includes legacy fields plus optional:
 #   sourceImageContract: { background: "transparent-alpha" | "chroma-green", chromaKey?: "#00ff66" }
 #   registration: { mode: "legacy-crop" | "preserve-canvas" | "anchor-locked", targetCanvasPx?: 256 }
 
 
+def _parse_chroma(source_contract: dict[str, Any]) -> tuple[int, int, int]:
+    raw = str(source_contract.get("chromaKey", "")).lstrip("#")
+    if len(raw) == 6:
+        try:
+            return (int(raw[0:2], 16), int(raw[2:4], 16), int(raw[4:6], 16))
+        except ValueError:
+            pass
+    # Default to the project chroma green if not specified.
+    return (16, 234, 109)
+
+
 def normalize_alpha(im: Image.Image, source_contract: dict[str, Any]) -> Image.Image:
     im = im.convert("RGBA")
     background = source_contract.get("background")
-    # Keep old behavior as a compatibility fallback: remove bright green unless a transparent-alpha
-    # contract explicitly says the image already has usable alpha.
     if background == "transparent-alpha":
         return im
-    px = im.load()
-    w, h = im.size
-    for y in range(h):
-        for x in range(w):
-            r, g, b, a = px[x, y]
-            if g > BG_RULE["g_min"] and r < BG_RULE["r_max"] and b < BG_RULE["b_max"]:
-                px[x, y] = (0, 0, 0, 0)
-    return im
+
+    try:
+        import numpy as np  # local import to keep legacy paths cheap
+    except ImportError:
+        # Fallback to the legacy hard rule if numpy is unavailable.
+        px = im.load()
+        w, h = im.size
+        for y in range(h):
+            for x in range(w):
+                r, g, b, _ = px[x, y]
+                if g > BG_RULE["g_min"] and r < BG_RULE["r_max"] and b < BG_RULE["b_max"]:
+                    px[x, y] = (0, 0, 0, 0)
+        return im
+
+    cr, cg, cb = _parse_chroma(source_contract)
+    arr = np.array(im, dtype=np.int16)
+    r = arr[:, :, 0]
+    g = arr[:, :, 1]
+    b = arr[:, :, 2]
+
+    # Chroma distance (Manhattan) to the chroma key per pixel.
+    dist = np.abs(r - cr) + np.abs(g - cg) + np.abs(b - cb)
+
+    # Soft alpha ramp: <hard => 0, >soft => 255, otherwise linear.
+    alpha = np.where(
+        dist <= CHROMA_HARD_DIST,
+        0,
+        np.where(
+            dist >= CHROMA_SOFT_DIST,
+            255,
+            ((dist - CHROMA_HARD_DIST) * 255 // max(1, (CHROMA_SOFT_DIST - CHROMA_HARD_DIST))).astype(np.int16),
+        ),
+    ).astype(np.uint8)
+
+    # Despill: clamp green so it never exceeds max(r,b) by more than DESPILL_DELTA.
+    rb_max = np.maximum(r, b)
+    spill_cap = rb_max + DESPILL_DELTA
+    g_clipped = np.minimum(g, spill_cap)
+    g_clipped = np.clip(g_clipped, 0, 255)
+
+    out = np.empty_like(arr, dtype=np.uint8)
+    out[:, :, 0] = np.clip(r, 0, 255)
+    out[:, :, 1] = g_clipped
+    out[:, :, 2] = np.clip(b, 0, 255)
+    out[:, :, 3] = alpha
+
+    return Image.fromarray(out, mode="RGBA")
 
 
 def legacy_crop(path: Path, source_contract: dict[str, Any], target_canvas: int) -> Image.Image:
