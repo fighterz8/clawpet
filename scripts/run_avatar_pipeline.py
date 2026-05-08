@@ -565,10 +565,10 @@ def generate_qa_report(manifest: dict[str, Any], paths: PipelinePaths) -> dict[s
     # Check idle anchor's bbox vs canvas to enforce a consistent visual scale across avatars.
     sprite_size = manifest.get("generation", {}).get("spriteSize", {})
     target_canvas = int(manifest.get("registration", {}).get("targetCanvasPx", 256))
-    long_min = float(sprite_size.get("longestAxisMinPct", 0.92))
-    long_max = float(sprite_size.get("longestAxisMaxPct", 1.00))
-    short_min = float(sprite_size.get("shortAxisMinPct", 0.78))
-    short_max = float(sprite_size.get("shortAxisMaxPct", 0.94))
+    long_min = float(sprite_size.get("longestAxisMinPct", 0.78))
+    long_max = float(sprite_size.get("longestAxisMaxPct", 0.90))
+    short_min = float(sprite_size.get("shortAxisMinPct", 0.66))
+    short_max = float(sprite_size.get("shortAxisMaxPct", 0.84))
     margin_min = int(sprite_size.get("minTransparentMarginPx", 0))
     try:
         idle_path = Path(manifest["states"]["idle"]["frames"][0])

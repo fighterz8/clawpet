@@ -66,8 +66,9 @@ Use `skills/clawpals/templates/avatar-job-template.json` as the scaffold.
 4. Generate the first `idle` anchor only, show only that anchor to the user, and wait for explicit approve/disapprove. Do not dump every generated state/frame into chat. If the user disapproves, regenerate the idle anchor and repeat until approved.
 
    The idle anchor must hit the standardized sprite size (golden-aligned with `dawn-v2-ember` and `lantern-moth-v0`):
-   - Longest axis fills **92–100%** of the 256-canvas (≈944–1024 px on a 1024 export).
-   - Short axis fills **78–94%** (anything ≥95% on both axes reads chunky like `glass-toad-v0` and is rejected).
+   - Longest axis fills **78–90%** of the 256-canvas (≈800–922 px on a 1024 export).
+   - Short axis fills **66–84%** (anything ≥90% on both axes reads chunky like `glass-toad-v0` and is rejected).
+   - Note: standard tightened down ~15% from the v1 92–100% / 78–94% range because that read too large on desktop overlay (Hearthling).
    - Avoid sub-90% on the longest axis (mooncap was 41%, too small).
    - Configured in `generation.spriteSize`; QA fails the idle anchor if it falls outside.
    - Always include in the generation prompt: "the character must fill ~95% of the longest dimension of the export with ~5% transparent margin".
