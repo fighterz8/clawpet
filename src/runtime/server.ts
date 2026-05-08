@@ -9,7 +9,7 @@ import { AvatarBundleStore } from "./avatarBundleStore";
 
 const port = Number(process.env.CLAWPALS_RUNTIME_PORT ?? 8737);
 const hostname = process.env.CLAWPALS_RUNTIME_HOST ?? "127.0.0.1";
-const avatarId = process.env.CLAWPALS_AVATAR_BUNDLE ?? "dawn-v0";
+const avatarId = process.env.CLAWPALS_AVATAR_BUNDLE ?? "dawn-v2-ember";
 const demoMode = process.env.CLAWPALS_DEMO === "1" || process.env.CLAWPALS_DEMO?.toLowerCase() === "true";
 
 const isLoopback = hostname === "127.0.0.1" || hostname === "::1" || hostname === "localhost";

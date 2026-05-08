@@ -21,7 +21,7 @@ Events are UI/status messages only. They must never execute code.
   },
   "target": {
     "deviceId": "nick-main-pc",
-    "avatarId": "dawn-v0"
+    "avatarId": "dawn-v2-ember"
   },
   "state": "thinking",
   "message": "Inspecting the repo...",
@@ -97,7 +97,7 @@ A Clawpals runtime should be able to report status:
     "displayName": "Nick's OpenClaw"
   },
   "avatar": {
-    "avatarId": "dawn-v0",
+    "avatarId": "dawn-v2-ember",
     "state": "idle",
     "bundleVersion": "0.1.0"
   },

@@ -46,7 +46,7 @@ function OverlayApp() {
 
   async function refreshBundle(avatarId?: string, bundleVersion?: string) {
     const cacheKey = encodeURIComponent(bundleVersion || avatarId || String(Date.now()));
-    const fallbackAvatar = BUILD_TIME_AVATAR || avatarId || "dawn-v0";
+    const fallbackAvatar = BUILD_TIME_AVATAR || avatarId || "dawn-v2-ember";
 
     if (BUILD_TIME_AVATAR) {
       try {

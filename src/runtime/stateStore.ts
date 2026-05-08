@@ -115,7 +115,7 @@ export class RuntimeStateStore {
     this.runtimeId = options.runtimeId ?? "clawpals-local-runtime";
     this.deviceName = options.deviceName ?? "Local Clawpals";
     this.mode = options.mode ?? "local";
-    this.avatarId = options.avatarId ?? "dawn-v0";
+    this.avatarId = options.avatarId ?? "dawn-v2-ember";
     this.bundleVersion = options.bundleVersion ?? "0.1.0";
     this.maxEvents = options.maxEvents ?? 200;
     this.now = options.now ?? (() => new Date());

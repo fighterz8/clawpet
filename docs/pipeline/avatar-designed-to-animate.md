@@ -18,7 +18,14 @@ If the only way to create motion is to split the character into arbitrary image 
 
 ## Golden-avatar acceptance profile
 
-Use `dawn-v2-ember`, `lantern-moth-v0`, and `glass-toad-v0` as the current goldens. New generated avatars do not need to copy their species or style exactly, but they must hit the same functional properties:
+Use `dawn-v2-ember` and `lantern-moth-v0` as the primary defaults/style goldens. `glass-toad-v0` remains useful as an expressive/coherency calibration case, but it is intentionally chunkier than the default house style. New generated avatars do not need to copy Dawn or the moth species exactly, but default/preset candidates should feel like they belong in the same family:
+
+- **Ember-familiar house style:** warm magical familiar, soft ember/lantern glow, dark crisp outline, flat cel-shaded forms, compact overlay silhouette, and a slightly mythic/cute personality rather than generic sticker art.
+- **Default preset palette discipline:** prefer warm ember/coral/gold/cream bases plus one restrained accent glow. Avoid dramatic pastel, neon, plastic, mascot, or highly realistic palettes unless the user explicitly asks for an experimental avatar.
+- **Dawn/Lantern scale and density:** match their visual weight, canvas fill, outline thickness, and amount of detail. Avoid tiny center sprites, overly chunky square bodies, and ornate features that read unlike the shipped defaults.
+- **House-style prompt anchor:** production prompts for default candidates should explicitly reference “same house style as Dawn Ember and Lantern Ember Moth: warm ember glow, crisp dark outline, compact magical familiar, flat cel-shaded, thumbnail-readable.”
+
+All generated avatars must still hit the same functional properties:
 
 - **Same creature, six performances:** every state must read as the same character acting a different state, not six loosely similar generated stickers.
 - **Character-led state acting:** thinking/focused/happy/alert/sleepy must be visible in the body, eyes, posture, or signature feature. Floating symbols may support the read, but may not be the main state difference.

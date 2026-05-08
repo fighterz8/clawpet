@@ -38,7 +38,7 @@ For v0.6.0-quality generated avatars, set:
 }
 ```
 
-The goldens are `dawn-v2-ember`, `lantern-moth-v0`, and `glass-toad-v0`. New avatars should match their functional quality: same character across all states, expressive body/face/signature-feature acting, distinctive silhouette, stable art direction, and readable thumbnail state changes. Floating symbols can support a state but cannot be the main difference.
+The default style goldens are `dawn-v2-ember` and `lantern-moth-v0` (Lantern Ember Moth). `glass-toad-v0` is useful for coherency calibration, but is chunkier than the desired default/preset house style. New default avatars should match Dawn Ember and Lantern Ember Moth stylistically: warm ember/lantern glow, crisp dark outline, compact magical familiar silhouette, flat cel-shaded forms, restrained warm palette with one accent glow, and thumbnail-readable charm. They should also match the functional quality of the goldens: same character across all states, expressive body/face/signature-feature acting, distinctive silhouette, stable art direction, and readable thumbnail state changes. Floating symbols can support a state but cannot be the main difference.
 
 1. Confirm runtime readiness:
 
@@ -61,6 +61,7 @@ Use `skills/clawpals/templates/avatar-job-template.json` as the scaffold.
 - stable species/silhouette/signature feature
 - source image contract: transparent alpha or chroma green, not both
 - registration mode, usually `preserve-canvas`
+- default/preset style: explicitly anchor the prompt to “same house style as Dawn Ember and Lantern Ember Moth: warm ember glow, crisp dark outline, compact magical familiar, flat cel-shaded, thumbnail-readable.”
 
 4. Generate the first `idle` anchor only, show only that anchor to the user, and wait for explicit approve/disapprove. Do not dump every generated state/frame into chat. If the user disapproves, regenerate the idle anchor and repeat until approved.
 

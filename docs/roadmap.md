@@ -31,7 +31,7 @@ This turned out to be much simpler than the OpenClaw extension/hook path because
 - Map approval events (`AgentApprovalEventData`) to `react blocker` once we wire those into the JSONL stream.
 
 ### Multi-avatar selection
-- Runtime accepts `CLAWPALS_AVATAR_BUNDLE` (default `dawn-v0`) and reports it in `/status`.
+- Runtime accepts `CLAWPALS_AVATAR_BUNDLE` (default `dawn-v2-ember`) and reports it in `/status`.
 - Desktop overlay reads that and loads the matching bundle automatically.
 - Skill: `clawpals avatar list | use <name>`.
 

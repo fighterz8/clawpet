@@ -573,11 +573,24 @@ def generate_qa_report(manifest: dict[str, Any], paths: PipelinePaths) -> dict[s
     try:
         idle_path = Path(manifest["states"]["idle"]["frames"][0])
         idle_im = load_rgba(idle_path)
-        # Resize-aware metrics: compute on the actual exported frame, scaled to targetCanvasPx.
         if idle_im.size != (target_canvas, target_canvas):
             idle_im = idle_im.resize((target_canvas, target_canvas), Image.Resampling.NEAREST)
-        alpha = idle_im.split()[-1].point(lambda x: 255 if x > 16 else 0)
-        bbox = alpha.getbbox()
+        contract = manifest.get("generation", {}).get("sourceImageContract", {})
+        if contract.get("background") == "chroma-green":
+            chroma = parse_hex_color(str(contract.get("chromaKey", "")))
+            arr = idle_im.load()
+            cw, ch = idle_im.size
+            mask_im = Image.new("L", (cw, ch), 0)
+            mp = mask_im.load()
+            for yy in range(ch):
+                for xx in range(cw):
+                    r2, g2, b2, _ = arr[xx, yy]
+                    if abs(r2 - chroma[0]) + abs(g2 - chroma[1]) + abs(b2 - chroma[2]) > 80:
+                        mp[xx, yy] = 255
+            bbox = mask_im.getbbox()
+        else:
+            alpha = idle_im.split()[-1].point(lambda x: 255 if x > 16 else 0)
+            bbox = alpha.getbbox()
         if bbox:
             bw, bh = bbox[2] - bbox[0], bbox[3] - bbox[1]
             longest = max(bw, bh) / target_canvas

@@ -37,7 +37,7 @@ export function buildTestEvent(options: BuildTestEventOptions): AvatarStateEvent
     },
     target: {
       deviceId: options.deviceId ?? "local-runtime",
-      avatarId: options.avatarId ?? "dawn-v0",
+      avatarId: options.avatarId ?? "dawn-v2-ember",
     },
     state: options.state,
     message: options.message ?? `Manual test: ${options.state}`,

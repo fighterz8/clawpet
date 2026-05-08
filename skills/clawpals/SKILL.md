@@ -198,7 +198,7 @@ clawpals status                  # avatar.avatarId / bundleVersion should match 
 curl -fsS "$RUNTIME_URL/avatar-bundle/current/avatar.json"  # should return the generated manifest
 ```
 
-If the desktop app still starts with the old blue/default Dawn after restart, the runtime is probably an older build that does not persist uploaded bundles. Update/restart the desktop runtime from a build containing persisted runtime bundles before moving on to generated multi-frame work.
+The built-in fallback/default avatar is Dawn Ember (`dawn-v2-ember`), not the deprecated old blue Dawn (`dawn-v0`). If the desktop app still starts with the old blue/default Dawn after restart, the runtime is probably an older build or an environment override (`CLAWPALS_AVATAR_BUNDLE=dawn-v0`) is still active. Update/restart the desktop runtime from a build containing Dawn Ember as the fallback and persisted runtime bundles before moving on to generated multi-frame work.
 
 The desktop machine is a display/runtime target, not the place the user has to manually edit files.
 

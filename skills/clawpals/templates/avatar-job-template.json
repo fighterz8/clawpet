@@ -9,6 +9,8 @@
   "generation": {
     "strategy": "anchors-plus-deterministic-motion",
     "acceptanceProfile": "golden-avatar-v0.6",
+    "styleProfile": "dawn-ember-lantern-house-style",
+    "stylePromptAnchor": "same house style as Dawn Ember and Lantern Ember Moth: warm ember glow, crisp dark outline, compact magical familiar, flat cel-shaded, thumbnail-readable",
     "provider": "none",
     "sourceImageContract": {
       "background": "transparent-alpha",

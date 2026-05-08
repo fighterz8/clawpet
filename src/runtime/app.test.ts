@@ -40,7 +40,7 @@ describe("runtime API", () => {
     expect(await status.json()).toMatchObject({
       type: "clawpals.status",
       connected: true,
-      avatar: { avatarId: "dawn-v0", state: "idle" },
+      avatar: { avatarId: "dawn-v2-ember", state: "idle" },
     });
   });
 

@@ -36,8 +36,8 @@
   <table>
     <tr>
       <td align="center" valign="top">
-        <img src="public/previews/dawn-v2-preview.gif" alt="Animated Dawn Ashgold preview" width="220" />
-        <div><strong>Dawn Ashgold</strong></div>
+        <img src="public/previews/dawn-v2-preview.gif" alt="Animated Dawn Ember preview" width="220" />
+        <div><strong>Dawn Ember</strong></div>
         <div><sub>Reading your message…</sub></div>
       </td>
       <td width="36"></td>
