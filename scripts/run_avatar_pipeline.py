@@ -137,7 +137,7 @@ def normalize_manifest(raw: dict[str, Any], manifest_path: Path) -> dict[str, An
         "minUniqueFramesPerState": 3,
         "overlayReadabilityPx": 32,
         "minInternalDelta32Px": 4,
-        "accessoryOnlyInternalRatio": 0.35,
+        "accessoryOnlyInternalRatio": 0.25,
         "maxWraparoundJumpRatio": 1.6,
         "stateThresholds": {
             "thinking": {"minInternalDelta32Px": 5, "accessoryOnlyFails": True},

@@ -1,0 +1,294 @@
+{
+  "pipelineJobSchemaVersion": "0.1.0",
+  "id": "ember-pebble-gpt-image-2-v0",
+  "name": "Ember Pebble GPT Image 2",
+  "version": "0.4.0-golden-profile-preview",
+  "description": "Strict identical-silhouette golden-profile avatar test.",
+  "mode": "local-only",
+  "pushAfterBuild": false,
+  "outputRoot": "/home/nick/.openclaw/workspace/local_avatars/ember-pebble-gpt-image-2-v0/bundle",
+  "previewGif": "/home/nick/.openclaw/workspace/local_avatars/ember-pebble-gpt-image-2-v0/preview.gif",
+  "generation": {
+    "strategy": "sprite-sheet-experiment",
+    "acceptanceProfile": "golden-avatar-v0.6",
+    "provider": "none",
+    "sourceImageContract": {
+      "background": "chroma-green",
+      "chromaKey": "#10EA6D",
+      "logicalCanvas": "128x128",
+      "exportSize": "512x512",
+      "preserveCanvas": true,
+      "singleCharacter": true,
+      "noText": true,
+      "noScene": true
+    },
+    "locked": {
+      "species": "tiny magical Ember Pebble familiar",
+      "signatureFeature": "warm glowing ember core inside belly",
+      "silhouette": "compact rounded pebble body with two fixed nub ears built into outline",
+      "poseFraming": "forward-facing centered desktop-overlay sprite with identical silhouette across states",
+      "outlineHex": "#11131a",
+      "paletteHex": [
+        "#11131a",
+        "#2b3038",
+        "#4b5460",
+        "#f0b24a",
+        "#fff0b0",
+        "#10EA6D"
+      ],
+      "forbiddenChanges": [
+        "species",
+        "signature silhouette",
+        "palette",
+        "outline color",
+        "body proportions",
+        "camera angle",
+        "lighting",
+        "scale",
+        "framing",
+        "loose accessories",
+        "external symbols",
+        "arms",
+        "legs",
+        "wings"
+      ]
+    },
+    "stateActing": {
+      "thinking": "The pebble itself looks thoughtful through upward/side eye direction, an uncertain mouth, and a subtle internal ember-core swirl while the outer silhouette stays identical.",
+      "focused": "The pebble itself looks intent through narrowed eyes, a straight mouth, and a brighter sharper internal ember core while the outer silhouette stays identical.",
+      "happy": "The pebble itself looks joyful through happy eyes, a bigger smile, and a warmer brighter internal ember core while the outer silhouette stays identical.",
+      "alert": "The pebble itself looks startled through wide round eyes, a tiny open mouth, and a flaring internal ember core while the outer silhouette stays identical.",
+      "sleepy": "The pebble itself looks tired through half-closed droopy eyes, a sleepy mouth, and a dimmer internal ember core while the outer silhouette stays identical."
+    }
+  },
+  "registration": {
+    "mode": "preserve-canvas",
+    "fallbackMode": "anchor-locked",
+    "anchorState": "idle",
+    "anchorFrameIndex": 0,
+    "targetCanvasPx": 256,
+    "applySameTransformTo": "all-frames",
+    "legacyCropAllowed": false
+  },
+  "coherency": {
+    "minFramesPerState": 4,
+    "bboxTolerancePct": 0.18,
+    "centerTolerancePct": 0.12,
+    "paletteTolerancePct": 0.35,
+    "minSilhouetteIouVsIdle": 0.6
+  },
+  "spriteSheet": {
+    "path": "fixtures/ember-pebble-sheet-gpt-image-2.png",
+    "rows": 2,
+    "cols": 3,
+    "stateOrder": [
+      "idle",
+      "thinking",
+      "focused",
+      "happy",
+      "alert",
+      "sleepy"
+    ]
+  },
+  "states": {
+    "idle": {
+      "fps": 4,
+      "anchorPath": "fixtures/ember-pebble-sheet-gpt-image-2.png",
+      "animationMode": "deterministic",
+      "motionRecipe": "subtle internal glow",
+      "framePlan": [
+        {
+          "index": 0,
+          "operation": "copy_anchor"
+        },
+        {
+          "index": 1,
+          "operation": "pulse_glow",
+          "radius": 12,
+          "opacity": 60
+        },
+        {
+          "index": 2,
+          "operation": "body_bob",
+          "dy": -1
+        },
+        {
+          "index": 3,
+          "operation": "body_bob",
+          "dy": 1
+        }
+      ],
+      "frames": [
+        "fixtures/ember-pebble-sheet-gpt-image-2.png",
+        "fixtures/ember-pebble-sheet-gpt-image-2.png",
+        "fixtures/ember-pebble-sheet-gpt-image-2.png",
+        "fixtures/ember-pebble-sheet-gpt-image-2.png"
+      ]
+    },
+    "thinking": {
+      "fps": 4,
+      "anchorPath": "fixtures/ember-pebble-sheet-gpt-image-2.png",
+      "animationMode": "deterministic",
+      "motionRecipe": "The pebble itself looks thoughtful through upward/side eye direction, an uncertain mouth, and a subtle internal ember-core swirl while the outer silhouette stays identical.",
+      "framePlan": [
+        {
+          "index": 0,
+          "operation": "copy_anchor"
+        },
+        {
+          "index": 1,
+          "operation": "pulse_glow",
+          "radius": 14,
+          "opacity": 80
+        },
+        {
+          "index": 2,
+          "operation": "body_bob",
+          "dy": -1
+        },
+        {
+          "index": 3,
+          "operation": "copy_anchor"
+        }
+      ],
+      "frames": [
+        "fixtures/ember-pebble-sheet-gpt-image-2.png",
+        "fixtures/ember-pebble-sheet-gpt-image-2.png",
+        "fixtures/ember-pebble-sheet-gpt-image-2.png",
+        "fixtures/ember-pebble-sheet-gpt-image-2.png"
+      ]
+    },
+    "focused": {
+      "fps": 4,
+      "anchorPath": "fixtures/ember-pebble-sheet-gpt-image-2.png",
+      "animationMode": "deterministic",
+      "motionRecipe": "The pebble itself looks intent through narrowed eyes, a straight mouth, and a brighter sharper internal ember core while the outer silhouette stays identical.",
+      "framePlan": [
+        {
+          "index": 0,
+          "operation": "copy_anchor"
+        },
+        {
+          "index": 1,
+          "operation": "pulse_glow",
+          "radius": 14,
+          "opacity": 80
+        },
+        {
+          "index": 2,
+          "operation": "body_bob",
+          "dy": -1
+        },
+        {
+          "index": 3,
+          "operation": "copy_anchor"
+        }
+      ],
+      "frames": [
+        "fixtures/ember-pebble-sheet-gpt-image-2.png",
+        "fixtures/ember-pebble-sheet-gpt-image-2.png",
+        "fixtures/ember-pebble-sheet-gpt-image-2.png",
+        "fixtures/ember-pebble-sheet-gpt-image-2.png"
+      ]
+    },
+    "happy": {
+      "fps": 5,
+      "anchorPath": "fixtures/ember-pebble-sheet-gpt-image-2.png",
+      "animationMode": "deterministic",
+      "motionRecipe": "The pebble itself looks joyful through happy eyes, a bigger smile, and a warmer brighter internal ember core while the outer silhouette stays identical.",
+      "framePlan": [
+        {
+          "index": 0,
+          "operation": "copy_anchor"
+        },
+        {
+          "index": 1,
+          "operation": "body_bob",
+          "dy": -3
+        },
+        {
+          "index": 2,
+          "operation": "pulse_glow",
+          "radius": 16,
+          "opacity": 120
+        },
+        {
+          "index": 3,
+          "operation": "body_bob",
+          "dy": 1
+        }
+      ],
+      "frames": [
+        "fixtures/ember-pebble-sheet-gpt-image-2.png",
+        "fixtures/ember-pebble-sheet-gpt-image-2.png",
+        "fixtures/ember-pebble-sheet-gpt-image-2.png",
+        "fixtures/ember-pebble-sheet-gpt-image-2.png"
+      ]
+    },
+    "alert": {
+      "fps": 5,
+      "anchorPath": "fixtures/ember-pebble-sheet-gpt-image-2.png",
+      "animationMode": "deterministic",
+      "motionRecipe": "The pebble itself looks startled through wide round eyes, a tiny open mouth, and a flaring internal ember core while the outer silhouette stays identical.",
+      "framePlan": [
+        {
+          "index": 0,
+          "operation": "copy_anchor"
+        },
+        {
+          "index": 1,
+          "operation": "pulse_glow",
+          "radius": 14,
+          "opacity": 80
+        },
+        {
+          "index": 2,
+          "operation": "body_bob",
+          "dy": -1
+        },
+        {
+          "index": 3,
+          "operation": "copy_anchor"
+        }
+      ],
+      "frames": [
+        "fixtures/ember-pebble-sheet-gpt-image-2.png",
+        "fixtures/ember-pebble-sheet-gpt-image-2.png",
+        "fixtures/ember-pebble-sheet-gpt-image-2.png",
+        "fixtures/ember-pebble-sheet-gpt-image-2.png"
+      ]
+    },
+    "sleepy": {
+      "fps": 4,
+      "anchorPath": "fixtures/ember-pebble-sheet-gpt-image-2.png",
+      "animationMode": "deterministic",
+      "motionRecipe": "The pebble itself looks tired through half-closed droopy eyes, a sleepy mouth, and a dimmer internal ember core while the outer silhouette stays identical.",
+      "framePlan": [
+        {
+          "index": 0,
+          "operation": "copy_anchor"
+        },
+        {
+          "index": 1,
+          "operation": "sleepy_droop",
+          "dy": 1
+        },
+        {
+          "index": 2,
+          "operation": "copy_anchor"
+        },
+        {
+          "index": 3,
+          "operation": "sleepy_droop",
+          "dy": 1
+        }
+      ],
+      "frames": [
+        "fixtures/ember-pebble-sheet-gpt-image-2.png",
+        "fixtures/ember-pebble-sheet-gpt-image-2.png",
+        "fixtures/ember-pebble-sheet-gpt-image-2.png",
+        "fixtures/ember-pebble-sheet-gpt-image-2.png"
+      ]
+    }
+  }
+}

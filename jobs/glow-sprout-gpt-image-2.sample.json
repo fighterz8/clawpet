@@ -1,0 +1,325 @@
+{
+  "pipelineJobSchemaVersion": "0.1.0",
+  "id": "glow-sprout-gpt-image-2-v0",
+  "name": "Glow Sprout GPT Image 2",
+  "version": "0.4.0-golden-profile-preview",
+  "description": "Golden-profile test avatar generated from GPT Image 2 sprite sheet using the v0.6 avatar acceptance gates.",
+  "mode": "local-only",
+  "pushAfterBuild": false,
+  "outputRoot": "/home/nick/.openclaw/workspace/local_avatars/glow-sprout-gpt-image-2-v0/bundle",
+  "previewGif": "/home/nick/.openclaw/workspace/local_avatars/glow-sprout-gpt-image-2-v0/preview.gif",
+  "generation": {
+    "strategy": "sprite-sheet-experiment",
+    "acceptanceProfile": "golden-avatar-v0.6",
+    "provider": "none",
+    "sourceImageContract": {
+      "background": "chroma-green",
+      "chromaKey": "#10EA6D",
+      "logicalCanvas": "128x128",
+      "exportSize": "512x512",
+      "preserveCanvas": true,
+      "singleCharacter": true,
+      "noText": true,
+      "noScene": true
+    },
+    "locked": {
+      "species": "tiny magical Glow Sprout plant familiar",
+      "signatureFeature": "glowing amber belly seed plus curled root-tail",
+      "silhouette": "compact rounded seed body with two leaf ears and one curled root-tail/base",
+      "poseFraming": "forward-facing centered desktop-overlay sprite with stable scale",
+      "outlineHex": "#14202a",
+      "paletteHex": [
+        "#14202a",
+        "#17434a",
+        "#2f7a67",
+        "#75b66b",
+        "#f3c35a",
+        "#fff2bd",
+        "#10EA6D"
+      ],
+      "forbiddenChanges": [
+        "species",
+        "signature silhouette",
+        "palette",
+        "outline color",
+        "body proportions",
+        "camera angle",
+        "lighting",
+        "scale",
+        "framing",
+        "loose accessories",
+        "arms",
+        "complex limbs"
+      ]
+    },
+    "stateActing": {
+      "thinking": "The sprout itself looks thoughtful: eyes glance upward or sideways, one leaf ear tilts, posture becomes curious, and the glowing belly core subtly pulses; any question sparkle is secondary.",
+      "focused": "The sprout itself looks intent: narrowed eyes, slight forward lean, inward leaf-ear angle, and a brighter steady belly core create a focused cue.",
+      "happy": "The sprout itself looks joyful: brighter eyes/smile, buoyant posture, perked leaves, lifted curled root-tail, and warmer belly glow create the happy read.",
+      "alert": "The sprout itself reacts: wide eyes, sharply perked leaves, upright/stiff posture, and flaring belly core create alert readiness; any spark is secondary.",
+      "sleepy": "The sprout itself looks tired: droopy eyes, lowered slumped posture, relaxed/drooping leaves, dimmer belly core, and relaxed root-tail create the sleepy read."
+    }
+  },
+  "registration": {
+    "mode": "preserve-canvas",
+    "fallbackMode": "anchor-locked",
+    "anchorState": "idle",
+    "anchorFrameIndex": 0,
+    "targetCanvasPx": 256,
+    "applySameTransformTo": "all-frames",
+    "legacyCropAllowed": false
+  },
+  "coherency": {
+    "minFramesPerState": 4,
+    "bboxTolerancePct": 0.18,
+    "centerTolerancePct": 0.12,
+    "paletteTolerancePct": 0.35,
+    "minSilhouetteIouVsIdle": 0.6
+  },
+  "spriteSheet": {
+    "path": "fixtures/glow-sprout-sheet-gpt-image-2.png",
+    "rows": 2,
+    "cols": 3,
+    "stateOrder": [
+      "idle",
+      "thinking",
+      "focused",
+      "happy",
+      "alert",
+      "sleepy"
+    ]
+  },
+  "states": {
+    "idle": {
+      "fps": 4,
+      "anchorPath": "fixtures/glow-sprout-sheet-gpt-image-2.png",
+      "animationMode": "deterministic",
+      "motionRecipe": "subtle idle breathing glow",
+      "framePlan": [
+        {
+          "index": 0,
+          "operation": "copy_anchor"
+        },
+        {
+          "index": 1,
+          "operation": "body_bob",
+          "dy": -1
+        },
+        {
+          "index": 2,
+          "operation": "pulse_glow",
+          "radius": 14,
+          "opacity": 70
+        },
+        {
+          "index": 3,
+          "operation": "body_bob",
+          "dy": 1
+        }
+      ],
+      "frames": [
+        "fixtures/glow-sprout-sheet-gpt-image-2.png",
+        "fixtures/glow-sprout-sheet-gpt-image-2.png",
+        "fixtures/glow-sprout-sheet-gpt-image-2.png",
+        "fixtures/glow-sprout-sheet-gpt-image-2.png"
+      ]
+    },
+    "thinking": {
+      "fps": 4,
+      "anchorPath": "fixtures/glow-sprout-sheet-gpt-image-2.png",
+      "animationMode": "deterministic",
+      "motionRecipe": "The sprout itself looks thoughtful: eyes glance upward or sideways, one leaf ear tilts, posture becomes curious, and the glowing belly core subtly pulses; any question sparkle is secondary.",
+      "framePlan": [
+        {
+          "index": 0,
+          "operation": "copy_anchor"
+        },
+        {
+          "index": 1,
+          "operations": [
+            {
+              "operation": "antenna_twitch"
+            },
+            {
+              "operation": "pulse_glow",
+              "radius": 14,
+              "opacity": 70
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "operation": "overlay_spark",
+          "position": "upper-right"
+        },
+        {
+          "index": 3,
+          "operation": "copy_anchor"
+        }
+      ],
+      "frames": [
+        "fixtures/glow-sprout-sheet-gpt-image-2.png",
+        "fixtures/glow-sprout-sheet-gpt-image-2.png",
+        "fixtures/glow-sprout-sheet-gpt-image-2.png",
+        "fixtures/glow-sprout-sheet-gpt-image-2.png"
+      ]
+    },
+    "focused": {
+      "fps": 4,
+      "anchorPath": "fixtures/glow-sprout-sheet-gpt-image-2.png",
+      "animationMode": "deterministic",
+      "motionRecipe": "The sprout itself looks intent: narrowed eyes, slight forward lean, inward leaf-ear angle, and a brighter steady belly core create a focused cue.",
+      "framePlan": [
+        {
+          "index": 0,
+          "operation": "copy_anchor"
+        },
+        {
+          "index": 1,
+          "operation": "pulse_glow",
+          "radius": 12,
+          "opacity": 100
+        },
+        {
+          "index": 2,
+          "operation": "body_bob",
+          "dy": -1
+        },
+        {
+          "index": 3,
+          "operation": "pulse_glow",
+          "radius": 16,
+          "opacity": 80
+        }
+      ],
+      "frames": [
+        "fixtures/glow-sprout-sheet-gpt-image-2.png",
+        "fixtures/glow-sprout-sheet-gpt-image-2.png",
+        "fixtures/glow-sprout-sheet-gpt-image-2.png",
+        "fixtures/glow-sprout-sheet-gpt-image-2.png"
+      ]
+    },
+    "happy": {
+      "fps": 5,
+      "anchorPath": "fixtures/glow-sprout-sheet-gpt-image-2.png",
+      "animationMode": "deterministic",
+      "motionRecipe": "The sprout itself looks joyful: brighter eyes/smile, buoyant posture, perked leaves, lifted curled root-tail, and warmer belly glow create the happy read.",
+      "framePlan": [
+        {
+          "index": 0,
+          "operation": "copy_anchor"
+        },
+        {
+          "index": 1,
+          "operation": "body_bob",
+          "dy": -4
+        },
+        {
+          "index": 2,
+          "operations": [
+            {
+              "operation": "pulse_glow",
+              "radius": 18,
+              "opacity": 110
+            },
+            {
+              "operation": "body_bob",
+              "dy": -2
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "operation": "body_bob",
+          "dy": 1
+        }
+      ],
+      "frames": [
+        "fixtures/glow-sprout-sheet-gpt-image-2.png",
+        "fixtures/glow-sprout-sheet-gpt-image-2.png",
+        "fixtures/glow-sprout-sheet-gpt-image-2.png",
+        "fixtures/glow-sprout-sheet-gpt-image-2.png"
+      ]
+    },
+    "alert": {
+      "fps": 5,
+      "anchorPath": "fixtures/glow-sprout-sheet-gpt-image-2.png",
+      "animationMode": "deterministic",
+      "motionRecipe": "The sprout itself reacts: wide eyes, sharply perked leaves, upright/stiff posture, and flaring belly core create alert readiness; any spark is secondary.",
+      "framePlan": [
+        {
+          "index": 0,
+          "operation": "copy_anchor"
+        },
+        {
+          "index": 1,
+          "operation": "body_bob",
+          "dy": -3
+        },
+        {
+          "index": 2,
+          "operations": [
+            {
+              "operation": "pulse_glow",
+              "radius": 18,
+              "opacity": 130
+            },
+            {
+              "operation": "overlay_spark",
+              "position": "upper-right"
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "operation": "copy_anchor"
+        }
+      ],
+      "frames": [
+        "fixtures/glow-sprout-sheet-gpt-image-2.png",
+        "fixtures/glow-sprout-sheet-gpt-image-2.png",
+        "fixtures/glow-sprout-sheet-gpt-image-2.png",
+        "fixtures/glow-sprout-sheet-gpt-image-2.png"
+      ]
+    },
+    "sleepy": {
+      "fps": 4,
+      "anchorPath": "fixtures/glow-sprout-sheet-gpt-image-2.png",
+      "animationMode": "deterministic",
+      "motionRecipe": "The sprout itself looks tired: droopy eyes, lowered slumped posture, relaxed/drooping leaves, dimmer belly core, and relaxed root-tail create the sleepy read.",
+      "framePlan": [
+        {
+          "index": 0,
+          "operation": "copy_anchor"
+        },
+        {
+          "index": 1,
+          "operation": "sleepy_droop",
+          "dy": 2
+        },
+        {
+          "index": 2,
+          "operations": [
+            {
+              "operation": "sleepy_droop",
+              "dy": 1
+            },
+            {
+              "operation": "overlay_z"
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "operation": "copy_anchor"
+        }
+      ],
+      "frames": [
+        "fixtures/glow-sprout-sheet-gpt-image-2.png",
+        "fixtures/glow-sprout-sheet-gpt-image-2.png",
+        "fixtures/glow-sprout-sheet-gpt-image-2.png",
+        "fixtures/glow-sprout-sheet-gpt-image-2.png"
+      ]
+    }
+  }
+}
